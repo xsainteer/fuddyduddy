@@ -12,6 +12,7 @@ public class CachedSummaryDto
     public string? Reason { get; set; }
     public string NewsArticleTitle { get; set; } = string.Empty;
     public string NewsArticleUrl { get; set; } = string.Empty;
+    public string Source { get; set; } = string.Empty;
 
     public static CachedSummaryDto FromNewsSummary(NewsSummary summary)
     {
@@ -24,7 +25,8 @@ public class CachedSummaryDto
             GeneratedAt = summary.GeneratedAt,
             Reason = summary.Reason,
             NewsArticleTitle = summary.NewsArticle.Title,
-            NewsArticleUrl = summary.NewsArticle.Url
+            NewsArticleUrl = summary.NewsArticle.Url,
+            Source = summary.NewsArticle.NewsSource.Name
         };
     }
 } 

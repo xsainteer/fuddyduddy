@@ -1,7 +1,7 @@
 using System.Xml.Linq;
 using HtmlAgilityPack;
 
-namespace FuddyDuddy.Core.Domain.Dialects;
+namespace FuddyDuddy.Core.Application.Dialects;
 
 public class SputnikDialect : INewsSourceDialect
 {

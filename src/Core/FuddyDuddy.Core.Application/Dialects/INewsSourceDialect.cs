@@ -1,4 +1,4 @@
-namespace FuddyDuddy.Core.Domain.Dialects;
+namespace FuddyDuddy.Core.Application.Dialects;
 
 public interface INewsSourceDialect
 {

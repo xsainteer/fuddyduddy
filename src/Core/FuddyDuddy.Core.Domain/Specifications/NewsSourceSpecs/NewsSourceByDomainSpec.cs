@@ -7,6 +7,5 @@ public class NewsSourceByDomainSpec : BaseSpecification<NewsSource>
     public NewsSourceByDomainSpec(string domain) 
         : base(x => x.Domain == domain)
     {
-        AddInclude(x => x.RobotsTxt);
     }
 } 

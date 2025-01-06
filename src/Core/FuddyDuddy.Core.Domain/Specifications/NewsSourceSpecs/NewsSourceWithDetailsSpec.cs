@@ -7,7 +7,6 @@ public class NewsSourceWithDetailsSpec : BaseSpecification<NewsSource>
     public NewsSourceWithDetailsSpec(Guid id) 
         : base(x => x.Id == id)
     {
-        AddInclude(x => x.RobotsTxt);
         // Add other includes as needed
     }
 } 

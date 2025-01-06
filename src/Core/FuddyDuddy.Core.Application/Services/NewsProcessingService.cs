@@ -53,6 +53,12 @@ public class NewsProcessingService
                 {
                     try
                     {
+                        if (newsItem.PublishedAt < DateTimeOffset.UtcNow.Date)
+                        {
+                            _logger.LogInformation("Skipping old news item: {Url}", newsItem.Url);
+                            continue;
+                        }
+
                         // Check if already processed
                         if (await _newsArticleRepository.GetByUrlAsync(newsItem.Url, cancellationToken) != null)
                         {

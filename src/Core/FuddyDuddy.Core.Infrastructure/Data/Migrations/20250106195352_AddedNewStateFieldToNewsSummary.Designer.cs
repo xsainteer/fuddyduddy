@@ -3,6 +3,7 @@ using System;
 using FuddyDuddy.Core.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FuddyDuddyDbContext))]
-    partial class FuddyDuddyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250106195352_AddedNewStateFieldToNewsSummary")]
+    partial class AddedNewStateFieldToNewsSummary
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,9 +117,6 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 
                     b.Property<Guid>("NewsArticleId")
                         .HasColumnType("char(36)");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("longtext");
 
                     b.Property<int>("State")
                         .HasColumnType("int");

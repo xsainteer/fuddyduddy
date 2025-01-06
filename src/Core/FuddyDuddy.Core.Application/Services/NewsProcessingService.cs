@@ -40,7 +40,7 @@ public class NewsProcessingService
         {
             try
             {
-                var httpClient = _httpClientFactory.CreateClient();
+                using var httpClient = _httpClientFactory.CreateClient();
                 var dialect = _dialectFactory.CreateDialect(source.DialectType);
                 _logger.LogInformation("Processing news source: {Domain} using dialect {Dialect}", 
                     source.Domain, source.DialectType);
@@ -48,6 +48,11 @@ public class NewsProcessingService
                 // Get sitemap
                 var sitemapContent = await httpClient.GetStringAsync(dialect.SitemapUrl, cancellationToken);
                 var newsItems = dialect.ParseSitemap(sitemapContent);
+
+                foreach (var newsItem in newsItems)
+                {
+                    _logger.LogInformation("News item: {Title} {Url} {PublishedAt}", newsItem.Title, newsItem.Url, newsItem.PublishedAt);
+                }
                 
                 foreach (var newsItem in newsItems)
                 {
@@ -117,7 +122,7 @@ public class NewsProcessingService
 
     private async Task<string> GetOllamaSummaryAsync(string content, CancellationToken cancellationToken)
     {
-        var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = _httpClientFactory.CreateClient();
         var request = new
         {
             model = "owl/t-lite",

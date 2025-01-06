@@ -1,9 +1,15 @@
-using FuddyDuddy.Core.Domain.Dialects;
+using FuddyDuddy.Core.Application.Dialects;
 
 namespace FuddyDuddy.Core.Application.Services;
 
 public class NewsSourceDialectFactory
 {
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public NewsSourceDialectFactory()
+    {
+    }
+
     public INewsSourceDialect CreateDialect(string dialectType)
     {
         return dialectType switch
@@ -11,6 +17,7 @@ public class NewsSourceDialectFactory
             "KNews" => new KNewsDialect(),
             "Kaktus" => new KaktusDialect(),
             "Sputnik" => new SputnikDialect(),
+            "AkiPress" => new AkiPressDialect(),
             _ => throw new ArgumentException($"Unknown dialect type: {dialectType}")
         };
     }

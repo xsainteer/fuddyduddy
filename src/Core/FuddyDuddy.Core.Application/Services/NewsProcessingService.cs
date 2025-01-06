@@ -87,6 +87,8 @@ public class NewsProcessingService
                             );
                             await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
                         }
+
+                        // TODO: validate the article when preparing a digest
                         
                         _logger.LogInformation("Processed article: {Title}", newsItem.Title);
                     }

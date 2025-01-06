@@ -9,6 +9,7 @@ public class NewsSourceDialectFactory
         return dialectType switch
         {
             "KNews" => new KNewsDialect(),
+            "Kaktus" => new KaktusDialect(),
             _ => throw new ArgumentException($"Unknown dialect type: {dialectType}")
         };
     }

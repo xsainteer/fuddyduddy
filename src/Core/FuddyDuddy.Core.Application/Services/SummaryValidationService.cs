@@ -1,8 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using FuddyDuddy.Core.Domain.Repositories;
-using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
 
 namespace FuddyDuddy.Core.Application.Services;
@@ -10,15 +11,18 @@ namespace FuddyDuddy.Core.Application.Services;
 public class SummaryValidationService
 {
     private readonly INewsSummaryRepository _summaryRepository;
+    private readonly ICacheService _cacheService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SummaryValidationService> _logger;
 
     public SummaryValidationService(
         INewsSummaryRepository summaryRepository,
+        ICacheService cacheService,
         IHttpClientFactory httpClientFactory,
         ILogger<SummaryValidationService> logger)
     {
         _summaryRepository = summaryRepository;
+        _cacheService = cacheService;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -37,6 +41,9 @@ public class SummaryValidationService
                 {
                     summary.Validate(validation.Reason);
                     _logger.LogInformation("Summary {Id} validated successfully: {Reason}", summary.Id, validation.Reason);
+                    
+                    // Add to cache only if validation passed
+                    await _cacheService.AddSummaryAsync(summary, cancellationToken);
                 }
                 else
                 {

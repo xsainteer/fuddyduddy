@@ -11,7 +11,8 @@ builder.Services.AddSwaggerGen();
 // Add our application services
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(
-    builder.Configuration.GetConnectionString("DefaultConnection"));
+    builder.Configuration.GetConnectionString("DefaultConnection"),
+    builder.Configuration.GetConnectionString("RedisConnection"));
 
 var app = builder.Build();
 

@@ -3,6 +3,7 @@ using System;
 using FuddyDuddy.Core.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FuddyDuddyDbContext))]
-    partial class FuddyDuddyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250106150417_AddedNewsArticleAndNewsSummaryModels_v2")]
+    partial class AddedNewsArticleAndNewsSummaryModels_v2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,9 +32,7 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsProcessed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid>("NewsSourceId")
                         .HasColumnType("char(36)");
@@ -39,26 +40,21 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
                     b.Property<DateTimeOffset>("PublishedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("RawContent")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Url")
                         .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("varchar(2048)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsProcessed");
-
                     b.HasIndex("NewsSourceId");
-
-                    b.HasIndex("PublishedAt");
-
-                    b.HasIndex("Url")
-                        .IsUnique();
 
                     b.ToTable("NewsArticles");
                 });
@@ -106,8 +102,7 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 
                     b.Property<string>("Article")
                         .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("varchar(2048)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("GeneratedAt")
                         .HasColumnType("datetime(6)");
@@ -117,16 +112,13 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 
                     b.Property<string>("Tags")
                         .IsRequired()
-                        .HasColumnType("json");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GeneratedAt");
 
                     b.HasIndex("NewsArticleId")
                         .IsUnique();
@@ -139,7 +131,7 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
                     b.HasOne("FuddyDuddy.Core.Domain.Entities.NewsSource", "NewsSource")
                         .WithMany()
                         .HasForeignKey("NewsSourceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("NewsSource");

@@ -1,24 +1,32 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using FuddyDuddy.Core.Domain.Repositories;
-using FuddyDuddy.Core.Domain.Dialects;
+using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using System.Text.Json.Serialization;
 
 namespace FuddyDuddy.Core.Application.Services;
 
 public class NewsProcessingService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly INewsSourceRepository _newsSourceRepository;
+    private readonly INewsArticleRepository _newsArticleRepository;
+    private readonly INewsSummaryRepository _newsSummaryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly NewsSourceDialectFactory _dialectFactory;
     private readonly ILogger<NewsProcessingService> _logger;
 
     public NewsProcessingService(
-        IUnitOfWork unitOfWork,
+        INewsSourceRepository newsSourceRepository,
+        INewsArticleRepository newsArticleRepository,
+        INewsSummaryRepository newsSummaryRepository,
         IHttpClientFactory httpClientFactory,
         NewsSourceDialectFactory dialectFactory,
         ILogger<NewsProcessingService> logger)
     {
-        _unitOfWork = unitOfWork;
+        _newsSourceRepository = newsSourceRepository;
+        _newsArticleRepository = newsArticleRepository;
+        _newsSummaryRepository = newsSummaryRepository;
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
         _logger = logger;
@@ -26,7 +34,7 @@ public class NewsProcessingService
 
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
     {
-        var activeSources = await _unitOfWork.NewsSourceRepository.GetActiveSourcesAsync(cancellationToken);
+        var activeSources = await _newsSourceRepository.GetActiveSourcesAsync(cancellationToken);
         
         foreach (var source in activeSources)
         {
@@ -39,31 +47,58 @@ public class NewsProcessingService
 
                 // Get sitemap
                 var sitemapContent = await httpClient.GetStringAsync(dialect.SitemapUrl, cancellationToken);
-                _logger.LogInformation("Sitemap content: {SitemapContent}", sitemapContent);
                 var newsItems = dialect.ParseSitemap(sitemapContent);
-                var latestNews = newsItems.FirstOrDefault();
-
-                if (latestNews == null)
-                {
-                    _logger.LogWarning("No news found for {Domain}", source.Domain);
-                    continue;
-                }
-
-                // Get article content
-                var newsContent = await httpClient.GetStringAsync(latestNews.Url, cancellationToken);
-                var articleContent = dialect.ExtractArticleContent(newsContent);
-
-                // Process with Ollama
-                var summary = await GetOllamaSummaryAsync(articleContent, cancellationToken);
                 
-                Console.WriteLine($"\nSummary for {source.Domain}:");
-                Console.WriteLine($"Title: {latestNews.Title}");
-                Console.WriteLine($"Published: {latestNews.PublishedAt}");
-                Console.WriteLine($"Summary: {summary}\n");
+                foreach (var newsItem in newsItems)
+                {
+                    try
+                    {
+                        // Check if already processed
+                        if (await _newsArticleRepository.GetByUrlAsync(newsItem.Url, cancellationToken) != null)
+                        {
+                            _logger.LogInformation("Article already processed: {Url}", newsItem.Url);
+                            continue;
+                        }
+
+                        // Get article content
+                        var newsContent = await httpClient.GetStringAsync(newsItem.Url, cancellationToken);
+                        var articleContent = dialect.ExtractArticleContent(newsContent);
+
+                        // Create and save article
+                        var article = new NewsArticle(
+                            source.Id,
+                            newsItem.Url,
+                            newsItem.Title,
+                            newsItem.PublishedAt
+                        );
+                        await _newsArticleRepository.AddAsync(article, cancellationToken);
+
+                        // Process with Ollama
+                        var summaryJson = await GetOllamaSummaryAsync(articleContent, cancellationToken);
+                        var summary = ParseSummaryResponse(summaryJson);
+                        
+                        if (summary != null)
+                        {
+                            var newsSummary = new NewsSummary(
+                                article.Id,
+                                summary.Title,
+                                summary.Article,
+                                summary.Tags
+                            );
+                            await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
+                        }
+                        
+                        _logger.LogInformation("Processed article: {Title}", newsItem.Title);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing article {Url}", newsItem.Url);
+                    }
+                }
 
                 // Update last crawled timestamp
                 source.UpdateLastCrawled();
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _newsSourceRepository.UpdateAsync(source, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -129,5 +164,30 @@ public class NewsProcessingService
     private class Message
     {
         public string? Content { get; set; }
+    }
+
+    private class OllamaSummaryResponse
+    {
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("article")]
+        public string Article { get; set; } = string.Empty;
+
+        [JsonPropertyName("tags")]
+        public List<string> Tags { get; set; } = new();
+    }
+
+    private OllamaSummaryResponse? ParseSummaryResponse(string jsonResponse)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<OllamaSummaryResponse>(jsonResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse summary response: {Response}", jsonResponse);
+            return null;
+        }
     }
 } 

@@ -1,36 +1,34 @@
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Domain.Repositories;
-using FuddyDuddy.Core.Domain.Specifications.NewsSourceSpecs;
 using Microsoft.EntityFrameworkCore;
 
 namespace FuddyDuddy.Core.Infrastructure.Data.Repositories;
 
-public class NewsSourceRepository : BaseRepository<NewsSource, Guid>, INewsSourceRepository
+public class NewsSourceRepository : INewsSourceRepository
 {
-    public NewsSourceRepository(FuddyDuddyDbContext context) : base(context)
+    private readonly FuddyDuddyDbContext _context;
+
+    public NewsSourceRepository(FuddyDuddyDbContext context)
     {
+        _context = context;
+    }
+
+    public async Task<IEnumerable<NewsSource>> GetActiveSourcesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.NewsSources
+            .Where(x => x.IsActive)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<NewsSource?> GetByDomainAsync(string domain, CancellationToken cancellationToken = default)
     {
-        var spec = new NewsSourceByDomainSpec(domain);
-        return await ApplySpecification(spec).FirstOrDefaultAsync(cancellationToken);
+        return await _context.NewsSources
+            .FirstOrDefaultAsync(x => x.Domain == domain, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<NewsSource>> GetActiveSourcesAsync(CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(NewsSource source, CancellationToken cancellationToken = default)
     {
-        var spec = new ActiveNewsSourcesSpec();
-        return await ApplySpecification(spec).ToListAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<NewsSource>> GetSourcesDueForCrawlAsync(TimeSpan threshold, CancellationToken cancellationToken = default)
-    {
-        var spec = new NewsSourcesDueForCrawlSpec(threshold);
-        return await ApplySpecification(spec).ToListAsync(cancellationToken);
-    }
-
-    public async Task<bool> ExistsAsync(string domain, CancellationToken cancellationToken = default)
-    {
-        return await DbSet.AnyAsync(x => x.Domain == domain, cancellationToken);
+        _context.NewsSources.Update(source);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 } 

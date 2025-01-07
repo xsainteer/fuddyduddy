@@ -2,7 +2,8 @@ export interface Summary {
   id: string
   title: string
   article: string
-  tags: string[]
+  category: string
+  categoryLocal: string
   generatedAt: string
   reason: string | null
   newsArticleTitle: string

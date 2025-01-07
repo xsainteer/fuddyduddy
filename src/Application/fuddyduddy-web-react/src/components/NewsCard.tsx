@@ -43,19 +43,15 @@ export default function NewsCard({ summary }: NewsCardProps) {
         </p>
       </div>
 
-      {/* Tags */}
+      {/* Category */}
       <div className="flex flex-wrap gap-1.5">
-        {summary.tags.map(tag => (
-          <span 
-            key={tag}
-            className="px-2 py-0.5 text-sm bg-gray-100 dark:bg-gray-800 
-                     text-gray-600 dark:text-gray-300 rounded-full
-                     hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer
-                     transition-colors"
-          >
-            #{tag}
-          </span>
-        ))}
+        <span 
+          className="px-2 py-0.5 text-sm bg-blue-100 dark:bg-blue-900 
+                   text-blue-600 dark:text-blue-300 rounded-full
+                   transition-colors"
+        >
+          {summary.categoryLocal}
+        </span>
       </div>
 
       {/* Engagement buttons */}

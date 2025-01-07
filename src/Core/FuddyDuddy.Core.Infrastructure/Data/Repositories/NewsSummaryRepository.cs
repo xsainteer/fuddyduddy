@@ -23,6 +23,7 @@ public class NewsSummaryRepository : INewsSummaryRepository
         return await _context
             .NewsSummaries
             .Where(s => s.State == state)
+            .Include(s => s.Category)
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)
             .ToListAsync(cancellationToken);

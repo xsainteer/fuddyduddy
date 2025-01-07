@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INewsSourceRepository, NewsSourceRepository>();
         services.AddScoped<INewsArticleRepository, NewsArticleRepository>();
         services.AddScoped<INewsSummaryRepository, NewsSummaryRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
 
         // Add Redis
         services.AddSingleton<IConnectionMultiplexer>(sp => 

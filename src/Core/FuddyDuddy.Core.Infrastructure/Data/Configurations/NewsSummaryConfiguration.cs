@@ -18,8 +18,9 @@ public class NewsSummaryConfiguration : IEntityTypeConfiguration<NewsSummary>
             .IsRequired()
             .HasMaxLength(2048);
 
-        builder.Property(x => x.Tags)
-            .HasColumnType("json");
+        builder.Property(x => x.CategoryId)
+            .HasDefaultValue(16)
+            .IsRequired(true);
 
         builder.Property(x => x.GeneratedAt)
             .IsRequired();

@@ -4,8 +4,6 @@ namespace FuddyDuddy.Core.Application.Services;
 
 public class NewsSourceDialectFactory
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
     public NewsSourceDialectFactory()
     {
     }

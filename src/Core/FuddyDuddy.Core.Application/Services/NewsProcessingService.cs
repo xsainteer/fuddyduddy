@@ -12,14 +12,18 @@ public class NewsProcessingService
     private readonly INewsSourceRepository _newsSourceRepository;
     private readonly INewsArticleRepository _newsArticleRepository;
     private readonly INewsSummaryRepository _newsSummaryRepository;
+    private readonly ICategoryRepository _categoryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly NewsSourceDialectFactory _dialectFactory;
     private readonly ILogger<NewsProcessingService> _logger;
+
+    private const int DEFAULT_CATEGORY_ID = 16; // "Other" category
 
     public NewsProcessingService(
         INewsSourceRepository newsSourceRepository,
         INewsArticleRepository newsArticleRepository,
         INewsSummaryRepository newsSummaryRepository,
+        ICategoryRepository categoryRepository,
         IHttpClientFactory httpClientFactory,
         NewsSourceDialectFactory dialectFactory,
         ILogger<NewsProcessingService> logger)
@@ -27,6 +31,7 @@ public class NewsProcessingService
         _newsSourceRepository = newsSourceRepository;
         _newsArticleRepository = newsArticleRepository;
         _newsSummaryRepository = newsSummaryRepository;
+        _categoryRepository = categoryRepository;
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
         _logger = logger;
@@ -35,6 +40,8 @@ public class NewsProcessingService
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
     {
         var activeSources = await _newsSourceRepository.GetActiveSourcesAsync(cancellationToken);
+        var categories = await _categoryRepository.GetAllAsync(cancellationToken);
+        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Id}. {c.Name} ({c.Local})"));
         
         foreach (var source in activeSources)
         {
@@ -85,7 +92,7 @@ public class NewsProcessingService
                         await _newsArticleRepository.AddAsync(article, cancellationToken);
 
                         // Process with Ollama
-                        var summaryJson = await GetOllamaSummaryAsync(articleContent, cancellationToken);
+                        var summaryJson = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
                         var summary = ParseSummaryResponse(summaryJson);
                         
                         if (summary != null)
@@ -94,13 +101,11 @@ public class NewsProcessingService
                                 article.Id,
                                 summary.Title,
                                 summary.Article,
-                                summary.Tags
+                                summary.CategoryId
                             );
                             await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
                         }
 
-                        // TODO: validate the article when preparing a digest
-                        
                         _logger.LogInformation("Processed article: {Title}", newsItem.Title);
                     }
                     catch (Exception ex)
@@ -120,7 +125,7 @@ public class NewsProcessingService
         }
     }
 
-    private async Task<string> GetOllamaSummaryAsync(string content, CancellationToken cancellationToken)
+    private async Task<string> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
     {
         using var httpClient = _httpClientFactory.CreateClient();
         var request = new
@@ -131,7 +136,12 @@ public class NewsProcessingService
                 new
                 {
                     role = "system",
-                    content = "Ты - умный ассистент, который умеет кратко и четко пересказывать тексты. Выдели заголовок статьи (title). Игнорируй программный код, ссылки, выдели только суть основной статьи в трех предложениях (article). Выдели основные три-четыре таги (tags). Отвечай строго в JSON формате."
+                    content = $@"Ты - умный ассистент, который умеет кратко и четко пересказывать тексты.
+                                Выдели заголовок статьи (title). Игнорируй программный код, ссылки, выдели только суть основной статьи в трех предложениях (article).
+                                Определи категорию новости (category) из следующего списка:
+                                {categoryPrompt}
+
+                                Отвечай строго в JSON формате, для category верни только ID категории (число от 1 до 16)."
                 },
                 new
                 {
@@ -146,13 +156,9 @@ public class NewsProcessingService
                 {
                     title = new { type = "string" },
                     article = new { type = "string" },
-                    tags = new
-                    {
-                        type = "array",
-                        items = new { type = "string" }
-                    }
+                    category = new { type = "integer", minimum = 1, maximum = 16 }
                 },
-                required = new[] { "title", "article", "tags" }
+                required = new[] { "title", "article", "category" }
             },
             stream = false,
             options = new
@@ -187,8 +193,8 @@ public class NewsProcessingService
         [JsonPropertyName("article")]
         public string Article { get; set; } = string.Empty;
 
-        [JsonPropertyName("tags")]
-        public List<string> Tags { get; set; } = new();
+        [JsonPropertyName("category")]
+        public int CategoryId { get; set; } = DEFAULT_CATEGORY_ID;
     }
 
     private OllamaSummaryResponse? ParseSummaryResponse(string jsonResponse)

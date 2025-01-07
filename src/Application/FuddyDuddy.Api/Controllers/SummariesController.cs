@@ -82,7 +82,7 @@ public class SummariesController : ControllerBase
                             Id = dbSummary.Id,
                             Title = dbSummary.Title,
                             Article = dbSummary.Article,
-                            Tags = dbSummary.Tags,
+                            Category = dbSummary.Category.Name,
                             GeneratedAt = dbSummary.GeneratedAt
                         };
                         

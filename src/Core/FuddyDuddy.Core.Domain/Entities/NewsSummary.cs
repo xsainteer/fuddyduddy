@@ -14,12 +14,13 @@ public class NewsSummary
     public Guid NewsArticleId { get; private set; }
     public string Title { get; private set; }
     public string Article { get; private set; }
-    public List<string> Tags { get; private set; }
+    public int CategoryId { get; private set; }
     public DateTimeOffset GeneratedAt { get; private set; }
     public NewsSummaryState State { get; private set; }
     public string? Reason { get; private set; }
 
     public virtual NewsArticle NewsArticle { get; private set; }
+    public virtual Category Category { get; private set; }
 
     private NewsSummary() { } // For EF Core
 
@@ -27,13 +28,13 @@ public class NewsSummary
         Guid newsArticleId,
         string title,
         string article,
-        IEnumerable<string> tags)
+        int categoryId)
     {
         Id = Guid.NewGuid();
         NewsArticleId = newsArticleId;
         Title = title;
         Article = article;
-        Tags = tags.ToList();
+        CategoryId = categoryId;
         GeneratedAt = DateTimeOffset.UtcNow;
         State = NewsSummaryState.Created;
     }
@@ -53,5 +54,10 @@ public class NewsSummary
     public void MarkAsDigested()
     {
         State = NewsSummaryState.Digested;
+    }
+
+    public void UpdateCategory(int categoryId)
+    {
+        CategoryId = categoryId;
     }
 } 

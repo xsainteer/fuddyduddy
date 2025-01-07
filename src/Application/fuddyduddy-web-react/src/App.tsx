@@ -1,54 +1,51 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Routes, Route, Link } from 'react-router-dom'
-import { ThemeProvider } from './contexts/ThemeContext'
-import { Toaster } from 'react-hot-toast'
+import { Routes, Route } from 'react-router-dom'
+import { useState } from 'react'
+import Header from './components/Header'
 import NewsFeed from './components/NewsFeed'
-import SummaryPage from './pages/SummaryPage'
 import AboutPage from './pages/AboutPage'
-import ThemeToggle from './components/ThemeToggle'
-import ScrollToTop from './components/ScrollToTop'
+import SummaryPage from './pages/SummaryPage'
+import Filters from './components/Filters'
+import Digests from './components/Digests'
+import MobileMenu from './components/MobileMenu'
+import type { Filters as FiltersType } from './types'
 
-const queryClient = new QueryClient()
+export default function App() {
+  const [filters, setFilters] = useState<FiltersType>({})
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-          <Toaster position="bottom-center" />
-          <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b dark:border-gray-700 sticky top-0 z-10 transition-colors">
-            <div className="max-w-2xl mx-auto py-3 px-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <Link to="/" className="block">
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">FuddyDuddy News</h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Новости Кыргызстана</p>
-                  </Link>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Link 
-                    to="/about"
-                    className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
-                  >
-                    About
-                  </Link>
-                  <ThemeToggle />
-                </div>
-              </div>
-            </div>
-          </header>
-          <main className="max-w-2xl mx-auto px-4 py-4">
-            <Routes>
-              <Route path="/" element={<NewsFeed />} />
-              <Route path="/summary/:id" element={<SummaryPage />} />
-              <Route path="/about" element={<AboutPage />} />
-            </Routes>
-          </main>
-          <ScrollToTop />
-        </div>
-      </ThemeProvider>
-    </QueryClientProvider>
-  )
-}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <Header onMobileMenuClick={() => setIsMobileMenuOpen(true)} />
+      
+      {/* Mobile menu */}
+      <MobileMenu 
+        isOpen={isMobileMenuOpen} 
+        onClose={() => setIsMobileMenuOpen(false)}
+      >
+        <Filters filters={filters} onFiltersChange={setFilters} />
+      </MobileMenu>
 
-export default App 
+      <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-12 gap-6">
+        {/* Left sidebar - Filters */}
+        <div className="hidden md:block md:col-span-3 lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+          <Filters filters={filters} onFiltersChange={setFilters} />
+        </div>
+
+        {/* Main content */}
+        <main className="col-span-12 md:col-span-6 lg:col-span-6">
+          <Routes>
+            <Route path="/" element={<NewsFeed filters={filters} />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/summary/:id" element={<SummaryPage />} />
+            <Route path="/digests" element={<Digests className="md:hidden" />} />
+          </Routes>
+        </main>
+
+        {/* Right sidebar - Digests */}
+        <div className="hidden md:block md:col-span-3 lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
+          <Digests />
+        </div>
+      </div>
+    </div>
+  )
+} 

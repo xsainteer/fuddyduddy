@@ -30,38 +30,28 @@ public class SummariesController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetLatestSummaries(
-        [FromQuery] string? summaryId = null,
         [FromQuery] int page = 0,
         [FromQuery] int pageSize = 20,
+        [FromQuery] Language? language = null,
+        [FromQuery] int? categoryId = null,
+        [FromQuery] Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            if (!string.IsNullOrEmpty(summaryId))
-            {
-                var summariesAroundId = await _cacheService.GetSummariesAroundIdAsync<CachedSummaryDto>(
-                    summaryId,
-                    pageSize,
-                    cancellationToken);
-
-                if (summariesAroundId == null)
-                {
-                    return NotFound(new { message = "Summary not found" });
-                }
-
-                return Ok(summariesAroundId);
-            }
-
             var summaries = await _cacheService.GetLatestSummariesAsync<CachedSummaryDto>(
                 page * pageSize, 
-                pageSize, 
+                pageSize,
+                language ?? Language.RU,
+                categoryId,
+                sourceId,
                 cancellationToken);
 
             return Ok(summaries);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting summaries. SummaryId: {SummaryId}, Page: {Page}", summaryId, page);
+            _logger.LogError(ex, "Error getting summaries. Page: {Page}", page);
             return StatusCode(500, new { message = "An error occurred while fetching summaries" });
         }
     }

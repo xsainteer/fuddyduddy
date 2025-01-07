@@ -11,69 +11,78 @@ namespace FuddyDuddy.Api.Controllers;
 public class NewsProcessingController : ControllerBase
 {
     private readonly NewsProcessingService _newsProcessingService;
-    private readonly ILogger<NewsProcessingController> _logger;
-    private readonly SummaryValidationService _summaryValidationService;
-    private readonly ICacheService _cacheService;
+    private readonly SummaryValidationService _validationService;
     private readonly INewsSummaryRepository _summaryRepository;
+    private readonly ICacheService _cacheService;
+    private readonly ILogger<NewsProcessingController> _logger;
 
     public NewsProcessingController(
         NewsProcessingService newsProcessingService,
-        ILogger<NewsProcessingController> logger,
-        SummaryValidationService summaryValidationService,
+        SummaryValidationService validationService,
+        INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
-        INewsSummaryRepository summaryRepository)
+        ILogger<NewsProcessingController> logger)
     {
         _newsProcessingService = newsProcessingService;
-        _logger = logger;
-        _summaryValidationService = summaryValidationService;
-        _cacheService = cacheService;
+        _validationService = validationService;
         _summaryRepository = summaryRepository;
+        _cacheService = cacheService;
+        _logger = logger;
     }
 
     [HttpPost("process")]
-    public async Task<IActionResult> ProcessNews(CancellationToken cancellationToken)
+    public async Task<IActionResult> ProcessNews(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting news processing flow");
-        
         try
         {
             await _newsProcessingService.ProcessNewsSourcesAsync(cancellationToken);
-            return Ok(new { message = "News processing completed successfully" });
+            return Ok(new { message = "News processing started" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during news processing");
-            return StatusCode(500, new { error = "Internal server error during news processing" });
+            _logger.LogError(ex, "Error processing news");
+            return StatusCode(500, new { message = "An error occurred while processing news" });
         }
     }
 
-    [HttpPost("validate-summaries")]
-    public async Task<IActionResult> ValidateSummaries(CancellationToken cancellationToken)
-    {
-        await _summaryValidationService.ValidateNewSummariesAsync(cancellationToken);
-        return Ok();
-    }
-
-    [HttpPost("rebuild-cache")]
-    public async Task<IActionResult> RebuildCache(CancellationToken cancellationToken)
+    [HttpPost("validate")]
+    public async Task<IActionResult> ValidateSummaries(CancellationToken cancellationToken = default)
     {
         try
         {
-            _logger.LogInformation("Starting cache rebuild");
+            await _validationService.ValidateNewSummariesAsync(cancellationToken);
+            return Ok(new { message = "Summaries validation started" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating summaries");
+            return StatusCode(500, new { message = "An error occurred while validating summaries" });
+        }
+    }
 
-            // Get all validated summaries from the database
+    [HttpPost("rebuild-cache")]
+    public async Task<IActionResult> RebuildCache(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Clear existing cache
+            await _cacheService.ClearCacheAsync(cancellationToken);
+
+            // Get all validated summaries
             var summaries = await _summaryRepository.GetByStateAsync(NewsSummaryState.Validated, cancellationToken);
-            
-            // Rebuild the cache with these summaries
-            await _cacheService.RebuildCacheAsync(summaries, cancellationToken);
 
-            _logger.LogInformation("Cache rebuild completed successfully");
-            return Ok(new { message = "Cache rebuilt successfully" });
+            // Add each summary back to cache
+            foreach (var summary in summaries)
+            {
+                await _cacheService.AddSummaryAsync(summary, cancellationToken);
+            }
+
+            return Ok(new { message = $"Cache rebuilt with {summaries.Count()} summaries" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error rebuilding cache");
-            return StatusCode(500, new { error = "Internal server error during cache rebuild" });
+            return StatusCode(500, new { message = "An error occurred while rebuilding cache" });
         }
     }
 } 

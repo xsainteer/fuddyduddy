@@ -18,12 +18,10 @@ export async function fetchSummaries(page: number) {
   }
 }
 
-export async function fetchSummaryById(id: string) {
-  try {
-    const { data } = await axios.get<Summary>(`${API_URL}/summaries/${id}`)
-    return data
-  } catch (error) {
-    console.error('Error fetching summary:', error)
-    throw error
+export async function fetchSummaryById(id: string): Promise<Summary> {
+  const response = await fetch(`/api/summaries/${id}`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch summary')
   }
+  return response.json()
 } 

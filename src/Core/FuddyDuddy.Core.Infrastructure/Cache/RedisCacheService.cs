@@ -11,8 +11,11 @@ public class RedisCacheService : ICacheService
 {
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisCacheService> _logger;
-    private const string SUMMARIES_KEY = "latest:summaries";
-    private const int MAX_SUMMARIES = 1000;
+    private const string SUMMARY_KEY = "summary:{0}";  // Individual summary
+    private const string SUMMARIES_BY_LANGUAGE_KEY = "latest:summaries:{0}";  // Timeline by language
+    private const string SUMMARIES_BY_CATEGORY_KEY = "summaries:by:category:{0}";  // Category index
+    private const string SUMMARIES_BY_SOURCE_KEY = "summaries:by:source:{0}";  // Source index
+    private const int MAX_SUMMARIES = 1000;  // Per language
 
     public RedisCacheService(
         IConnectionMultiplexer redis,
@@ -29,14 +32,30 @@ public class RedisCacheService : ICacheService
             var db = _redis.GetDatabase();
             var score = summary.GeneratedAt.ToUnixTimeSeconds();
             var cachedSummary = CachedSummaryDto.FromNewsSummary(summary);
+            var summaryJson = JsonSerializer.Serialize(cachedSummary);
             
-            await db.SortedSetAddAsync(
-                SUMMARIES_KEY,
-                JsonSerializer.Serialize(cachedSummary),
-                score);
+            // Store the summary itself
+            await db.StringSetAsync(
+                string.Format(SUMMARY_KEY, summary.Id),
+                summaryJson,
+                TimeSpan.FromDays(7));  // TTL for individual summaries
 
-            // Trim to keep only latest 1000
-            await db.SortedSetRemoveRangeByRankAsync(SUMMARIES_KEY, 0, -MAX_SUMMARIES - 1);
+            // Add to the language-specific timeline
+            var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, summary.Language.ToString().ToLower());
+            await db.SortedSetAddAsync(timelineKey, summaryJson, score);
+
+            // Add to category index
+            await db.SetAddAsync(
+                string.Format(SUMMARIES_BY_CATEGORY_KEY, summary.CategoryId),
+                summary.Id.ToString());
+
+            // Add to source index
+            await db.SetAddAsync(
+                string.Format(SUMMARIES_BY_SOURCE_KEY, summary.NewsArticle.NewsSourceId),
+                summary.Id.ToString());
+
+            // Trim the language-specific timeline
+            await db.SortedSetRemoveRangeByRankAsync(timelineKey, 0, -MAX_SUMMARIES - 1);
         }
         catch (Exception ex)
         {
@@ -45,134 +64,175 @@ public class RedisCacheService : ICacheService
         }
     }
 
-    public async Task<IEnumerable<T>> GetLatestSummariesAsync<T>(int skip, int take, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var db = _redis.GetDatabase();
-
-            // Get total count for pagination
-            var totalCount = await db.SortedSetLengthAsync(SUMMARIES_KEY);
-            
-            // If skip is beyond total count, return empty
-            if (skip >= totalCount)
-                return Enumerable.Empty<T>();
-
-            var summaries = await db.SortedSetRangeByRankAsync(
-                SUMMARIES_KEY,
-                start: skip,
-                stop: Math.Min(skip + take - 1, totalCount - 1),
-                Order.Descending);
-
-            if (summaries == null || !summaries.Any())
-                return Enumerable.Empty<T>();
-
-            return summaries
-                .Select(s => JsonSerializer.Deserialize<T>(s.ToString()!))
-                .Where(s => s != null)!;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting latest summaries from cache. Skip: {Skip}, Take: {Take}", skip, take);
-            throw;
-        }
-    }
-
-    public async Task<IEnumerable<T>?> GetSummariesAroundIdAsync<T>(
-        string summaryId,
-        int count,
+    public async Task<IEnumerable<T>> GetLatestSummariesAsync<T>(
+        int skip,
+        int take,
+        Language language = Language.RU,
+        int? categoryId = null,
+        Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             var db = _redis.GetDatabase();
-            var allSummaries = await db.SortedSetRangeByScoreAsync(SUMMARIES_KEY, order: Order.Descending);
-            
-            if (allSummaries == null || !allSummaries.Any())
-                return null;
+            var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, language.ToString().ToLower());
 
-            var targetIndex = -1;
-            var summariesList = new List<T>();
-
-            // Find the target summary
-            for (var i = 0; i < allSummaries.Length; i++)
+            // If no filters, just return from timeline
+            if (categoryId == null && sourceId == null)
             {
-                var summary = JsonSerializer.Deserialize<T>(allSummaries[i]!.ToString()!);
-                summariesList.Add(summary!);
-                
-                var id = summary!.GetType().GetProperty("Id")!.GetValue(summary)?.ToString();
-                if (id == summaryId)
-                {
-                    targetIndex = i;
-                    break;
-                }
+                var summaries = await db.SortedSetRangeByRankAsync(
+                    timelineKey,
+                    skip,
+                    skip + take - 1,
+                    Order.Descending);
+
+                return DeserializeSummaries<T>(summaries);
             }
 
-            if (targetIndex == -1)
-            {
-                return null;
-            }
+            // Get filtered IDs
+            var filteredIds = await GetFilteredSummaryIdsAsync(db, categoryId, sourceId);
+            if (!filteredIds.Any())
+                return Enumerable.Empty<T>();
 
-            // Calculate the range to fetch
-            var halfCount = count / 2;
-            var start = Math.Max(0, targetIndex - halfCount);
-            var end = Math.Min(allSummaries.Length - 1, targetIndex + halfCount);
+            // Get scores for filtered IDs from timeline
+            var summaryScores = await db.SortedSetRangeByRankWithScoresAsync(timelineKey);
+            var filteredSummaries = summaryScores
+                .Where(x => filteredIds.Contains(GetSummaryId(x.Element)))
+                .Skip(skip)
+                .Take(take)
+                .Select(x => x.Element)
+                .ToArray();  // Convert to array for DeserializeSummaries
 
-            return allSummaries
-                .Skip(start)
-                .Take(end - start + 1)
-                .Select(s => JsonSerializer.Deserialize<T>(s.ToString()!)!)
-                .ToList();
+            return DeserializeSummaries<T>(filteredSummaries);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting summaries around ID from cache. SummaryId: {SummaryId}", summaryId);
-            throw;
+            _logger.LogError(ex, "Error getting latest summaries");
+            return Enumerable.Empty<T>();
         }
     }
 
     public async Task<T?> GetSummaryByIdAsync<T>(string id, CancellationToken cancellationToken = default)
     {
-        var key = $"summary:{id}";
-        var value = await _redis.GetDatabase().StringGetAsync(key);
-        return value.HasValue ? JsonSerializer.Deserialize<T>(value!) : default;
+        try
+        {
+            var db = _redis.GetDatabase();
+            var summaryJson = await db.StringGetAsync(string.Format(SUMMARY_KEY, id));
+            
+            if (summaryJson.IsNull)
+                return default;
+
+            return JsonSerializer.Deserialize<T>(summaryJson!);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting summary by ID");
+            return default;
+        }
     }
 
     public async Task CacheSummaryDtoAsync<T>(string id, T summary, CancellationToken cancellationToken = default)
     {
-        var key = $"summary:{id}";
-        var value = JsonSerializer.Serialize(summary);
-        await _redis.GetDatabase().StringSetAsync(key, value, TimeSpan.FromHours(24));
+        try
+        {
+            var db = _redis.GetDatabase();
+            var summaryJson = JsonSerializer.Serialize(summary);
+            
+            await db.StringSetAsync(
+                string.Format(SUMMARY_KEY, id),
+                summaryJson,
+                TimeSpan.FromDays(7));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error caching summary DTO");
+            throw;
+        }
     }
 
-    public async Task RebuildCacheAsync(IEnumerable<NewsSummary> summaries, CancellationToken cancellationToken = default)
+    public async Task ClearCacheAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             var db = _redis.GetDatabase();
-            
-            // Clear existing cache
-            await db.KeyDeleteAsync(SUMMARIES_KEY);
-            
-            // Add all summaries to cache
-            foreach (var summary in summaries)
+            var server = _redis.GetServer(_redis.GetEndPoints().First());
+
+            // Clear all language-specific timelines
+            foreach (var language in Enum.GetValues<Language>())
             {
-                var score = summary.GeneratedAt.ToUnixTimeSeconds();
-                var cachedSummary = CachedSummaryDto.FromNewsSummary(summary);
-                
-                await db.SortedSetAddAsync(
-                    SUMMARIES_KEY,
-                    JsonSerializer.Serialize(cachedSummary),
-                    score);
+                var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, language.ToString().ToLower());
+                await db.KeyDeleteAsync(timelineKey);
             }
-            
-            // Trim to keep only latest 1000
-            await db.SortedSetRemoveRangeByRankAsync(SUMMARIES_KEY, 0, -MAX_SUMMARIES - 1);
+
+            // Clear all summary keys
+            var summaryKeys = server.Keys(pattern: "summary:*");
+            foreach (var key in summaryKeys)
+            {
+                await db.KeyDeleteAsync(key);
+            }
+
+            // Clear all category indexes
+            var categoryKeys = server.Keys(pattern: "summaries:by:category:*");
+            foreach (var key in categoryKeys)
+            {
+                await db.KeyDeleteAsync(key);
+            }
+
+            // Clear all source indexes
+            var sourceKeys = server.Keys(pattern: "summaries:by:source:*");
+            foreach (var key in sourceKeys)
+            {
+                await db.KeyDeleteAsync(key);
+            }
+
+            _logger.LogInformation("Cache cleared successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error rebuilding cache");
+            _logger.LogError(ex, "Error clearing cache");
             throw;
         }
+    }
+
+    private async Task<HashSet<string>> GetFilteredSummaryIdsAsync(
+        IDatabase db,
+        int? categoryId = null,
+        Guid? sourceId = null)
+    {
+        var sets = new List<RedisKey>();
+
+        if (categoryId.HasValue)
+            sets.Add(string.Format(SUMMARIES_BY_CATEGORY_KEY, categoryId.Value));
+
+        if (sourceId.HasValue)
+            sets.Add(string.Format(SUMMARIES_BY_SOURCE_KEY, sourceId.Value));
+
+        if (!sets.Any())
+            return new HashSet<string>();
+
+        // Intersect all filter sets
+        var intersection = await db.SetCombineAsync(SetOperation.Intersect, sets.ToArray());
+        return intersection.Select(x => x.ToString()).ToHashSet();
+    }
+
+    private string GetSummaryId(RedisValue summaryJson)
+    {
+        try
+        {
+            var summary = JsonSerializer.Deserialize<CachedSummaryDto>(summaryJson!);
+            return summary?.Id.ToString() ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private IEnumerable<T> DeserializeSummaries<T>(RedisValue[] summaries)
+    {
+        return summaries
+            .Select(s => JsonSerializer.Deserialize<T>(s!))
+            .Where(s => s != null)
+            .Cast<T>();
     }
 } 

@@ -79,7 +79,7 @@ public class AkiPressDialect : INewsSourceDialect
         var doc = new HtmlDocument();
         doc.LoadHtml(htmlContent);
 
-        var articleContent = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'article-text')]");
+        var articleContent = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'article-text')]") ?? doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'news_in')]");
 
         return articleContent?.InnerText.Trim() ?? string.Empty;
     }

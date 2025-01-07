@@ -82,6 +82,12 @@ public class NewsProcessingService
                         var newsContent = await httpClient.GetStringAsync(newsItem.Url, cancellationToken);
                         var articleContent = dialect.ExtractArticleContent(newsContent);
 
+                        if (string.IsNullOrEmpty(articleContent))
+                        {
+                            _logger.LogInformation("Skipping article with empty content: {Url}", newsItem.Url);
+                            continue;
+                        }
+
                         // Create and save article
                         var article = new NewsArticle(
                             source.Id,

@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<SummaryValidationService>();
         services.AddScoped<SummaryTranslationService>();
         services.AddScoped<NewsSourceDialectFactory>();
+        services.AddScoped<DigestCookService>();
 
         return services;
     }

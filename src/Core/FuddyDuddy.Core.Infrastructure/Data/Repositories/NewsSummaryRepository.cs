@@ -30,6 +30,17 @@ public class NewsSummaryRepository : INewsSummaryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<NewsSummary>> GetValidatedOrDigestedAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context
+            .NewsSummaries
+            .Where(s => s.State == NewsSummaryState.Validated || s.State == NewsSummaryState.Digested)
+            .Include(s => s.Category)
+            .Include(s => s.NewsArticle)
+            .ThenInclude(na => na.NewsSource)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(NewsSummary summary, CancellationToken cancellationToken = default)
     {
         _context.NewsSummaries.Update(summary);

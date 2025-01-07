@@ -23,7 +23,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(
     builder.Configuration.GetConnectionString("DefaultConnection"),
-    builder.Configuration.GetConnectionString("RedisConnection"));
+    builder.Configuration.GetConnectionString("RedisConnection"),
+    builder.Configuration.GetConnectionString("GeminiApiKey"));
 
 var app = builder.Build();
 

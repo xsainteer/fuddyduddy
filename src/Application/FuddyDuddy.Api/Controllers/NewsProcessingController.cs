@@ -69,7 +69,7 @@ public class NewsProcessingController : ControllerBase
             await _cacheService.ClearCacheAsync(cancellationToken);
 
             // Get all validated summaries
-            var summaries = await _summaryRepository.GetByStateAsync(NewsSummaryState.Validated, cancellationToken);
+            var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken);
 
             // Add each summary back to cache
             foreach (var summary in summaries)

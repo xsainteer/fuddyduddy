@@ -83,7 +83,7 @@ public class SummaryTranslationService
 
     private async Task<TranslationResponse?> GetTranslationAsync(NewsSummary summary, Language targetLanguage, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
         var request = new
         {
             model = "owl/t-lite",
@@ -121,7 +121,7 @@ public class SummaryTranslationService
             }
         };
 
-        var response = await httpClient.PostAsJsonAsync("http://localhost:11434/api/chat", request, cancellationToken);
+        var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
         response.EnsureSuccessStatusCode();
         
         var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);

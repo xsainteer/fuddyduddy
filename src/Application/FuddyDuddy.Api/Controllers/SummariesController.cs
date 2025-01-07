@@ -13,7 +13,6 @@ public class SummariesController : ControllerBase
 {
     private readonly ICacheService _cacheService;
     private readonly INewsSummaryRepository _summaryRepository;
-    private readonly SummaryTranslationService _translationService;
     private readonly ILogger<SummariesController> _logger;
 
     public SummariesController(
@@ -24,7 +23,6 @@ public class SummariesController : ControllerBase
     {
         _cacheService = cacheService;
         _summaryRepository = summaryRepository;
-        _translationService = translationService;
         _logger = logger;
     }
 
@@ -89,35 +87,6 @@ public class SummariesController : ControllerBase
         {
             _logger.LogError(ex, "Error getting summary by ID. Id: {Id}", id);
             return StatusCode(500, new { message = "An error occurred while fetching the summary" });
-        }
-    }
-
-    [HttpPost("{id}/translate")]
-    public async Task<IActionResult> TranslateSummary(
-        string id, 
-        [FromQuery] Language targetLanguage,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (!Guid.TryParse(id, out var summaryId))
-            {
-                return BadRequest(new { message = "Invalid summary ID format" });
-            }
-
-            var translatedSummary = await _translationService.TranslateSummaryAsync(summaryId, targetLanguage, cancellationToken);
-            if (translatedSummary == null)
-            {
-                return NotFound(new { message = "Summary not found or translation failed" });
-            }
-
-            var result = CachedSummaryDto.FromNewsSummary(translatedSummary);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error translating summary. Id: {Id}, TargetLanguage: {Language}", id, targetLanguage);
-            return StatusCode(500, new { message = "An error occurred while translating the summary" });
         }
     }
 }

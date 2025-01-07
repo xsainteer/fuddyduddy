@@ -1,30 +1,29 @@
 using FuddyDuddy.Core.Application.Extensions;
 using FuddyDuddy.Core.Infrastructure.Extensions;
+using FuddyDuddy.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add CORS
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? throw new Exception("AllowedOrigins are not configured");
+    options.AddPolicy("AllowAllOrigins", builder =>
     {
-        policy.WithOrigins("http://localhost:5173") // React dev server
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        builder.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
     });
 });
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c => c.OperationFilter<AuthHeaderFilter>());
+
+builder.Services.AddScoped<AuthMiddleware>();
 
 // Add our application services
 builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(
-    builder.Configuration.GetConnectionString("DefaultConnection"),
-    builder.Configuration.GetConnectionString("RedisConnection"),
-    builder.Configuration.GetConnectionString("GeminiApiKey"));
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -36,10 +35,11 @@ if (app.Environment.IsDevelopment())
 }
 
 // Use CORS
-app.UseCors();
+app.UseCors("AllowAllOrigins");
 
-app.UseHttpsRedirection();
-app.UseAuthorization();
+// Use auth for maintenance endpoint
+app.UseMiddleware<AuthMiddleware>();
+
 app.MapControllers();
 
 app.Run();

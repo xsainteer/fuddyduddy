@@ -3,11 +3,13 @@ using FuddyDuddy.Core.Infrastructure.Data.Repositories;
 using FuddyDuddy.Core.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Infrastructure.Cache;
 using FuddyDuddy.Core.Infrastructure.AI;
 using StackExchange.Redis;
+using Microsoft.Extensions.Configuration;
+using FuddyDuddy.Core.Infrastructure.Configuration;
+using FuddyDuddy.Core.Application;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -15,14 +17,25 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
-        string connectionString,
-        string redisConnectionString,
-        string geminiApiKey)
+        IConfiguration configuration)
     {
+        services.Configure<MySQLOptions>(configuration.GetSection("MySQL"));
+        services.Configure<RedisOptions>(configuration.GetSection("Redis")); 
+        services.Configure<GeminiOptions>(configuration.GetSection("Gemini"));
+        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
+        // services.Configure<RabbitMQOptions>(configuration.GetSection("RabbitMQ"));
+
+        var section = configuration.GetSection("Services");
+        var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
+        var redisOptions = section.GetSection("Redis").Get<RedisOptions>() ?? throw new Exception("Redis options are not configured");
+        // var rabbitMQOptions = configuration.GetSection("RabbitMQ").Get<RabbitMQOptions>() ?? throw new Exception("RabbitMQ options are not configured");
+        var ollamaOptions = section.GetSection("Ollama").Get<OllamaOptions>() ?? throw new Exception("Ollama options are not configured");
+        var geminiOptions = section.GetSection("Gemini").Get<GeminiOptions>() ?? throw new Exception("Gemini options are not configured");
+
         services.AddDbContext<FuddyDuddyDbContext>(options =>
             options.UseMySql(
-                connectionString,
-                ServerVersion.AutoDetect(connectionString),
+                mysqlOptions.ConnectionString,
+                ServerVersion.AutoDetect(mysqlOptions.ConnectionString),
                 b => b.MigrationsAssembly(typeof(FuddyDuddyDbContext).Assembly.FullName)));
 
         services.AddScoped<INewsSourceRepository, NewsSourceRepository>();
@@ -33,14 +46,25 @@ public static class ServiceCollectionExtensions
 
         // Add Redis
         services.AddSingleton<IConnectionMultiplexer>(sp => 
-            ConnectionMultiplexer.Connect(redisConnectionString));
+            ConnectionMultiplexer.Connect(redisOptions.ConnectionString));
 
         // Register cache service
         services.AddScoped<ICacheService, RedisCacheService>();
 
         // Register AI service
-        services.AddScoped<IAiService>(sp => 
-            new GeminiAiService(geminiApiKey, sp.GetRequiredService<ILogger<GeminiAiService>>()));
+        services.AddScoped<IAiService, GeminiAiService>();
+
+        // Register http clients
+        services.AddHttpClient(Constants.OLLAMA_HTTP_CLIENT_NAME, client =>
+        {
+            client.BaseAddress = new Uri(ollamaOptions.Url);
+        });
+
+        services.AddHttpClient(Constants.GEMINI_HTTP_CLIENT_NAME, client =>
+        {
+            client.BaseAddress = new Uri(geminiOptions.Url);
+            client.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
+        });
 
         return services;
     }

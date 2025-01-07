@@ -8,29 +8,31 @@ namespace FuddyDuddy.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class NewsProcessingController : ControllerBase
+public class MaintenanceController : ControllerBase
 {
     private readonly NewsProcessingService _newsProcessingService;
     private readonly SummaryValidationService _validationService;
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;
-    private readonly ILogger<NewsProcessingController> _logger;
-
-    public NewsProcessingController(
+    private readonly ILogger<MaintenanceController> _logger;
+    private readonly SummaryTranslationService _translationService;
+    public MaintenanceController(
         NewsProcessingService newsProcessingService,
         SummaryValidationService validationService,
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
-        ILogger<NewsProcessingController> logger)
+        ILogger<MaintenanceController> logger,
+        SummaryTranslationService translationService)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
         _logger = logger;
+        _translationService = translationService;
     }
 
-    [HttpPost("process")]
+    [HttpPost("process-news")]
     public async Task<IActionResult> ProcessNews(CancellationToken cancellationToken = default)
     {
         try
@@ -45,7 +47,7 @@ public class NewsProcessingController : ControllerBase
         }
     }
 
-    [HttpPost("validate")]
+    [HttpPost("validate-summaries")]
     public async Task<IActionResult> ValidateSummaries(CancellationToken cancellationToken = default)
     {
         try
@@ -83,6 +85,34 @@ public class NewsProcessingController : ControllerBase
         {
             _logger.LogError(ex, "Error rebuilding cache");
             return StatusCode(500, new { message = "An error occurred while rebuilding cache" });
+        }
+    }
+
+    [HttpPost("translate-summary/{id}")]
+    public async Task<IActionResult> TranslateSummary(
+        string id, 
+        [FromQuery] Language targetLanguage,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!Guid.TryParse(id, out var summaryId))
+            {
+                return BadRequest(new { message = "Invalid summary ID format" });
+            }
+
+            var translatedSummary = await _translationService.TranslateSummaryAsync(summaryId, targetLanguage, cancellationToken);
+            if (translatedSummary == null)
+            {
+                return NotFound(new { message = "Summary not found or translation failed" });
+            }
+
+            return Ok(translatedSummary);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error translating summary. Id: {Id}, TargetLanguage: {Language}", id, targetLanguage);
+            return StatusCode(500, new { message = "An error occurred while translating the summary" });
         }
     }
 } 

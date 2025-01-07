@@ -62,7 +62,7 @@ public class SummaryValidationService
 
     private async Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
         var request = new
         {
             model = "owl/t-lite",
@@ -97,7 +97,7 @@ public class SummaryValidationService
             options = new { temperature = 0.3 }
         };
 
-        using var response = await httpClient.PostAsJsonAsync("http://localhost:11434/api/chat", request, cancellationToken);
+        using var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
         response.EnsureSuccessStatusCode();
         
         var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);

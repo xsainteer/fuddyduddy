@@ -133,7 +133,7 @@ public class NewsProcessingService
 
     private async Task<string> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient();
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
         var request = new
         {
             model = "owl/t-lite",
@@ -174,7 +174,7 @@ public class NewsProcessingService
             }
         };
 
-        var response = await httpClient.PostAsJsonAsync("http://localhost:11434/api/chat", request, cancellationToken);
+        var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
         response.EnsureSuccessStatusCode();
         
         var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);

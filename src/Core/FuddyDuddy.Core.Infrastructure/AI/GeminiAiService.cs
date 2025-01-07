@@ -1,26 +1,22 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Net.Http.Json;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
-
+using Microsoft.Extensions.Options;
+using FuddyDuddy.Core.Infrastructure.Configuration;
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
 public class GeminiAiService : IAiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeminiAiService> _logger;
-    private readonly string _apiKey;
+    private readonly IOptions<GeminiOptions> _geminiOptions;
 
-    public GeminiAiService(string apiKey, ILogger<GeminiAiService> logger)
+    public GeminiAiService(IOptions<GeminiOptions> geminiOptions, ILogger<GeminiAiService> logger, IHttpClientFactory httpClientFactory)
     {
-        _apiKey = apiKey;
+        _geminiOptions = geminiOptions;
         _logger = logger;
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://generativelanguage.googleapis.com/")
-        };
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
+        _httpClient = httpClientFactory.CreateClient("GEMINI");
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
@@ -59,7 +55,7 @@ public class GeminiAiService : IAiService
             _logger.LogInformation("Sending request: {Request}", requestJson);
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, 
-                $"v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}");
+                $"v1beta/models/{_geminiOptions.Value.Model}:generateContent?key={_geminiOptions.Value.ApiKey}");
             httpRequest.Content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
             _logger.LogInformation("Sending request uri: {Request}", httpRequest.RequestUri);

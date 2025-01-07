@@ -1,6 +1,6 @@
-import { useInfiniteQuery, InfiniteData } from '@tanstack/react-query'
+import { useInfiniteQuery, InfiniteData, useQueryClient } from '@tanstack/react-query'
 import { useIntersection } from '@mantine/hooks'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { fetchSummaries } from '../api/summaries'
 import NewsCard from './NewsCard'
@@ -13,6 +13,9 @@ interface PageData {
 }
 
 export default function NewsFeed() {
+  const queryClient = useQueryClient()
+  const [hasNewSummaries, setHasNewSummaries] = useState(false)
+
   // Create two intersection observers - one for top and one for bottom
   const { ref: topRef, entry: topEntry } = useIntersection({
     root: null,
@@ -32,6 +35,7 @@ export default function NewsFeed() {
     isFetchingPreviousPage,
     hasNextPage,
     hasPreviousPage,
+    refetch
   } = useInfiniteQuery<PageData, Error, InfiniteData<PageData>, string[], number>({
     queryKey: ['summaries'],
     queryFn: async ({ pageParam }) => {
@@ -50,6 +54,33 @@ export default function NewsFeed() {
     staleTime: 1000 * 60
   })
 
+  // Check for new summaries every minute
+  useEffect(() => {
+    const checkNewSummaries = async () => {
+      try {
+        const latestData = await fetchSummaries(0)
+        const currentFirstId = data?.pages[0]?.items[0]?.id
+        
+        if (currentFirstId && latestData[0]?.id !== currentFirstId) {
+          setHasNewSummaries(true)
+        }
+      } catch (error) {
+        console.error('Error checking for new summaries:', error)
+      }
+    }
+
+    const interval = setInterval(checkNewSummaries, 60000) // Check every minute
+    return () => clearInterval(interval)
+  }, [data?.pages])
+
+  // Handle refresh click
+  const handleRefresh = async () => {
+    setHasNewSummaries(false)
+    await queryClient.resetQueries({ queryKey: ['summaries'] })
+    await refetch()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   // Handle bottom scroll
   useEffect(() => {
     if (bottomEntry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -66,6 +97,31 @@ export default function NewsFeed() {
 
   return (
     <div className="space-y-3">
+      {/* New summaries notification */}
+      {hasNewSummaries && (
+        <button
+          onClick={handleRefresh}
+          className="fixed top-[4.5rem] left-1/2 -translate-x-1/2 px-3 py-1.5 
+            bg-gray-900/90 dark:bg-gray-800/90 backdrop-blur-sm
+            text-white
+            rounded-full border border-gray-700/50
+            shadow-lg hover:bg-gray-800/90 dark:hover:bg-gray-700/90 
+            transition-all duration-300
+            flex items-center gap-2 group
+            z-50"
+        >
+          <svg 
+            className="w-3.5 h-3.5 transition-transform group-hover:rotate-180 duration-500" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span className="text-xs font-medium">New summaries available</span>
+        </button>
+      )}
+
       {/* Loading indicator for previous page */}
       {isFetchingPreviousPage && (
         <div className="text-center py-4">

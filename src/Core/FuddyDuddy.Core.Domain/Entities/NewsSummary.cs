@@ -8,6 +8,12 @@ public enum NewsSummaryState
     Discarded   // Summary was found to be invalid/irrelevant
 }
 
+public enum Language
+{
+    RU,     // Original Russian summary
+    EN      // English translation
+}
+
 public class NewsSummary
 {
     public Guid Id { get; private set; }
@@ -17,6 +23,7 @@ public class NewsSummary
     public int CategoryId { get; private set; }
     public DateTimeOffset GeneratedAt { get; private set; }
     public NewsSummaryState State { get; private set; }
+    public Language Language { get; private set; }
     public string? Reason { get; private set; }
 
     public virtual NewsArticle NewsArticle { get; private set; }
@@ -28,13 +35,15 @@ public class NewsSummary
         Guid newsArticleId,
         string title,
         string article,
-        int categoryId)
+        int categoryId,
+        Language language = Language.RU)
     {
         Id = Guid.NewGuid();
         NewsArticleId = newsArticleId;
         Title = title;
         Article = article;
         CategoryId = categoryId;
+        Language = language;
         GeneratedAt = DateTimeOffset.UtcNow;
         State = NewsSummaryState.Created;
     }

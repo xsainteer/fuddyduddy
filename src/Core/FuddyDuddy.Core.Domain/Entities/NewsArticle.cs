@@ -11,7 +11,6 @@ public class NewsArticle
     public bool IsProcessed { get; private set; }
     
     public virtual NewsSource NewsSource { get; private set; }
-    public virtual NewsSummary? Summary { get; private set; }
 
     private NewsArticle() { } // For EF Core
 

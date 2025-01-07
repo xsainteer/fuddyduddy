@@ -25,14 +25,24 @@ public class NewsSummaryConfiguration : IEntityTypeConfiguration<NewsSummary>
         builder.Property(x => x.GeneratedAt)
             .IsRequired();
 
+        builder.Property(x => x.Language)
+            .IsRequired()
+            .HasDefaultValue(Language.RU);
+
         // Relationships
         builder.HasOne(x => x.NewsArticle)
-            .WithOne(x => x.Summary)
-            .HasForeignKey<NewsSummary>(x => x.NewsArticleId)
+            .WithMany()
+            .HasForeignKey(x => x.NewsArticleId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // builder.HasOne(x => x.Category)
+        //     .WithMany()
+        //     .HasForeignKey(x => x.CategoryId)
+        //     .OnDelete(DeleteBehavior.Restrict);
+
         // Indexes
-        builder.HasIndex(x => x.NewsArticleId).IsUnique();
+        builder.HasIndex(x => x.NewsArticleId);
         builder.HasIndex(x => x.GeneratedAt);
+        builder.HasIndex(x => x.Language);
     }
 } 

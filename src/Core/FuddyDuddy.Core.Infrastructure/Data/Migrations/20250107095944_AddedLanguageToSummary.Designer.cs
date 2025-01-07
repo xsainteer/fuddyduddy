@@ -3,6 +3,7 @@ using System;
 using FuddyDuddy.Core.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FuddyDuddyDbContext))]
-    partial class FuddyDuddyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250107095944_AddedLanguageToSummary")]
+    partial class AddedLanguageToSummary
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,7 +166,8 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
 
                     b.HasIndex("Language");
 
-                    b.HasIndex("NewsArticleId");
+                    b.HasIndex("NewsArticleId")
+                        .IsUnique();
 
                     b.ToTable("NewsSummaries");
                 });
@@ -196,6 +200,11 @@ namespace FuddyDuddy.Core.Infrastructure.Data.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("NewsArticle");
+                });
+
+            modelBuilder.Entity("FuddyDuddy.Core.Domain.Entities.NewsArticle", b =>
+                {
+                    b.Navigation("Summary");
                 });
 #pragma warning restore 612, 618
         }

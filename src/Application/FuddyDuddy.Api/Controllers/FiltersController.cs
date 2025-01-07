@@ -70,7 +70,8 @@ public class FiltersController : ControllerBase
             var languages = Enum.GetValues<Language>().Select(l => new
             {
                 id = l.ToString().ToLower(),
-                name = l.GetDescription()
+                name = l.GetDescription(),
+                local = l.GetDescriptionInLocal()
             });
             return Ok(languages);
         }

@@ -9,6 +9,7 @@ export interface Summary {
   newsArticleTitle: string
   newsArticleUrl: string
   source: string
+  language: string
 }
 
 export interface Category {
@@ -18,7 +19,7 @@ export interface Category {
 }
 
 export interface NewsSource {
-  id: string
+  id: number
   name: string
   domain: string
 }
@@ -26,12 +27,13 @@ export interface NewsSource {
 export interface Language {
   id: string
   name: string
+  local: string
 }
 
 export interface Filters {
-  language?: string
   categoryId?: number
-  sourceId?: string
+  sourceId?: number
+  language?: string
 }
 
 export interface DigestSummary {

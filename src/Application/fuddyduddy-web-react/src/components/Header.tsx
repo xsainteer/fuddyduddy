@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
+import LanguageToggle from './LanguageToggle'
+import { useLocalization } from '../hooks/useLocalization'
 
 interface HeaderProps {
   onMobileMenuClick: () => void
 }
 
 export default function Header({ onMobileMenuClick }: HeaderProps) {
+  const { t } = useLocalization()
+
   return (
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b dark:border-gray-700 sticky top-0 z-10 transition-colors">
       <div className="max-w-7xl mx-auto py-3 px-4">
@@ -21,8 +25,8 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
             </button>
 
             <Link to="/" className="block">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">FuddyDuddy News</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Новости Кыргызстана</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t.header.title}</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
             </Link>
           </div>
 
@@ -31,16 +35,19 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
               to="/digests"
               className="md:hidden text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
             >
-              Digests
+              {t.header.digests}
             </Link>
 
             <Link 
               to="/about"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
             >
-              About
+              {t.header.about}
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-2 border-l dark:border-gray-700 pl-4">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { formatDateTime } from '../utils/dateFormat'
 import ShareButton from './ShareButton'
 import type { Summary } from '../types'
+import { useLocalization } from '../hooks/useLocalization'
 
 interface NewsCardProps {
   summary: Summary
@@ -9,6 +10,8 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ summary }: NewsCardProps) {
+  const { t, language: interfaceLanguage } = useLocalization()  
+
   return (
     <article className="p-4 rounded-xl transition-all duration-300 border dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:text-gray-100">
       {/* Header */}
@@ -30,7 +33,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
               rel="noopener noreferrer"
               className="hover:text-blue-500 hover:underline"
             >
-              Original source
+              {t.common.originalSource}
             </a>
           </div>
         </div>
@@ -50,7 +53,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
                    text-blue-600 dark:text-blue-300 rounded-full
                    transition-colors"
         >
-          {summary.categoryLocal}
+          {interfaceLanguage === 'RU' ? summary.categoryLocal : summary.category}
         </span>
       </div>
 
@@ -66,7 +69,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          <span className="text-sm">Read full article</span>
+          <span className="text-sm">{t.common.readMore}</span>
         </a>
       </div>
     </article>

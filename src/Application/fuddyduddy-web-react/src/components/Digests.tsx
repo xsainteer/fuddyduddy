@@ -1,10 +1,13 @@
 import type { DigestSummary } from '../types'
+import { useLocalization } from '../hooks/useLocalization'
 
 interface DigestsProps {
   className?: string
 }
 
 export default function Digests({ className = '' }: DigestsProps) {
+  const { t } = useLocalization()
+
   // Placeholder data until we implement the digests feature
   const placeholderDigests: DigestSummary[] = [
     {
@@ -21,7 +24,7 @@ export default function Digests({ className = '' }: DigestsProps) {
 
   return (
     <div className={`p-4 space-y-4 ${className}`}>
-      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Latest Digests</h2>
+      <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">{t.digests.title}</h2>
       <div className="space-y-3">
         {placeholderDigests.map(digest => (
           <div
@@ -36,7 +39,7 @@ export default function Digests({ className = '' }: DigestsProps) {
         ))}
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-        Digests are generated every hour
+        {t.digests.generatedEveryHour}
       </p>
     </div>
   )

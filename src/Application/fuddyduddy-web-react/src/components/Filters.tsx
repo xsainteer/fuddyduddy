@@ -1,90 +1,121 @@
 import { useQuery } from '@tanstack/react-query'
-import type { Category, NewsSource, Language, Filters } from '../types'
+import type { Category, NewsSource, Language, Filters as FiltersType } from '../types'
+import { useLocalization } from '../hooks/useLocalization'
 
 interface FiltersProps {
-  filters: Filters
-  onFiltersChange: (filters: Filters) => void
+  filters: FiltersType
+  onFiltersChange: (filters: FiltersType) => void
 }
 
 export default function Filters({ filters, onFiltersChange }: FiltersProps) {
-  const { data: categories } = useQuery<Category[]>({
+  const { t, language: interfaceLanguage } = useLocalization()
+  
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],
-    queryFn: async () => {
-      const response = await fetch('/api/filters/categories')
-      if (!response.ok) throw new Error('Failed to fetch categories')
-      return response.json()
-    }
+    queryFn: () => fetch('/api/filters/categories').then(res => res.json())
   })
 
-  const { data: sources } = useQuery<NewsSource[]>({
+  const { data: sources = [] } = useQuery<NewsSource[]>({
     queryKey: ['sources'],
-    queryFn: async () => {
-      const response = await fetch('/api/filters/sources')
-      if (!response.ok) throw new Error('Failed to fetch sources')
-      return response.json()
-    }
+    queryFn: () => fetch('/api/filters/sources').then(res => res.json())
   })
 
-  const { data: languages } = useQuery<Language[]>({
+  const { data: languages = [] } = useQuery<Language[]>({
     queryKey: ['languages'],
-    queryFn: async () => {
-      const response = await fetch('/api/filters/languages')
-      if (!response.ok) throw new Error('Failed to fetch languages')
-      return response.json()
-    }
+    queryFn: () => fetch('/api/filters/languages').then(res => res.json())
   })
+
+  const handleCategoryChange = (categoryId: number) => {
+    onFiltersChange({
+      ...filters,
+      categoryId: filters.categoryId === categoryId ? undefined : categoryId
+    })
+  }
+
+  const handleSourceChange = (sourceId: number) => {
+    onFiltersChange({
+      ...filters,
+      sourceId: filters.sourceId === sourceId ? undefined : sourceId
+    })
+  }
+
+  const handleLanguageChange = (language: string) => {
+    onFiltersChange({
+      ...filters,
+      language: filters.language === language ? undefined : language
+    })
+  }
+
+  const clearFilters = () => {
+    onFiltersChange({})
+  }
 
   return (
-    <div className="p-4 space-y-8">
+    <div className="p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">{t.filters.title}</h2>
+        {(filters.categoryId || filters.sourceId || filters.language) && (
+          <button
+            onClick={clearFilters}
+            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            {t.filters.clearAll}
+          </button>
+        )}
+      </div>
+
+      {/* Language */}
       <div>
-        <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">Language</h3>
-        <div className="space-y-1">
-          {languages?.map(lang => (
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.filters.language}</h3>
+        <div className="space-y-2">
+          {languages.map(lang => (
             <button
               key={lang.id}
-              onClick={() => onFiltersChange({ ...filters, language: lang.id })}
-              className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
+              onClick={() => handleLanguageChange(lang.id)}
+              className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                 filters.language === lang.id
-                  ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'
               }`}
             >
-              {lang.name}
+              {interfaceLanguage === 'RU' ? lang.local : lang.name}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Categories */}
       <div>
-        <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">Categories</h3>
-        <div className="space-y-1">
-          {categories?.map(category => (
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.filters.categories}</h3>
+        <div className="space-y-2">
+          {categories.map(category => (
             <button
               key={category.id}
-              onClick={() => onFiltersChange({ ...filters, categoryId: category.id })}
-              className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
+              onClick={() => handleCategoryChange(category.id)}
+              className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                 filters.categoryId === category.id
-                  ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'
               }`}
             >
-              {category.local}
+              {interfaceLanguage === 'RU' ? category.local : category.name}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Sources */}
       <div>
-        <h3 className="text-base font-semibold mb-3 text-gray-900 dark:text-white">Sources</h3>
-        <div className="space-y-1">
-          {sources?.map(source => (
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t.filters.sources}</h3>
+        <div className="space-y-2">
+          {sources.map(source => (
             <button
               key={source.id}
-              onClick={() => onFiltersChange({ ...filters, sourceId: source.id })}
-              className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
+              onClick={() => handleSourceChange(source.id)}
+              className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                 filters.sourceId === source.id
-                  ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                  : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50'
               }`}
             >
               {source.name}
@@ -92,15 +123,6 @@ export default function Filters({ filters, onFiltersChange }: FiltersProps) {
           ))}
         </div>
       </div>
-
-      {(filters.language || filters.categoryId || filters.sourceId) && (
-        <button
-          onClick={() => onFiltersChange({})}
-          className="w-full px-2.5 py-1.5 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
-        >
-          Clear filters
-        </button>
-      )}
     </div>
   )
 } 

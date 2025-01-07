@@ -22,6 +22,12 @@ public static class LanguageExtensions
         Language.EN => "English",
         _ => throw new ArgumentOutOfRangeException(nameof(language))
     };
+    public static string GetDescriptionInLocal(this Language language) => language switch
+    {
+        Language.RU => "Русский",
+        Language.EN => "Английский",
+        _ => throw new ArgumentOutOfRangeException(nameof(language))
+    };
 }
 
 public class NewsSummary

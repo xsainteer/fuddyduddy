@@ -95,13 +95,13 @@ public class RedisCacheService : ICacheService
                 return Enumerable.Empty<T>();
 
             // Get scores for filtered IDs from timeline
-            var summaryScores = await db.SortedSetRangeByRankWithScoresAsync(timelineKey);
+            var summaryScores = await db.SortedSetRangeByRankWithScoresAsync(timelineKey, 0, -1, Order.Descending);
             var filteredSummaries = summaryScores
                 .Where(x => filteredIds.Contains(GetSummaryId(x.Element)))
                 .Skip(skip)
                 .Take(take)
                 .Select(x => x.Element)
-                .ToArray();  // Convert to array for DeserializeSummaries
+                .ToArray();
 
             return DeserializeSummaries<T>(filteredSummaries);
         }

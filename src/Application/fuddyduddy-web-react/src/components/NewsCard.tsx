@@ -23,7 +23,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
             </h2>
           </Link>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>{formatDateTime(summary.generatedAt)}</span>
+            <span>{formatDateTime(summary.generatedAt, interfaceLanguage)}</span>
             <span>·</span>
             <span className="text-blue-600 dark:text-blue-400">{summary.source}</span>
             <span>·</span>

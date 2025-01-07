@@ -30,6 +30,9 @@ interface Translation {
     error: string
     retry: string
     originalSource: string
+    newSummariesAvailable: string
+    loadMore: string
+    backToFeed: string
   }
 }
 
@@ -63,7 +66,10 @@ const translations: Record<Language, Translation> = {
       loading: 'Loading...',
       error: 'Something went wrong',
       retry: 'Try again',
-      originalSource: 'Original source'
+      originalSource: 'Original source',
+      newSummariesAvailable: 'New summaries available. Click to refresh.',
+      loadMore: 'Load more',
+      backToFeed: 'Back to news feed'
     }
   },
   RU: {
@@ -95,7 +101,10 @@ const translations: Record<Language, Translation> = {
       loading: 'Загрузка...',
       error: 'Что-то пошло не так',
       retry: 'Попробовать снова',
-      originalSource: 'Оригинальный источник'
+      originalSource: 'Оригинальный источник',
+      newSummariesAvailable: 'Доступны новые новости. Нажмите, чтобы обновить.',
+      loadMore: 'Загрузить еще',
+      backToFeed: 'Вернуться к ленте новостей'
     }
   }
 }

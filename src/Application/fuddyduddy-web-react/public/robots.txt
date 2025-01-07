@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://fuddyduddy.news/sitemap.xml 
+Sitemap: https://fuddy-duddy.org/sitemap.xml 

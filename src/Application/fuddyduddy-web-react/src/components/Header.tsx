@@ -32,15 +32,8 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
 
           <div className="flex items-center gap-4">
             <Link 
-              to="/digests"
-              className="md:hidden text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
-            >
-              {t.header.digests}
-            </Link>
-
-            <Link 
               to="/about"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              className="hidden md:block text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
             >
               {t.header.about}
             </Link>

@@ -16,6 +16,7 @@ public class NewsSummaryRepository : INewsSummaryRepository
     public async Task AddAsync(NewsSummary summary, CancellationToken cancellationToken = default)
     {
         await _context.NewsSummaries.AddAsync(summary, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<NewsSummary>> GetByStateAsync(NewsSummaryState state, CancellationToken cancellationToken = default)
@@ -39,6 +40,9 @@ public class NewsSummaryRepository : INewsSummaryRepository
     {
         return await _context.NewsSummaries
             .Include(s => s.NewsArticle)
+            .Include(s => s.Category)
+            .Include(s => s.NewsArticle)
+            .ThenInclude(na => na.NewsSource)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 } 

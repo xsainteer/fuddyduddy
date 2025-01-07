@@ -10,8 +10,18 @@ public enum NewsSummaryState
 
 public enum Language
 {
-    RU,     // Original Russian summary
-    EN      // English translation
+    RU = 0,     // Russian - original language
+    EN = 1      // English - translation target
+}
+
+public static class LanguageExtensions
+{
+    public static string GetDescription(this Language language) => language switch
+    {
+        Language.RU => "Russian",
+        Language.EN => "English",
+        _ => throw new ArgumentOutOfRangeException(nameof(language))
+    };
 }
 
 public class NewsSummary

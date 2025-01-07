@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Models;
 using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Services;
 
 namespace FuddyDuddy.Api.Controllers;
 
@@ -11,15 +13,18 @@ public class SummariesController : ControllerBase
 {
     private readonly ICacheService _cacheService;
     private readonly INewsSummaryRepository _summaryRepository;
+    private readonly SummaryTranslationService _translationService;
     private readonly ILogger<SummariesController> _logger;
 
     public SummariesController(
         ICacheService cacheService,
         INewsSummaryRepository summaryRepository,
+        SummaryTranslationService translationService,
         ILogger<SummariesController> logger)
     {
         _cacheService = cacheService;
         _summaryRepository = summaryRepository;
+        _translationService = translationService;
         _logger = logger;
     }
 
@@ -76,15 +81,7 @@ public class SummariesController : ControllerBase
                     var dbSummary = await _summaryRepository.GetByIdAsync(summaryId, cancellationToken);
                     if (dbSummary != null)
                     {
-                        // Map to DTO and cache for future requests
-                        summary = new CachedSummaryDto
-                        {
-                            Id = dbSummary.Id,
-                            Title = dbSummary.Title,
-                            Article = dbSummary.Article,
-                            Category = dbSummary.Category.Name,
-                            GeneratedAt = dbSummary.GeneratedAt
-                        };
+                        summary = CachedSummaryDto.FromNewsSummary(dbSummary);
                         
                         // Cache asynchronously without waiting
                         _ = _cacheService.CacheSummaryDtoAsync(id, summary, cancellationToken);
@@ -102,6 +99,35 @@ public class SummariesController : ControllerBase
         {
             _logger.LogError(ex, "Error getting summary by ID. Id: {Id}", id);
             return StatusCode(500, new { message = "An error occurred while fetching the summary" });
+        }
+    }
+
+    [HttpPost("{id}/translate")]
+    public async Task<IActionResult> TranslateSummary(
+        string id, 
+        [FromQuery] Language targetLanguage,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!Guid.TryParse(id, out var summaryId))
+            {
+                return BadRequest(new { message = "Invalid summary ID format" });
+            }
+
+            var translatedSummary = await _translationService.TranslateSummaryAsync(summaryId, targetLanguage, cancellationToken);
+            if (translatedSummary == null)
+            {
+                return NotFound(new { message = "Summary not found or translation failed" });
+            }
+
+            var result = CachedSummaryDto.FromNewsSummary(translatedSummary);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error translating summary. Id: {Id}, TargetLanguage: {Language}", id, targetLanguage);
+            return StatusCode(500, new { message = "An error occurred while translating the summary" });
         }
     }
 }

@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
         // Register services
         services.AddScoped<NewsProcessingService>();
         services.AddScoped<SummaryValidationService>();
+        services.AddScoped<SummaryTranslationService>();
         services.AddScoped<NewsSourceDialectFactory>();
 
         return services;

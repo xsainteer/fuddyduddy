@@ -4,6 +4,8 @@ import Header from './components/Header'
 import NewsFeed from './components/NewsFeed'
 import AboutPage from './pages/AboutPage'
 import SummaryPage from './pages/SummaryPage'
+import DigestPage from './pages/DigestPage'
+import DigestsPage from './pages/DigestsPage'
 import Filters from './components/Filters'
 import Digests from './components/Digests'
 import MobileMenu from './components/MobileMenu'
@@ -39,13 +41,14 @@ export default function App() {
               <Route path="/" element={<NewsFeed filters={filters} />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/summary/:id" element={<SummaryPage />} />
-              <Route path="/digests" element={<Digests className="md:hidden" />} />
+              <Route path="/digests" element={<DigestsPage filters={filters} />} />
+              <Route path="/digests/:id" element={<DigestPage />} />
             </Routes>
           </main>
 
           {/* Right sidebar - Digests */}
           <div className="hidden md:block md:col-span-3 lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-            <Digests />
+            <Digests filters={filters} />
           </div>
         </div>
       </div>

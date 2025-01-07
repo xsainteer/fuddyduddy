@@ -3,6 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import type { Summary, Filters } from '../types'
 import NewsCard from './NewsCard'
 import { useLocalization } from '../hooks/useLocalization'
+import UpdateNotification from './UpdateNotification'
 
 interface PageData {
   items: Summary[]
@@ -14,11 +15,10 @@ interface NewsFeedProps {
 }
 
 const PAGE_SIZE = 10
-const SCROLL_THRESHOLD = 300 // Show scroll to top button after scrolling this many pixels
+const SCROLL_THRESHOLD = 300
 
 export default function NewsFeed({ filters }: NewsFeedProps) {
   const { t } = useLocalization()
-  const [hasNewSummaries, setHasNewSummaries] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
 
   const {
@@ -42,6 +42,11 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
       if (!response.ok) throw new Error('Network response was not ok')
       const summaries = await response.json() as Summary[]
       
+      // Store the latest summary ID when loading the first page
+      if (pageParam === 0 && summaries.length > 0) {
+        localStorage.setItem('latestSummaryId', summaries[0].id)
+      }
+      
       return {
         items: summaries,
         hasMore: summaries.length >= PAGE_SIZE
@@ -52,39 +57,10 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
     initialPageParam: 0
   })
 
-  // Check for new summaries every minute
-  useEffect(() => {
-    const checkNewSummaries = async () => {
-      try {
-        const searchParams = new URLSearchParams()
-        searchParams.append('page', '0')
-        if (filters.categoryId) searchParams.append('categoryId', filters.categoryId.toString())
-        if (filters.sourceId) searchParams.append('sourceId', filters.sourceId.toString())
-        if (filters.language) searchParams.append('language', filters.language)
-
-        const response = await fetch(`/api/summaries?${searchParams.toString()}`)
-        if (!response.ok) return
-        const summaries = await response.json() as Summary[]
-        
-        const currentFirstId = data?.pages?.[0]?.items?.[0]?.id
-        if (currentFirstId && summaries[0]?.id !== currentFirstId) {
-          setHasNewSummaries(true)
-        }
-      } catch (error) {
-        console.error('Error checking for new summaries:', error)
-      }
-    }
-
-    const interval = setInterval(checkNewSummaries, 60000)
-    return () => clearInterval(interval)
-  }, [data?.pages?.[0]?.items?.[0]?.id, filters])
-
   // Infinite scroll handler
   const handleScroll = useCallback(() => {
-    // Show/hide scroll to top button
     setShowScrollTop(window.scrollY > SCROLL_THRESHOLD)
 
-    // Check for infinite scroll
     if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1000) {
       if (hasNextPage && !isFetchingNextPage) {
         fetchNextPage()
@@ -92,16 +68,10 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Add scroll listener
   useEffect(() => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
-
-  const handleRefresh = () => {
-    setHasNewSummaries(false)
-    refetch()
-  }
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -138,16 +108,8 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {hasNewSummaries && (
-        <button
-          onClick={handleRefresh}
-          className="w-full py-2 px-4 bg-blue-50 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300 
-                   rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/70 transition-colors"
-        >
-          {t.common.newSummariesAvailable}
-        </button>
-      )}
+    <>
+      <UpdateNotification filters={filters} onRefresh={refetch} />
 
       <div className="space-y-4">
         {data.pages.map((page, i) => (
@@ -157,37 +119,37 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
             ))}
           </div>
         ))}
-      </div>
 
-      {isFetchingNextPage && (
-        <div className="text-center py-4">
-          <p>{t.common.loading}</p>
-        </div>
-      )}
+        {isFetchingNextPage && (
+          <div className="text-center py-4">
+            <p>{t.common.loading}</p>
+          </div>
+        )}
 
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-4 right-4 p-3 bg-blue-600 dark:bg-blue-500 text-white rounded-full 
-                   shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-          aria-label="Scroll to top"
-        >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-4 right-4 p-3 bg-blue-600 dark:bg-blue-500 text-white rounded-full 
+                     shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+            aria-label="Scroll to top"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 10l7-7m0 0l7 7m-7-7v18"
-            />
-          </svg>
-        </button>
-      )}
-    </div>
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 10l7-7m0 0l7 7m-7-7v18"
+              />
+            </svg>
+          </button>
+        )}
+      </div>
+    </>
   )
 } 

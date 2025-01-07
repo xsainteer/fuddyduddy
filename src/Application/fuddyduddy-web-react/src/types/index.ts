@@ -40,4 +40,20 @@ export interface DigestSummary {
   id: string
   title: string
   generatedAt: string
+}
+
+export interface DigestReference {
+  title: string
+  url: string
+  reason: string
+}
+
+export interface Digest {
+  id: string
+  title: string
+  content: string
+  generatedAt: string
+  periodStart: string
+  periodEnd: string
+  references: DigestReference[]
 } 

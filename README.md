@@ -71,3 +71,10 @@ Deployment is automated through Azure Pipelines:
 
 This repository contains proprietary code and is not intended for public distribution. All rights reserved.
 
+## Design & Branding
+
+### Typography
+- The platform uses [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) for its logo and headings
+- Bebas Neue is loaded from Google Fonts CDN for optimal performance
+- The font was chosen for its strong, modern appearance that matches our brand identity
+

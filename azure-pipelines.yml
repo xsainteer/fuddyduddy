@@ -122,3 +122,4 @@ stages:
                 # Update services
                 docker compose up -d --no-deps --build fuddyduddy-api fuddyduddy-web >> azure-pipeline.log
                 echo `date` ": succeed azure pipeline build" >> azure-pipeline.log 
+              readyTimeout: '60000'

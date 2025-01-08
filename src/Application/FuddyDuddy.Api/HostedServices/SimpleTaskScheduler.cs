@@ -1,5 +1,7 @@
 using FuddyDuddy.Core.Application.Services;
 using FuddyDuddy.Core.Domain.Entities;
+using Microsoft.Extensions.Options;
+using FuddyDuddy.Api.Configuration;
 
 namespace FuddyDuddy.Api.HostedServices;
 
@@ -8,6 +10,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
     private readonly ILogger<SimpleTaskScheduler> _logger;
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IOptions<TaskSchedulerSettings> _schedulerSettings;
     private Timer? _summaryPipelineTimer;
     private Timer? _digestPipelineTimer;
     private readonly SemaphoreSlim _pipelineLock = new(1, 1);
@@ -15,17 +18,18 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
     public SimpleTaskScheduler(
         ILogger<SimpleTaskScheduler> logger,
         IConfiguration configuration,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IOptions<TaskSchedulerSettings> schedulerSettings)
     {
         _logger = logger;
         _configuration = configuration;
         _serviceProvider = serviceProvider;
-        _configuration = configuration;
+        _schedulerSettings = schedulerSettings;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!_configuration.GetValue<bool>("TaskScheduler:Enabled"))
+        if (!_schedulerSettings.Value.Enabled)
         {
             _logger.LogWarning("Task Scheduler Service is disabled.");
             return Task.CompletedTask;
@@ -34,8 +38,8 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         _logger.LogInformation("Task Scheduler Service is starting.");
 
         // Get intervals from configuration
-        var summaryInterval = TimeSpan.Parse(_configuration.GetValue<string>("TaskScheduler:SummaryPipelineInterval") ?? "00:05:00");
-        var digestInterval = TimeSpan.Parse(_configuration.GetValue<string>("TaskScheduler:DigestPipelineInterval") ?? "01:00:00");
+        var summaryInterval = _schedulerSettings.Value.SummaryPipelineInterval;
+        var digestInterval = _schedulerSettings.Value.DigestPipelineInterval;
 
         // Start summary pipeline timer
         _summaryPipelineTimer = new Timer(
@@ -70,16 +74,25 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             _logger.LogInformation("Starting summary pipeline execution");
 
             // Step 1: Process news
-            await newsProcessingService.ProcessNewsSourcesAsync(cancellationToken);
-            _logger.LogInformation("News processing completed");
+            if (_schedulerSettings.Value.SummaryTask)
+            {
+                await newsProcessingService.ProcessNewsSourcesAsync(cancellationToken);
+                _logger.LogInformation("News processing completed");
+            }
 
             // Step 2: Validate summaries
-            await validationService.ValidateNewSummariesAsync(cancellationToken);
-            _logger.LogInformation("Summary validation completed");
+            if (_schedulerSettings.Value.ValidationTask)
+            {
+                await validationService.ValidateNewSummariesAsync(cancellationToken);
+                _logger.LogInformation("Summary validation completed");
+            }
 
             // Step 3: Translate to English
-            await translationService.TranslatePendingAsync(Language.EN, cancellationToken);
-            _logger.LogInformation("Summary translation completed");
+            if (_schedulerSettings.Value.TranslationTask)
+            {
+                await translationService.TranslatePendingAsync(Language.EN, cancellationToken);
+                _logger.LogInformation("Summary translation completed");
+            }
 
             _logger.LogInformation("Summary pipeline execution completed successfully");
         }
@@ -98,6 +111,12 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         try
         {
             await _pipelineLock.WaitAsync(cancellationToken);
+
+            if (!_schedulerSettings.Value.DigestTask)
+            {
+                _logger.LogInformation("Digest pipeline is disabled");
+                return;
+            }
 
             using var scope = _serviceProvider.CreateScope();
             var digestCookService = scope.ServiceProvider.GetRequiredService<DigestCookService>();

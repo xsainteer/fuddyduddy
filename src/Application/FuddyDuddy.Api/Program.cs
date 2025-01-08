@@ -3,6 +3,7 @@ using FuddyDuddy.Core.Infrastructure.Extensions;
 using FuddyDuddy.Api.Middleware;
 using FuddyDuddy.Api.Swagger;
 using FuddyDuddy.Api.HostedServices;
+using FuddyDuddy.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Add task scheduler service
 builder.Services.AddHostedService<SimpleTaskScheduler>();
+
+// Register task scheduler settings
+builder.Services.Configure<TaskSchedulerSettings>(builder.Configuration.GetSection("TaskScheduler"));
 
 var app = builder.Build();
 

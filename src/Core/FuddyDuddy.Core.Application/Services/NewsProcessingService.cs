@@ -41,7 +41,7 @@ public class NewsProcessingService
     {
         var activeSources = await _newsSourceRepository.GetActiveSourcesAsync(cancellationToken);
         var categories = await _categoryRepository.GetAllAsync(cancellationToken);
-        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Id}. {c.Name} ({c.Local})"));
+        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Id}. {c.Local} ({c.Name})"));
         
         foreach (var source in activeSources)
         {

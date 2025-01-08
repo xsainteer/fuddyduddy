@@ -47,7 +47,7 @@ public class NewsProcessingService
         {
             try
             {
-                using var httpClient = _httpClientFactory.CreateClient();
+                using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER_HTTP_CLIENT_NAME);
                 var dialect = _dialectFactory.CreateDialect(source.DialectType);
                 _logger.LogInformation("Processing news source: {Domain} using dialect {Dialect}", 
                     source.Domain, source.DialectType);

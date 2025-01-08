@@ -66,6 +66,11 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
         });
 
+        services.AddHttpClient(Constants.CRAWLER_HTTP_CLIENT_NAME, client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
+        });
+
         return services;
     }
 } 

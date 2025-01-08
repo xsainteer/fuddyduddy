@@ -16,6 +16,7 @@ public class NewsSourceDialectFactory
             "Kaktus" => new KaktusDialect(),
             "Sputnik" => new SputnikDialect(),
             "AkiPress" => new AkiPressDialect(),
+            "24kg" => new TwentyFourKgDialect(),
             _ => throw new ArgumentException($"Unknown dialect type: {dialectType}")
         };
     }

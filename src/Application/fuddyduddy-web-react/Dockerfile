@@ -24,12 +24,15 @@ COPY src/Application/fuddyduddy-web-react/nginx.conf /etc/nginx/conf.d/default.c
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Create a non-root user
-RUN adduser -D -H -s /sbin/nologin webuser && \
-    chown -R webuser:webuser /usr/share/nginx/html
+# Create required directories and set permissions
+RUN mkdir -p /var/cache/nginx && \
+    mkdir -p /var/log/nginx && \
+    mkdir -p /var/run && \
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/run /usr/share/nginx/html && \
+    chmod -R 755 /var/cache/nginx /var/log/nginx /var/run /usr/share/nginx/html
 
-# Switch to non-root user
-USER webuser
+# Use the 'nginx' user (already exists in nginx:alpine)
+USER nginx
 
 EXPOSE 80
 

@@ -1,0 +1,4 @@
+### get news summaries
+GET https://api.fuddy-duddy.org/api/summaries
+Content-Type: application/json
+

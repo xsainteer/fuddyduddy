@@ -113,13 +113,37 @@ stages:
               sshEndpoint: $(sshServiceConnection)
               runOptions: inline
               inline: |
-                cd /root/docker
-                pwd
-                echo `date` ": starting azure pipeline build $(Build.BuildNumber)" >> azure-pipeline.log
-                # Pull latest images
-                docker pull $(repository):api-latest >> azure-pipeline.log
-                docker pull $(repository):web-latest >> azure-pipeline.log
-                # Update services
-                docker compose up -d --no-deps --build fuddyduddy-api fuddyduddy-web >> azure-pipeline.log
-                echo `date` ": succeed azure pipeline build" >> azure-pipeline.log 
+                {
+                  # Redirect all output to a temporary file
+                  exec 3>&1 4>&2
+                  trap 'exec 2>&4 1>&3' 0 1 2 3
+                  exec 1>temp_output.log 2>&1
+
+                  # Your commands here
+                  cd /root/docker
+                  pwd
+
+                  echo `date` ": starting azure pipeline build $(Build.BuildNumber)" >> azure-pipeline.log
+
+                  # Pull latest images
+                  docker pull $(repository):api-latest >> azure-pipeline.log
+                  docker pull $(repository):web-latest >> azure-pipeline.log
+
+                  # Update services
+                  docker compose up -d --no-deps --build fuddyduddy-api fuddyduddy-web >> azure-pipeline.log
+
+                  echo `date` ": succeed azure pipeline build" >> azure-pipeline.log
+
+                  # Check if any actual errors occurred
+                  if ! docker ps | grep -q fuddyduddy-api || ! docker ps | grep -q fuddyduddy-web; then
+                    echo "Error: One or more containers failed to start properly"
+                    exit 1
+                  fi
+
+                } 2>/dev/null # Suppress stderr from the entire block
+
+                # Show the output but don't treat it as error
+                cat temp_output.log || true
+                rm temp_output.log || true
               readyTimeout: '60000'
+              failOnStdErr: false

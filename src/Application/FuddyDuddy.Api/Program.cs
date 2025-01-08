@@ -1,6 +1,7 @@
 using FuddyDuddy.Core.Application.Extensions;
 using FuddyDuddy.Core.Infrastructure.Extensions;
 using FuddyDuddy.Api.Middleware;
+using FuddyDuddy.Api.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,7 @@ builder.Services.AddCors(options =>
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.OperationFilter<AuthHeaderFilter>());
+builder.Services.AddSwaggerGen(c => c.OperationFilter<AddRequiredHeaderParameter>());
 
 builder.Services.AddScoped<AuthMiddleware>();
 

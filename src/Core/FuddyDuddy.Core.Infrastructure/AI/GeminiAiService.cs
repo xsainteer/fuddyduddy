@@ -4,6 +4,8 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Infrastructure.Configuration;
+using FuddyDuddy.Core.Application;
+
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
 public class GeminiAiService : IAiService
@@ -16,7 +18,7 @@ public class GeminiAiService : IAiService
     {
         _geminiOptions = geminiOptions;
         _logger = logger;
-        _httpClient = httpClientFactory.CreateClient("GEMINI");
+        _httpClient = httpClientFactory.CreateClient(Constants.GEMINI_HTTP_CLIENT_NAME);
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(

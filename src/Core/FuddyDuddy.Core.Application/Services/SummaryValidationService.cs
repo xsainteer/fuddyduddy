@@ -29,7 +29,7 @@ public class SummaryValidationService
 
     public async Task ValidateNewSummariesAsync(CancellationToken cancellationToken = default)
     {
-        var newSummaries = await _summaryRepository.GetByStateAsync(NewsSummaryState.Created, cancellationToken);
+        var newSummaries = (await _summaryRepository.GetByStateAsync(NewsSummaryState.Created, cancellationToken)).OrderBy(s => s.GeneratedAt);
 
         foreach (var summary in newSummaries)
         {

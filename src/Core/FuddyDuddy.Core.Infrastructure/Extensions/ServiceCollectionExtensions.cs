@@ -19,13 +19,13 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<MySQLOptions>(configuration.GetSection("MySQL"));
-        services.Configure<RedisOptions>(configuration.GetSection("Redis")); 
-        services.Configure<GeminiOptions>(configuration.GetSection("Gemini"));
-        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
-        // services.Configure<RabbitMQOptions>(configuration.GetSection("RabbitMQ"));
-
         var section = configuration.GetSection("Services");
+        services.Configure<MySQLOptions>(section.GetSection("MySQL"));
+        services.Configure<RedisOptions>(section.GetSection("Redis")); 
+        services.Configure<GeminiOptions>(section.GetSection("Gemini"));
+        services.Configure<OllamaOptions>(section.GetSection("Ollama"));
+        // services.Configure<RabbitMQOptions>(section.GetSection("RabbitMQ"));
+
         var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
         var redisOptions = section.GetSection("Redis").Get<RedisOptions>() ?? throw new Exception("Redis options are not configured");
         // var rabbitMQOptions = configuration.GetSection("RabbitMQ").Get<RabbitMQOptions>() ?? throw new Exception("RabbitMQ options are not configured");

@@ -1,8 +1,6 @@
 import axios from 'axios'
 import type { Digest } from '../types'
 
-const API_URL = 'http://localhost:5102/api'
-
 export async function fetchLatestDigests(language: string = 'RU', count: number = 5, skip: number = 0) {
   try {
     const params = new URLSearchParams({
@@ -11,7 +9,7 @@ export async function fetchLatestDigests(language: string = 'RU', count: number 
       skip: skip.toString()
     })
 
-    const { data } = await axios.get<Digest[]>(`${API_URL}/digests`, { params })
+    const { data } = await axios.get<Digest[]>(`/api/digests`, { params })
     return data
   } catch (error) {
     console.error('Error fetching digests:', error)
@@ -21,7 +19,7 @@ export async function fetchLatestDigests(language: string = 'RU', count: number 
 
 export async function fetchDigestById(id: string): Promise<Digest> {
   try {
-    const { data } = await axios.get<Digest>(`${API_URL}/digests/${id}`)
+    const { data } = await axios.get<Digest>(`/api/digests/${id}`)
     return data
   } catch (error) {
     console.error('Error fetching digest:', error)

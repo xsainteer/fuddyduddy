@@ -1,8 +1,6 @@
 import axios from 'axios'
 import type { Summary } from '../types'
 
-const API_URL = 'http://localhost:5102/api'
-
 export async function fetchSummaries(page: number) {
   try {
     const params = new URLSearchParams({
@@ -10,7 +8,7 @@ export async function fetchSummaries(page: number) {
       pageSize: '20',
     })
 
-    const { data } = await axios.get<Summary[]>(`${API_URL}/summaries`, { params })
+    const { data } = await axios.get<Summary[]>(`/api/summaries`, { params })
     return data
   } catch (error) {
     console.error('Error fetching summaries:', error)
@@ -19,9 +17,11 @@ export async function fetchSummaries(page: number) {
 }
 
 export async function fetchSummaryById(id: string): Promise<Summary> {
-  const response = await fetch(`/api/summaries/${id}`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch summary')
+  try {
+    const { data } = await axios.get<Summary>(`/api/summaries/${id}`)
+    return data
+  } catch (error) {
+    console.error('Error fetching summary:', error)
+    throw error
   }
-  return response.json()
 } 

@@ -1,121 +1,73 @@
-# FuddyDuddy News Aggregator
+# Fuddy-Duddy
 
-A news aggregation and summarization platform that collects news from various sources in Kyrgyzstan and generates AI-powered summaries.
+A news aggregation and summarization platform that collects news from various sources, processes them with AI, and generates comprehensive digests.
 
-## Features
+## Overview
 
-- 🔄 Automated news collection from configured sources
-- 🤖 AI-powered news summarization
-- 🏷️ Automatic tagging and categorization
-- 💾 Efficient caching with Redis
-- 🌓 Dark/Light theme support
-- 📱 Responsive design
-- ♾️ Infinite scroll news feed
-- 🔍 Context-aware news navigation
+Fuddy-Duddy is a private platform that:
+- Aggregates news from trusted sources using sitemaps
+- Processes news articles using AI for summarization
+- Generates daily digests in multiple languages
+- Provides a modern web interface for news consumption
 
 ## Architecture
 
-### Backend Components
-- **Core Domain**: Contains business logic and domain entities
-- **Infrastructure**: Implements data access and external services
-- **Application**: Hosts API endpoints and web interface
-- **Clean Architecture** principles with CQRS pattern
+The platform consists of:
 
-### Data Flow
-1. **News Collection**
-   - Fetch sitemaps from configured sources
-   - Parse using source-specific dialects
-   - Store raw news content
-
-2. **News Processing**
-   - Extract relevant content
-   - Generate AI summaries
-   - Validate and categorize content
-   - Cache processed summaries
-
-3. **Data Access**
-   - MySQL for persistent storage
-   - Redis for caching and performance
-   - Entity Framework Core for ORM
+### Backend (.NET 9)
+- Clean Architecture design
+- CQRS pattern for data operations
+- Async communication with RabbitMQ
+- Data storage in MySQL and Elasticsearch
+- Object storage with MinIO
+- Caching with Redis
+- AI-powered processing pipeline
 
 ### Frontend (React)
 - Modern React with TypeScript
-- TanStack Query for data fetching
 - Tailwind CSS for styling
-- Context-based theme management
-- Responsive and accessible components
+- Real-time updates
+- Responsive design
+- Multi-language support
 
-## Tech Stack
+## Infrastructure
+- Containerized with Docker
+- CI/CD through Azure Pipelines
+- Private Docker Hub repository
+- Automated deployment
+- High availability setup
 
-### Backend
-- .NET 9
-- MySQL (persistent storage)
-- Redis (caching)
-- Entity Framework Core
-- Ollama AI (summarization)
+## Development
 
-### Frontend
-- React 18
-- TypeScript
-- TanStack Query
-- Tailwind CSS
-- React Router
-- React Hot Toast
+This is a private repository. Access is restricted to authorized team members only.
 
-## API Endpoints
+### Prerequisites
+- Docker and Docker Compose
+- .NET 9 SDK
+- Node.js 20+
+- Access to private Docker Hub repository
 
-### News Processing
-- `POST /api/newsprocessing/process` - Trigger news collection and processing
-- `POST /api/newsprocessing/validate-summaries` - Validate generated summaries
-- `POST /api/newsprocessing/rebuild-cache` - Rebuild Redis cache
+### Local Setup
+1. Clone the repository
+2. Copy `.env.example` to `.env` and configure
+3. Run `docker compose up -d`
+4. Access the web interface at `http://localhost:5173`
 
-### Summaries
-- `GET /api/summaries` - Get paginated summaries
-- `GET /api/summaries/{id}` - Get specific summary
-- Query parameters supported:
-  - `page`: Page number (default: 0)
-  - `pageSize`: Items per page (default: 20)
-  - `summaryId`: Get summaries around specific ID
+### Environment Variables
+- Database configuration
+- API endpoints
+- Service credentials
+- AI provider settings
 
-## Development Setup
+## Deployment
 
-1. Prerequisites:
-   - .NET 9 SDK
-   - Node.js 18+
-   - MySQL 8+
-   - Redis 7+
-   - Ollama with owl/t-lite model
+Deployment is automated through Azure Pipelines:
+- Builds Docker images for API and web
+- Pushes to private Docker Hub repository
+- Deploys to production server
+- Maintains rolling updates
 
-2. Backend Setup:
-   ```bash
-   cd src/Application/FuddyDuddy.Api
-   dotnet restore
-   dotnet run
-   ```
+## Private Repository Notice
 
-3. Frontend Setup:
-   ```bash
-   cd src/Application/fuddyduddy-web-react
-   npm install
-   npm run dev
-   ```
-
-## Configuration
-
-Key configuration files:
-- `appsettings.json`: Backend configuration
-- `.env`: Frontend environment variables
-- `package.json`: Frontend dependencies
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-MIT License - see LICENSE file for details
+This repository contains proprietary code and is not intended for public distribution. All rights reserved.
 

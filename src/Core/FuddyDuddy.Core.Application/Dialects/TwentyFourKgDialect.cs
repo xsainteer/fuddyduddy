@@ -66,7 +66,23 @@ public class TwentyFourKgDialect : INewsSourceDialect
         var doc = new HtmlDocument();
         doc.LoadHtml(htmlContent);
 
+        var contentBuilder = new System.Text.StringBuilder();
+
+        // Extract title
+        var titleElement = doc.DocumentNode.SelectSingleNode("//h1[@class='newsTitle']");
+        if (titleElement != null)
+        {
+            contentBuilder.AppendLine(titleElement.InnerText.Trim());
+            contentBuilder.AppendLine();
+        }
+
+        // Extract content
         var articleContent = doc.DocumentNode.SelectSingleNode("//div[@class='cont']");
-        return articleContent?.InnerText.Trim() ?? string.Empty;
+        if (articleContent != null)
+        {
+            contentBuilder.AppendLine(articleContent.InnerText.Trim());
+        }
+
+        return contentBuilder.ToString().Trim();
     }
 } 

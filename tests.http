@@ -2,3 +2,6 @@
 GET https://api.fuddy-duddy.org/api/summaries
 Content-Type: application/json
 
+### get news summaries
+GET https://fuddy-duddy.org/api/summaries
+Content-Type: application/json

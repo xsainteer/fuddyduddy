@@ -51,6 +51,16 @@ public class AkchabarDialect : INewsSourceDialect
         if (articleContainer == null)
             return string.Empty;
 
+        var contentBuilder = new System.Text.StringBuilder();
+
+        // Get title
+        var titleElement = articleContainer.SelectSingleNode(".//h1[contains(@class, 'font-semibold')]");
+        if (titleElement != null)
+        {
+            contentBuilder.AppendLine(titleElement.InnerText.Trim());
+            contentBuilder.AppendLine();
+        }
+
         // Get main content from CKEditor div
         var mainContent = articleContainer.SelectSingleNode(".//div[contains(@class, 'ckeditor')]");
         if (mainContent == null)
@@ -61,7 +71,6 @@ public class AkchabarDialect : INewsSourceDialect
         if (paragraphs == null)
             return string.Empty;
 
-        var contentBuilder = new System.Text.StringBuilder();
         foreach (var paragraph in paragraphs)
         {
             var text = paragraph.InnerText.Trim();

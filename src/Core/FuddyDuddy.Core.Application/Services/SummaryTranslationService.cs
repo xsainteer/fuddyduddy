@@ -27,6 +27,20 @@ public class SummaryTranslationService
         _logger = logger;
     }
 
+    public async Task TranslatePendingAsync(Language targetLanguage, CancellationToken cancellationToken = default)
+    {
+        var summaries = (await _summaryRepository.GetByStateAsync(
+                [NewsSummaryState.Validated, NewsSummaryState.Digested], 
+                date: DateTimeOffset.UtcNow.AddHours(-1), 
+                cancellationToken: cancellationToken))
+            .OrderBy(s => s.GeneratedAt)
+            .ToArray();
+        foreach (var summary in summaries)
+        {
+            await TranslateSummaryAsync(summary.Id, targetLanguage, cancellationToken);
+        }
+    }
+
     public async Task<NewsSummary?> TranslateSummaryAsync(Guid summaryId, Language targetLanguage, CancellationToken cancellationToken = default)
     {
         var summary = await _summaryRepository.GetByIdAsync(summaryId, cancellationToken);
@@ -44,6 +58,13 @@ public class SummaryTranslationService
 
         try
         {
+            var existingSummaries = await _summaryRepository.GetByNewsArticleIdAsync(summary.NewsArticleId, cancellationToken);
+            if (existingSummaries.Any(s => s.Language == targetLanguage))
+            {
+                _logger.LogInformation("Summary {Id} already exists in {Language}. Skipping translation.", summaryId, targetLanguage);
+                return null;
+            }
+
             var translation = await GetTranslationAsync(summary, targetLanguage, cancellationToken);
             if (translation == null)
             {
@@ -57,6 +78,8 @@ public class SummaryTranslationService
                 translation.Article,
                 summary.CategoryId,
                 targetLanguage);
+
+            translatedSummary.Validate(); // TODO: add validation step for translated summaries
 
             await _summaryRepository.AddAsync(translatedSummary, cancellationToken);
 

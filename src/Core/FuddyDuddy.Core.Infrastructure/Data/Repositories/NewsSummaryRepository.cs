@@ -19,11 +19,12 @@ public class NewsSummaryRepository : INewsSummaryRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<NewsSummary>> GetByStateAsync(NewsSummaryState state, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<NewsSummary>> GetByStateAsync(IList<NewsSummaryState> states, DateTimeOffset? date = null, CancellationToken cancellationToken = default)
     {
         return await _context
             .NewsSummaries
-            .Where(s => s.State == state)
+            .Where(s => states.Contains(s.State))
+            .Where(s => date == null || s.GeneratedAt >= date)
             .Include(s => s.Category)
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)
@@ -55,5 +56,12 @@ public class NewsSummaryRepository : INewsSummaryRepository
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+    }
+
+    public async Task<IEnumerable<NewsSummary>> GetByNewsArticleIdAsync(Guid newsArticleId, CancellationToken cancellationToken = default)
+    {
+        return await _context.NewsSummaries
+            .Where(s => s.NewsArticleId == newsArticleId)
+            .ToListAsync(cancellationToken);
     }
 } 

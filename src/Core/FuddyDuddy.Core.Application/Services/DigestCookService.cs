@@ -5,6 +5,7 @@ using FuddyDuddy.Core.Domain.Repositories;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -36,8 +37,14 @@ public class DigestCookService
             var periodStart = lastDigest?.PeriodEnd ?? DateTimeOffset.UtcNow.AddHours(-12);
             var periodEnd = DateTimeOffset.UtcNow;
 
+            if (lastDigest != null && Math.Abs((DateTimeOffset.UtcNow - lastDigest.GeneratedAt).TotalHours) < 1)
+            {
+                _logger.LogWarning("Digest already generated within the last hour for {Language}", language);
+                return;
+            }
+
             // Get validated summaries since the last digest
-            var summaries = await _summaryRepository.GetByStateAsync(NewsSummaryState.Validated, cancellationToken);
+            var summaries = await _summaryRepository.GetByStateAsync([NewsSummaryState.Validated], cancellationToken: cancellationToken);
             var relevantSummaries = summaries
                 .Where(s => s.Language == language && s.GeneratedAt >= periodStart)
                 .OrderByDescending(s => s.GeneratedAt)

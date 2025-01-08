@@ -56,7 +56,7 @@ export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProp
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t.header.title}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
           </div>
 

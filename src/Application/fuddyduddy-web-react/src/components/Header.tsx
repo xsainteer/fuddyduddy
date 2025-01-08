@@ -25,7 +25,7 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
             </button>
 
             <Link to="/" className="block">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t.header.title}</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
             </Link>
           </div>

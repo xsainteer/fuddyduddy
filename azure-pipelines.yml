@@ -1,0 +1,124 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  sshServiceConnection: 'anvarlab'
+  containerRegistry: 'dockerhub'
+  repository: 'ggsa/fuddyduddy'
+  # Backend variables
+  backendDockerfile: 'src/Application/FuddyDuddy.Api/Dockerfile'
+  # Frontend variables
+  frontendDockerfile: 'src/Application/fuddyduddy-web-react/Dockerfile'
+
+stages:
+- stage: BuildAndPush
+  displayName: Build and push stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+
+    # Login to Docker Hub
+    - task: Docker@2
+      displayName: Login to Docker Hub
+      inputs:
+        command: login
+        containerRegistry: $(containerRegistry)
+
+    # Handle backend image
+    - task: Bash@3
+      displayName: 'Manage Backend Image Tags'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Pull latest (if exists) and retag as previous
+          if docker pull $(repository):api-latest; then
+            docker tag $(repository):api-latest $(repository):api-previous
+            docker push $(repository):api-previous
+          fi
+
+    - task: Docker@2
+      displayName: Build Backend Docker image
+      inputs:
+        command: build
+        repository: $(repository)
+        Dockerfile: $(backendDockerfile)
+        buildContext: .
+        tags: api-latest
+
+    - task: Docker@2
+      displayName: Push Backend Docker image
+      inputs:
+        command: push
+        repository: $(repository)
+        tags: api-latest
+
+    # Handle frontend image
+    - task: Bash@3
+      displayName: 'Manage Frontend Image Tags'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Pull latest (if exists) and retag as previous
+          if docker pull $(repository):web-latest; then
+            docker tag $(repository):web-latest $(repository):web-previous
+            docker push $(repository):web-previous
+          fi
+
+    - task: Docker@2
+      displayName: Build Frontend Docker image
+      inputs:
+        command: build
+        repository: $(repository)
+        Dockerfile: $(frontendDockerfile)
+        buildContext: .
+        tags: web-latest
+
+    - task: Docker@2
+      displayName: Push Frontend Docker image
+      inputs:
+        command: push
+        repository: $(repository)
+        tags: web-latest
+
+    # Logout from Docker Hub
+    - task: Docker@2
+      displayName: Logout from Docker Hub
+      inputs:
+        command: logout
+        containerRegistry: $(containerRegistry)
+
+- stage: Deploy
+  displayName: Deploy stage
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: none
+
+          - task: SSH@0
+            displayName: 'Deploy to VPS'
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              runOptions: inline
+              inline: |
+                cd /root/docker
+                pwd
+                echo `date` ": starting azure pipeline build $(Build.BuildNumber)" >> azure-pipeline.log
+                # Pull latest images
+                docker pull $(repository):api-latest >> azure-pipeline.log
+                docker pull $(repository):web-latest >> azure-pipeline.log
+                # Update services
+                docker compose up -d --no-deps --build fuddyduddy-api fuddyduddy-web >> azure-pipeline.log
+                echo `date` ": succeed azure pipeline build" >> azure-pipeline.log 

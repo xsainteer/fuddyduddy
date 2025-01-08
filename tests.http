@@ -5,3 +5,9 @@ Content-Type: application/json
 ### get news summaries
 GET https://fuddy-duddy.org/api/summaries
 Content-Type: application/json
+
+
+### rebuild cache
+POST https://api.fuddy-duddy.org/api/maintenance/rebuild-cache
+Content-Type: application/json
+api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3

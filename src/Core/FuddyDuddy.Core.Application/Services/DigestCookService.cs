@@ -56,6 +56,12 @@ public class DigestCookService
                 return;
             }
 
+            if (relevantSummaries.Count < 10)
+            {
+                _logger.LogInformation("Not enough summaries to generate digest for {Language}", language);
+                return;
+            }
+
             // Format summaries as plain text
             var summariesText = new StringBuilder();
             foreach (var summary in relevantSummaries)

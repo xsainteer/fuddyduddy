@@ -3,10 +3,11 @@ import { useParams, Link } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
 import { fetchDigestById } from '../api/digests'
 import type { Digest } from '../types'
+import { formatDateTime } from '../utils/dateFormat'
 
 export default function DigestPage() {
   const { id } = useParams<{ id: string }>()
-  const { t } = useLocalization()
+  const { t, language: interfaceLanguage } = useLocalization()
   const [digest, setDigest] = useState<Digest | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -75,7 +76,7 @@ export default function DigestPage() {
             {digest.title}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {new Date(digest.generatedAt).toLocaleString()}
+            {formatDateTime(digest.generatedAt, interfaceLanguage)}
           </p>
         </div>
 

@@ -4,6 +4,7 @@ import type { Digest, Filters } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
 import { fetchLatestDigests } from '../api/digests'
 import DigestSkeleton from './DigestSkeleton'
+import { formatDateTime } from '../utils/dateFormat'
 
 interface DigestsProps {
   className?: string
@@ -26,7 +27,7 @@ function getContentPreview(content: string): string {
 }
 
 export default function Digests({ className = '', filters = {} }: DigestsProps) {
-  const { t } = useLocalization()
+  const { t, language: interfaceLanguage } = useLocalization()
   const [digests, setDigests] = useState<Digest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -75,7 +76,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
                   {getContentPreview(digest.content)}
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(digest.generatedAt).toLocaleString()}
+                  {formatDateTime(digest.generatedAt, interfaceLanguage)}
                 </p>
               </Link>
             ))}

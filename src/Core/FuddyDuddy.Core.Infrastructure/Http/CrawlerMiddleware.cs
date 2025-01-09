@@ -37,15 +37,24 @@ public class CrawlerMiddleware : ICrawlerMiddleware
         request.Headers.UserAgent.ParseAdd(userAgent);
 
         // Add common browser headers
-        request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
-        request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.5");
+        request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        request.Headers.AcceptLanguage.ParseAdd("en-US,en;q=0.9,ru;q=0.8");
         request.Headers.Add("Accept-Encoding", "gzip, deflate, br");
-        request.Headers.Add("DNT", "1");
+        request.Headers.Add("Cache-Control", "max-age=0");
+        request.Headers.Add("Sec-Ch-Ua", "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"");
+        request.Headers.Add("Sec-Ch-Ua-Mobile", "?0");
+        request.Headers.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
         request.Headers.Add("Sec-Fetch-Dest", "document");
         request.Headers.Add("Sec-Fetch-Mode", "navigate");
         request.Headers.Add("Sec-Fetch-Site", "none");
         request.Headers.Add("Sec-Fetch-User", "?1");
         request.Headers.Add("Upgrade-Insecure-Requests", "1");
+        
+        // Add referrer if not the sitemap URL
+        if (!request.RequestUri!.PathAndQuery.Contains("sitemap"))
+        {
+            request.Headers.Referrer = new Uri($"https://{domain}/");
+        }
 
         return request;
     }

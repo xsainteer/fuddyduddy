@@ -13,6 +13,10 @@ using FuddyDuddy.Core.Application;
 using FuddyDuddy.Core.Infrastructure.Http;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
+using Polly;
+using Polly.Extensions.Http;
+using System.Net.Security;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -89,7 +93,12 @@ public static class ServiceCollectionExtensions
             var handler = new HttpClientHandler
             {
                 UseProxy = crawlerOptions.UseProxies,
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli,
+                ServerCertificateCustomValidationCallback = (sender, cert, chain, errors) => 
+                    {
+                        // Accept all certificates when using proxy
+                        return crawlerOptions.UseProxies || errors == SslPolicyErrors.None;
+                    }
             };
 
             if (crawlerOptions.UseProxies)
@@ -107,9 +116,25 @@ public static class ServiceCollectionExtensions
                 }
             }
 
-            return handler;
-        });
+                return handler;
+            })
+            .AddPolicyHandler(GetRetryPolicy())
+            .ConfigureHttpClient(client =>
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
 
         return services;
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .Or<TimeoutException>()
+            .Or<TaskCanceledException>()
+            .WaitAndRetryAsync(3, retryAttempt => 
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
     }
 } 

@@ -18,7 +18,7 @@ public class GeminiAiService : IAiService
     {
         _geminiOptions = geminiOptions;
         _logger = logger;
-        _httpClient = httpClientFactory.CreateClient(Constants.GEMINI_HTTP_CLIENT_NAME);
+        _httpClient = httpClientFactory.CreateClient(Constants.GEMINI);
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(

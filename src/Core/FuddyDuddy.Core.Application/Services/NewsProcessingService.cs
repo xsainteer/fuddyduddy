@@ -42,7 +42,7 @@ public class NewsProcessingService
         _logger = logger;
     }
 
-    private async Task<string> ReadResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    private static async Task<string> ReadResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         
@@ -53,24 +53,24 @@ public class NewsProcessingService
         {
             using var gzipStream = new GZipStream(contentStream, CompressionMode.Decompress);
             using var reader = new StreamReader(gzipStream);
-            return await reader.ReadToEndAsync();
+            return await reader.ReadToEndAsync(cancellationToken);
         }
         else if (contentEncoding.Contains("deflate"))
         {
             using var deflateStream = new DeflateStream(contentStream, CompressionMode.Decompress);
             using var reader = new StreamReader(deflateStream);
-            return await reader.ReadToEndAsync();
+            return await reader.ReadToEndAsync(cancellationToken);
         }
         else if (contentEncoding.Contains("br"))
         {
             using var brStream = new BrotliStream(contentStream, CompressionMode.Decompress);
             using var reader = new StreamReader(brStream);
-            return await reader.ReadToEndAsync();
+            return await reader.ReadToEndAsync(cancellationToken);
         }
         
         // No compression
         using var defaultReader = new StreamReader(contentStream);
-        return await defaultReader.ReadToEndAsync();
+        return await defaultReader.ReadToEndAsync(cancellationToken);
     }
 
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
@@ -83,7 +83,7 @@ public class NewsProcessingService
         {
             try
             {
-                using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER_HTTP_CLIENT_NAME);
+                using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER);
                 var dialect = _dialectFactory.CreateDialect(source.DialectType);
                 _logger.LogInformation("Processing news source: {Domain} using dialect {Dialect}", 
                     source.Domain, source.DialectType);
@@ -97,72 +97,20 @@ public class NewsProcessingService
                 _logger.LogInformation("Sitemap content: {Content}", sitemapContent);
                 var newsItems = dialect.ParseSitemap(sitemapContent);
 
+                if (newsItems == null)
+                {
+                    _logger.LogError("No news items found for {Domain}", source.Domain);
+                    continue;
+                }
+
                 foreach (var newsItem in newsItems)
                 {
                     _logger.LogInformation("News item: {Title} {Url} {PublishedAt}", newsItem.Title, newsItem.Url, newsItem.PublishedAt);
                 }
-                
+
                 foreach (var newsItem in newsItems)
                 {
-                    try
-                    {
-                        if (newsItem.PublishedAt < DateTimeOffset.UtcNow.Date)
-                        {
-                            _logger.LogInformation("Skipping old news item: {Url}", newsItem.Url);
-                            continue;
-                        }
-
-                        // Check if already processed
-                        if (await _newsArticleRepository.GetByUrlAsync(newsItem.Url, cancellationToken) != null)
-                        {
-                            _logger.LogInformation("Article already processed: {Url}", newsItem.Url);
-                            continue;
-                        }
-
-                        // Get article content with crawler middleware
-                        request = new HttpRequestMessage(HttpMethod.Get, newsItem.Url);
-                        request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
-                        response = await httpClient.SendAsync(request, cancellationToken);
-                        response.EnsureSuccessStatusCode();
-                        var newsContent = await ReadResponseContentAsync(response, cancellationToken);
-                        var articleContent = dialect.ExtractArticleContent(newsContent);
-
-                        if (string.IsNullOrEmpty(articleContent))
-                        {
-                            _logger.LogInformation("Skipping article with empty content: {Url}", newsItem.Url);
-                            continue;
-                        }
-
-                        // Create and save article
-                        var article = new NewsArticle(
-                            source.Id,
-                            newsItem.Url,
-                            newsItem.Title,
-                            newsItem.PublishedAt
-                        );
-                        await _newsArticleRepository.AddAsync(article, cancellationToken);
-
-                        // Process with Ollama
-                        var summaryJson = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
-                        var summary = ParseSummaryResponse(summaryJson);
-                        
-                        if (summary != null)
-                        {
-                            var newsSummary = new NewsSummary(
-                                article.Id,
-                                summary.Title,
-                                summary.Article,
-                                summary.CategoryId
-                            );
-                            await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
-                        }
-
-                        _logger.LogInformation("Processed article: {Title}", newsItem.Title);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error processing article {Url}", newsItem.Url);
-                    }
+                    await ProcessNewsItemAsync(newsItem!, source!, dialect!, categoryPrompt, cancellationToken);
                 }
 
                 // Update last crawled timestamp
@@ -176,9 +124,78 @@ public class NewsProcessingService
         }
     }
 
+    private async Task ProcessNewsItemAsync(
+        Dialects.NewsItem newsItem,
+        NewsSource source,
+        Dialects.INewsSourceDialect dialect,
+        string categoryPrompt,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (newsItem.PublishedAt < DateTimeOffset.UtcNow.Date)
+            {
+                _logger.LogInformation("Skipping old news item: {Url}", newsItem.Url);
+                return;
+            }
+
+            // Check if already processed
+            if (await _newsArticleRepository.GetByUrlAsync(newsItem.Url, cancellationToken) != null)
+            {
+                _logger.LogInformation("Article already processed: {Url}", newsItem.Url);
+                return;
+            }
+
+            // Get article content with crawler middleware
+            using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER);
+            var request = new HttpRequestMessage(HttpMethod.Get, newsItem.Url);
+            request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var newsContent = await ReadResponseContentAsync(response, cancellationToken);
+            var articleContent = dialect.ExtractArticleContent(newsContent);
+
+            if (string.IsNullOrEmpty(articleContent))
+            {
+                _logger.LogInformation("Skipping article with empty content: {Url}", newsItem.Url);
+                return;
+            }
+
+            // Create and save article
+            var article = new NewsArticle(
+                source.Id,
+                newsItem.Url,
+                newsItem.Title,
+                newsItem.PublishedAt
+            );
+            await _newsArticleRepository.AddAsync(article, cancellationToken);
+
+            // Process with Ollama
+            var summaryJson = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
+            var summary = ParseSummaryResponse(summaryJson);
+            
+            if (summary != null)
+            {
+                var newsSummary = new NewsSummary(
+                    article.Id,
+                    summary.Title,
+                    summary.Article,
+                    summary.CategoryId
+                );
+                await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
+            }
+
+            _logger.LogInformation("Processed article: {Title}", newsItem.Title);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing article {Url}", newsItem.Url);
+        }
+    }
+
     private async Task<string> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
         var request = new
         {
             model = "owl/t-lite",

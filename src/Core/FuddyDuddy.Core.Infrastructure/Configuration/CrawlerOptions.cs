@@ -9,4 +9,5 @@ public class CrawlerOptions
     public bool UseRandomDelay { get; set; } = true;
     public int MinDelayMilliseconds { get; set; } = 2000;
     public int MaxDelayMilliseconds { get; set; } = 5000;
+    public bool UseProxies { get; set; } = false;
 }

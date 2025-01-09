@@ -63,7 +63,7 @@ public class SummaryValidationService
 
     private async Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
         var request = new
         {
             model = "owl/t-lite",

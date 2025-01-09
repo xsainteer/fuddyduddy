@@ -52,7 +52,7 @@ public class SummaryTranslationService
 
         if (summary.Language == targetLanguage)
         {
-            _logger.LogWarning("Summary {Id} is already in {Language}", summaryId, targetLanguage);
+            _logger.LogInformation("Summary {Id} is already in {Language}", summaryId, targetLanguage);
             return null;
         }
 
@@ -106,7 +106,7 @@ public class SummaryTranslationService
 
     private async Task<TranslationResponse?> GetTranslationAsync(NewsSummary summary, Language targetLanguage, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA_HTTP_CLIENT_NAME);
+        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
         var request = new
         {
             model = "owl/t-lite",

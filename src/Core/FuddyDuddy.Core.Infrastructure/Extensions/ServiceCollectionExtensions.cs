@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Application;
 using FuddyDuddy.Core.Infrastructure.Http;
+using System.Net;
+using Microsoft.Extensions.Logging;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -35,6 +37,7 @@ public static class ServiceCollectionExtensions
         
         // Crawler options
         services.Configure<CrawlerOptions>(configuration.GetSection("Crawler"));
+        services.Configure<ProxyOptions>(configuration.GetSection("Proxy"));
         var crawlerOptions = configuration.GetSection("Crawler").Get<CrawlerOptions>() ?? throw new Exception("Crawler options are not configured");
 
         services.AddDbContext<FuddyDuddyDbContext>(options =>
@@ -60,23 +63,51 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAiService, GeminiAiService>();
 
         // Register crawler middleware
-        services.AddScoped<ICrawlerMiddleware, CrawlerMiddleware>();
+        services.AddSingleton<ICrawlerMiddleware, CrawlerMiddleware>();
+
+        // Register proxy pool manager
+        services.AddSingleton<IProxyPoolManager, ProxyPoolManager>();
 
         // Register http clients
-        services.AddHttpClient(Constants.OLLAMA_HTTP_CLIENT_NAME, client =>
+        services.AddHttpClient(Constants.OLLAMA, client =>
         {
             client.BaseAddress = new Uri(ollamaOptions.Url);
         });
 
-        services.AddHttpClient(Constants.GEMINI_HTTP_CLIENT_NAME, client =>
+        services.AddHttpClient(Constants.GEMINI, client =>
         {
             client.BaseAddress = new Uri(geminiOptions.Url);
             client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
         });
 
-        services.AddHttpClient(Constants.CRAWLER_HTTP_CLIENT_NAME, client =>
+        services.AddHttpClient(Constants.CRAWLER, client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
+        })
+        .ConfigurePrimaryHttpMessageHandler(sp =>
+        {
+            var handler = new HttpClientHandler
+            {
+                UseProxy = crawlerOptions.UseProxies,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate | DecompressionMethods.Brotli
+            };
+
+            if (crawlerOptions.UseProxies)
+            {
+                var proxyPool = sp.GetRequiredService<IProxyPoolManager>();
+                var proxyAddress = proxyPool.GetNextProxy();
+                if (proxyAddress != null)
+                {
+                    var proxyUri = new Uri(proxyAddress);
+                    handler.Proxy = new WebProxy(proxyUri);
+                }
+                else
+                {
+                    handler.UseProxy = false;
+                }
+            }
+
+            return handler;
         });
 
         return services;

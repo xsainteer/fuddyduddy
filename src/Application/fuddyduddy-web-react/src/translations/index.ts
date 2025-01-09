@@ -69,7 +69,7 @@ const translations: Record<Language, Translation> = {
   EN: {
     header: {
       title: 'FuddyDuddy News',
-      subtitle: 'News from Kyrgyzstan',
+      subtitle: 'KYRGYZSTAN NEWS',
       about: 'About',
       digests: 'Digests'
     },
@@ -133,7 +133,7 @@ const translations: Record<Language, Translation> = {
   RU: {
     header: {
       title: 'FuddyDuddy News',
-      subtitle: 'Новости Кыргызстана',
+      subtitle: 'НОВОСТИ КЫРГЫЗСТАНА',
       about: 'О проекте',
       digests: 'Дайджесты'
     },

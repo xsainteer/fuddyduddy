@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
 import LanguageToggle from './LanguageToggle'
 import { useLocalization } from '../hooks/useLocalization'
+import { useTheme } from '../contexts/ThemeContext'
+import logoTransparent from '../assets/fuddyduddy_logo_transparent.png'
+import logoWhite from '../assets/fuddyduddy_logo_white.jpg'
 
 interface HeaderProps {
   onMobileMenuClick: () => void
@@ -9,6 +12,7 @@ interface HeaderProps {
 
 export default function Header({ onMobileMenuClick }: HeaderProps) {
   const { t } = useLocalization()
+  const { theme } = useTheme()
 
   return (
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b dark:border-gray-700 sticky top-0 z-10 transition-colors">
@@ -24,9 +28,16 @@ export default function Header({ onMobileMenuClick }: HeaderProps) {
               </svg>
             </button>
 
-            <Link to="/" className="block">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
+            <Link to="/" className="flex items-center gap-3">
+              <img 
+                src={theme === 'dark' ? logoTransparent : logoWhite} 
+                alt="FuddyDuddy Logo" 
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
+              </div>
             </Link>
           </div>
 

@@ -1,6 +1,9 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
+import { useTheme } from '../contexts/ThemeContext'
+import logoTransparent from '../assets/fuddyduddy_logo_transparent.png'
+import logoWhite from '../assets/fuddyduddy_logo_white.jpg'
 
 interface MobileMenuProps {
   isOpen: boolean
@@ -10,6 +13,7 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProps) {
   const { t } = useLocalization()
+  const { theme } = useTheme()
   const location = useLocation()
   const isNotHomePage = location.pathname !== '/'
 
@@ -56,8 +60,17 @@ export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProp
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
+            <div className="flex items-center gap-3">
+              <img 
+                src={theme === 'dark' ? logoTransparent : logoWhite} 
+                alt="FuddyDuddy Logo" 
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white font-['Bebas_Neue']">{t.header.title}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t.header.subtitle}</p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}

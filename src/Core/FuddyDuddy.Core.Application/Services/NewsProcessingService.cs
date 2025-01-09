@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.IO.Compression;
 using FuddyDuddy.Core.Domain.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
 
@@ -15,6 +17,7 @@ public class NewsProcessingService
     private readonly ICategoryRepository _categoryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly NewsSourceDialectFactory _dialectFactory;
+    private readonly ICrawlerMiddleware _crawlerMiddleware;
     private readonly ILogger<NewsProcessingService> _logger;
 
     private const int DEFAULT_CATEGORY_ID = 16; // "Other" category
@@ -26,6 +29,7 @@ public class NewsProcessingService
         ICategoryRepository categoryRepository,
         IHttpClientFactory httpClientFactory,
         NewsSourceDialectFactory dialectFactory,
+        ICrawlerMiddleware crawlerMiddleware,
         ILogger<NewsProcessingService> logger)
     {
         _newsSourceRepository = newsSourceRepository;
@@ -34,7 +38,39 @@ public class NewsProcessingService
         _categoryRepository = categoryRepository;
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
+        _crawlerMiddleware = crawlerMiddleware;
         _logger = logger;
+    }
+
+    private async Task<string> ReadResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        
+        // Check content encoding
+        var contentEncoding = response.Content.Headers.ContentEncoding;
+        
+        if (contentEncoding.Contains("gzip"))
+        {
+            using var gzipStream = new GZipStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(gzipStream);
+            return await reader.ReadToEndAsync();
+        }
+        else if (contentEncoding.Contains("deflate"))
+        {
+            using var deflateStream = new DeflateStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(deflateStream);
+            return await reader.ReadToEndAsync();
+        }
+        else if (contentEncoding.Contains("br"))
+        {
+            using var brStream = new BrotliStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(brStream);
+            return await reader.ReadToEndAsync();
+        }
+        
+        // No compression
+        using var defaultReader = new StreamReader(contentStream);
+        return await defaultReader.ReadToEndAsync();
     }
 
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
@@ -52,8 +88,13 @@ public class NewsProcessingService
                 _logger.LogInformation("Processing news source: {Domain} using dialect {Dialect}", 
                     source.Domain, source.DialectType);
 
-                // Get sitemap
-                var sitemapContent = await httpClient.GetStringAsync(dialect.SitemapUrl, cancellationToken);
+                // Get sitemap with crawler middleware
+                var request = new HttpRequestMessage(HttpMethod.Get, dialect.SitemapUrl);
+                request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
+                var response = await httpClient.SendAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+                var sitemapContent = await ReadResponseContentAsync(response, cancellationToken);
+                _logger.LogInformation("Sitemap content: {Content}", sitemapContent);
                 var newsItems = dialect.ParseSitemap(sitemapContent);
 
                 foreach (var newsItem in newsItems)
@@ -78,8 +119,12 @@ public class NewsProcessingService
                             continue;
                         }
 
-                        // Get article content
-                        var newsContent = await httpClient.GetStringAsync(newsItem.Url, cancellationToken);
+                        // Get article content with crawler middleware
+                        request = new HttpRequestMessage(HttpMethod.Get, newsItem.Url);
+                        request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
+                        response = await httpClient.SendAsync(request, cancellationToken);
+                        response.EnsureSuccessStatusCode();
+                        var newsContent = await ReadResponseContentAsync(response, cancellationToken);
                         var articleContent = dialect.ExtractArticleContent(newsContent);
 
                         if (string.IsNullOrEmpty(articleContent))

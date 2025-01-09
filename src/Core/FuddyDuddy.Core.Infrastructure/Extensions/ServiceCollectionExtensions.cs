@@ -10,6 +10,7 @@ using StackExchange.Redis;
 using Microsoft.Extensions.Configuration;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Application;
+using FuddyDuddy.Core.Infrastructure.Http;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -58,6 +59,9 @@ public static class ServiceCollectionExtensions
         // Register AI service
         services.AddScoped<IAiService, GeminiAiService>();
 
+        // Register crawler middleware
+        services.AddScoped<ICrawlerMiddleware, CrawlerMiddleware>();
+
         // Register http clients
         services.AddHttpClient(Constants.OLLAMA_HTTP_CLIENT_NAME, client =>
         {
@@ -67,12 +71,12 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient(Constants.GEMINI_HTTP_CLIENT_NAME, client =>
         {
             client.BaseAddress = new Uri(geminiOptions.Url);
-            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.UserAgent);
+            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
         });
 
         services.AddHttpClient(Constants.CRAWLER_HTTP_CLIENT_NAME, client =>
         {
-            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.UserAgent);
+            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
         });
 
         return services;

@@ -31,6 +31,10 @@ public static class ServiceCollectionExtensions
         // var rabbitMQOptions = configuration.GetSection("RabbitMQ").Get<RabbitMQOptions>() ?? throw new Exception("RabbitMQ options are not configured");
         var ollamaOptions = section.GetSection("Ollama").Get<OllamaOptions>() ?? throw new Exception("Ollama options are not configured");
         var geminiOptions = section.GetSection("Gemini").Get<GeminiOptions>() ?? throw new Exception("Gemini options are not configured");
+        
+        // Crawler options
+        services.Configure<CrawlerOptions>(configuration.GetSection("Crawler"));
+        var crawlerOptions = configuration.GetSection("Crawler").Get<CrawlerOptions>() ?? throw new Exception("Crawler options are not configured");
 
         services.AddDbContext<FuddyDuddyDbContext>(options =>
             options.UseMySql(
@@ -63,12 +67,12 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient(Constants.GEMINI_HTTP_CLIENT_NAME, client =>
         {
             client.BaseAddress = new Uri(geminiOptions.Url);
-            client.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
+            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.UserAgent);
         });
 
         services.AddHttpClient(Constants.CRAWLER_HTTP_CLIENT_NAME, client =>
         {
-            client.DefaultRequestHeaders.Add("User-Agent", "FuddyDuddy/1.0 (News Digest Application)");
+            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.UserAgent);
         });
 
         return services;

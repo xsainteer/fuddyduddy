@@ -81,6 +81,9 @@ export default function AboutPage() {
                 {t.about.legal.responsibility}
               </p>
             </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t.about.legal.optOut}
+            </p>
           </div>
         </section>
 

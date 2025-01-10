@@ -86,7 +86,7 @@ For each remarkable event, provide:
 Format your response as a JSON object with the following structure:
 {{
     ""title"": ""Digest title"",
-    ""content"": ""Main digest content"",
+    ""content"": ""Main digest content (no links here, only tailored content)"",
     ""references"": [
         {{
             ""title"": ""Event title"",

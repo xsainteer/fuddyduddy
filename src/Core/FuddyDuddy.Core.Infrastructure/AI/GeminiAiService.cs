@@ -10,7 +10,7 @@ namespace FuddyDuddy.Core.Infrastructure.AI;
 
 public class GeminiAiService : IGeminiService
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<GeminiAiService> _logger;
     private readonly IOptions<GeminiOptions> _geminiOptions;
 
@@ -18,7 +18,7 @@ public class GeminiAiService : IGeminiService
     {
         _geminiOptions = geminiOptions;
         _logger = logger;
-        _httpClient = httpClientFactory.CreateClient(Constants.GEMINI);
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
@@ -29,6 +29,7 @@ public class GeminiAiService : IGeminiService
     {
         try
         {
+            using var httpClient = _httpClientFactory.CreateClient(Constants.GEMINI);
             var sampleJson = JsonSerializer.Serialize(sample, IAiService.SampleJsonOptions);
             _logger.LogInformation("Sample digest: {Sample}", sampleJson);
             var sampleText = $"Format your response as a JSON object with the following structure:\n{sampleJson}";
@@ -60,7 +61,7 @@ public class GeminiAiService : IGeminiService
 
             _logger.LogInformation("Sending request uri: {Request}", httpRequest.RequestUri);
 
-            var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+            var response = await httpClient.SendAsync(httpRequest, cancellationToken);
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogInformation("Raw Gemini response: {Response}", responseContent);
             response.EnsureSuccessStatusCode();

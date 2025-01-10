@@ -1,6 +1,6 @@
 using FuddyDuddy.Core.Domain.Entities;
 
-namespace FuddyDuddy.Core.Domain.Repositories;
+namespace FuddyDuddy.Core.Application.Repositories;
 
 public interface INewsArticleRepository
 {

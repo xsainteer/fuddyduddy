@@ -1,10 +1,10 @@
 using FuddyDuddy.Core.Domain.Entities;
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace FuddyDuddy.Core.Infrastructure.Data.Repositories;
 
-public class DigestRepository : IDigestRepository
+internal class DigestRepository : IDigestRepository
 {
     private readonly FuddyDuddyDbContext _context;
 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Models;
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Services;
 

@@ -1,4 +1,4 @@
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Infrastructure.Data.Repositories;
 using FuddyDuddy.Core.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +9,8 @@ using FuddyDuddy.Core.Infrastructure.AI;
 using StackExchange.Redis;
 using Microsoft.Extensions.Configuration;
 using FuddyDuddy.Core.Infrastructure.Configuration;
-using FuddyDuddy.Core.Application;
 using FuddyDuddy.Core.Infrastructure.Http;
 using System.Net;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Http;
 using Polly;
 using Polly.Extensions.Http;
 using System.Net.Security;

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Domain.Entities;
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;

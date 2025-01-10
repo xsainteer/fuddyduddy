@@ -1,5 +1,5 @@
 using FuddyDuddy.Core.Application.Services;
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 

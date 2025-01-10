@@ -1,11 +1,9 @@
 using System.IO.Compression;
-using FuddyDuddy.Core.Domain.Repositories;
-using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Application.Models.AI;
-using Microsoft.Extensions.Options;
-
+using FuddyDuddy.Core.Domain.Entities;
 namespace FuddyDuddy.Core.Application.Services;
 
 public class NewsProcessingService

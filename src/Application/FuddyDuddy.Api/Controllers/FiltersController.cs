@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using FuddyDuddy.Core.Domain.Repositories;
+using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 
 namespace FuddyDuddy.Api.Controllers;

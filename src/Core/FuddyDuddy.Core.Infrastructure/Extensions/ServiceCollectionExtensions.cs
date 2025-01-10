@@ -17,6 +17,10 @@ using Microsoft.Extensions.Http;
 using Polly;
 using Polly.Extensions.Http;
 using System.Net.Security;
+using RabbitMQ.Client;
+using FuddyDuddy.Core.Infrastructure.Messaging;
+using Constants = FuddyDuddy.Core.Application.Constants;
+using Microsoft.Extensions.Options;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -31,11 +35,10 @@ public static class ServiceCollectionExtensions
         services.Configure<RedisOptions>(section.GetSection("Redis")); 
         services.Configure<GeminiOptions>(section.GetSection("Gemini"));
         services.Configure<OllamaOptions>(section.GetSection("Ollama"));
-        // services.Configure<RabbitMQOptions>(section.GetSection("RabbitMQ"));
+        services.Configure<RabbitMqOptions>(section.GetSection("RabbitMQ"));
 
         var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
         var redisOptions = section.GetSection("Redis").Get<RedisOptions>() ?? throw new Exception("Redis options are not configured");
-        // var rabbitMQOptions = configuration.GetSection("RabbitMQ").Get<RabbitMQOptions>() ?? throw new Exception("RabbitMQ options are not configured");
         var ollamaOptions = section.GetSection("Ollama").Get<OllamaOptions>() ?? throw new Exception("Ollama options are not configured");
         var geminiOptions = section.GetSection("Gemini").Get<GeminiOptions>() ?? throw new Exception("Gemini options are not configured");
         
@@ -59,6 +62,9 @@ public static class ServiceCollectionExtensions
         // Add Redis
         services.AddSingleton<IConnectionMultiplexer>(sp => 
             ConnectionMultiplexer.Connect(redisOptions.ConnectionString));
+
+        // Add RabbitMQ
+        services.AddRabbitMq();
 
         // Register cache service
         services.AddScoped<ICacheService, RedisCacheService>();
@@ -116,14 +122,14 @@ public static class ServiceCollectionExtensions
                 }
             }
 
-                return handler;
-            })
-            .AddPolicyHandler(GetRetryPolicy())
-            .ConfigureHttpClient(client =>
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
+            return handler;
+        })
+        .AddPolicyHandler(GetRetryPolicy())
+        .ConfigureHttpClient(client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         return services;
     }
@@ -136,5 +142,32 @@ public static class ServiceCollectionExtensions
             .Or<TaskCanceledException>()
             .WaitAndRetryAsync(3, retryAttempt => 
                 TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+    }
+
+    public static IServiceCollection AddRabbitMq(this IServiceCollection services)
+    {
+        services.AddTransient<IConnectionFactory>(sp => {
+            var options = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+            var factory = new ConnectionFactory
+            {
+                HostName = options.HostName,
+                Port = options.Port,
+                UserName = options.UserName,
+                Password = options.Password,
+                VirtualHost = options.VirtualHost,
+                DispatchConsumersAsync = true,
+                ConsumerDispatchConcurrency = 1,
+                TopologyRecoveryEnabled = true,
+                AutomaticRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
+                RequestedHeartbeat = TimeSpan.FromSeconds(30)
+            };
+
+            return factory;
+        });
+
+        services.AddTransient<ProducerPool>();
+        services.AddSingleton<IBroker, RabbitMqBroker>();
+        return services;
     }
 } 

@@ -1,11 +1,10 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.IO.Compression;
 using FuddyDuddy.Core.Domain.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Text.Json.Serialization;
+using FuddyDuddy.Core.Application.Models.AI;
+using Microsoft.Extensions.Options;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -19,6 +18,7 @@ public class NewsProcessingService
     private readonly NewsSourceDialectFactory _dialectFactory;
     private readonly ICrawlerMiddleware _crawlerMiddleware;
     private readonly ILogger<NewsProcessingService> _logger;
+    private readonly IOllamaService _ollamaService;
 
     private const int DEFAULT_CATEGORY_ID = 16; // "Other" category
 
@@ -30,6 +30,7 @@ public class NewsProcessingService
         IHttpClientFactory httpClientFactory,
         NewsSourceDialectFactory dialectFactory,
         ICrawlerMiddleware crawlerMiddleware,
+        IOllamaService ollamaService,
         ILogger<NewsProcessingService> logger)
     {
         _newsSourceRepository = newsSourceRepository;
@@ -39,6 +40,7 @@ public class NewsProcessingService
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
         _crawlerMiddleware = crawlerMiddleware;
+        _ollamaService = ollamaService;
         _logger = logger;
     }
 
@@ -171,8 +173,7 @@ public class NewsProcessingService
             await _newsArticleRepository.AddAsync(article, cancellationToken);
 
             // Process with Ollama
-            var summaryJson = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
-            var summary = ParseSummaryResponse(summaryJson);
+            var summary = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
             
             if (summary != null)
             {
@@ -193,18 +194,9 @@ public class NewsProcessingService
         }
     }
 
-    private async Task<string> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
+    private async Task<SummaryResponse?> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
-        var request = new
-        {
-            model = "owl/t-lite",
-            messages = new[]
-            {
-                new
-                {
-                    role = "system",
-                    content = $@"Ты - умный ассистент, который делится своими краткими впечателниями (максимум 3 предложения) о прочитанных новостях.
+        var systemPrompt = $@"Ты - умный ассистент, который делится своими краткими впечателниями (максимум 3 предложения) о прочитанных новостях.
                                 Прочитай новостной материал и поделись своим кратким впечателлением/перессказом о нем.
                                 
                                 В поле title укажи заголовок статьи (оригинальный заголовок).
@@ -214,72 +206,23 @@ public class NewsProcessingService
 
                                 Отвечай строго в JSON формате, для category верни только ID категории (число от 1 до 16).
                                 
-                                Помни: ты делишься своим впечатлением, а не копируешь или пересказываешь текст. Используй собственные формулировки."
-                },
-                new
-                {
-                    role = "user",
-                    content = content
-                }
-            },
-            format = new
-            {
-                type = "object",
-                properties = new
-                {
-                    title = new { type = "string" },
-                    article = new { type = "string" },
-                    category = new { type = "integer", minimum = 1, maximum = 16 }
-                },
-                required = new[] { "title", "article", "category" }
-            },
-            stream = false,
-            options = new
-            {
-                temperature = 0.3,
-                num_ctx = 8192
-            }
-        };
+                                Помни: ты делишься своим впечатлением, а не копируешь или пересказываешь текст. Используй собственные формулировки.";
 
-        var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        
-        var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);
-        return result?.Message?.Content ?? "No summary generated";
-    }
+        var userInput = content;
 
-    private class OllamaResponse
-    {
-        public Message? Message { get; set; }
-    }
+        var response = await _ollamaService.GenerateStructuredResponseAsync<SummaryResponse>(
+            systemPrompt,
+            userInput,
+            new SummaryResponse(),
+            cancellationToken
+        );
 
-    private class Message
-    {
-        public string? Content { get; set; }
-    }
-
-    private class OllamaSummaryResponse
-    {
-        [JsonPropertyName("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [JsonPropertyName("article")]
-        public string Article { get; set; } = string.Empty;
-
-        [JsonPropertyName("category")]
-        public int CategoryId { get; set; } = DEFAULT_CATEGORY_ID;
-    }
-
-    private OllamaSummaryResponse? ParseSummaryResponse(string jsonResponse)
-    {
-        try
+        if (response?.CategoryId == 0)
         {
-            return JsonSerializer.Deserialize<OllamaSummaryResponse>(jsonResponse);
+            _logger.LogWarning("No category id generated, setting to default: {Response}", response);
+            response.CategoryId = DEFAULT_CATEGORY_ID;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to parse summary response: {Response}", jsonResponse);
-            return null;
-        }
+
+        return response;
     }
 } 

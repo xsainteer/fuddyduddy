@@ -8,7 +8,7 @@ using FuddyDuddy.Core.Application;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
-public class GeminiAiService : IAiService
+public class GeminiAiService : IGeminiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<GeminiAiService> _logger;
@@ -24,10 +24,15 @@ public class GeminiAiService : IAiService
     public async Task<T?> GenerateStructuredResponseAsync<T>(
         string systemPrompt,
         string userInput,
+        T sample,
         CancellationToken cancellationToken = default) where T : class
     {
         try
         {
+            var sampleJson = JsonSerializer.Serialize(sample, IAiService.SampleJsonOptions);
+            _logger.LogInformation("Sample digest: {Sample}", sampleJson);
+            var sampleText = $"Format your response as a JSON object with the following structure:\n{sampleJson}";
+
             var request = new
             {
                 contents = new[]
@@ -36,7 +41,7 @@ public class GeminiAiService : IAiService
                     {
                         parts = new[]
                         {
-                            new { text = systemPrompt + "\n\n" + userInput }
+                            new { text = systemPrompt + "\n\n" + sampleText + "\n\n" + userInput }
                         }
                     }
                 },
@@ -46,14 +51,7 @@ public class GeminiAiService : IAiService
                 }
             };
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-            };
-
-            var requestJson = JsonSerializer.Serialize(request, jsonOptions);
+            var requestJson = JsonSerializer.Serialize(request, IAiService.RequestJsonOptions);
             _logger.LogInformation("Sending request: {Request}", requestJson);
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, 

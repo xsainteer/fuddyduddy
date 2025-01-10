@@ -6,6 +6,7 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.RegularExpressions;
+using FuddyDuddy.Core.Application.Models.AI;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -13,13 +14,13 @@ public class DigestCookService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly IDigestRepository _digestRepository;
-    private readonly IAiService _aiService;
+    private readonly IGeminiService _aiService;
     private readonly ILogger<DigestCookService> _logger;
 
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
         IDigestRepository digestRepository,
-        IAiService aiService,
+        IGeminiService aiService,
         ILogger<DigestCookService> logger)
     {
         _summaryRepository = summaryRepository;
@@ -73,6 +74,16 @@ public class DigestCookService
                 summariesText.AppendLine();
             }
 
+            var sample = new DigestResponse
+            {
+                Title = "Digest title",
+                Content = "Main digest content (no links here, only tailored content)",
+                References = new List<ReferenceResponse>
+                {
+                    new ReferenceResponse { Title = "Event title", Url = "Source URL", Reason = "Why this event is remarkable" }
+                }
+            };
+
             var systemPrompt = $@"You are a skilled news analyst who creates concise and informative digests.
 Your task is to analyze news summaries and create a digest that highlights the most remarkable events.
 The digest should be in {language.GetDescription()}.
@@ -83,19 +94,6 @@ For each remarkable event, provide:
 1. A clear explanation of why it's significant
 2. A reference to the original source (use provided URLs as string references only)
 
-Format your response as a JSON object with the following structure:
-{{
-    ""title"": ""Digest title"",
-    ""content"": ""Main digest content (no links here, only tailored content)"",
-    ""references"": [
-        {{
-            ""title"": ""Event title"",
-            ""url"": ""Source URL"",
-            ""reason"": ""Why this event is remarkable""
-        }}
-    ]
-}}
-
 Keep the content succinct and focused on truly significant events.
 Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.";
 
@@ -103,6 +101,7 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(
                 systemPrompt,
                 summariesText.ToString(),
+                sample,
                 cancellationToken);
 
             if (digestData == null)
@@ -150,29 +149,5 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
             _logger.LogError(ex, "Error generating digest for {Language}", language);
             throw;
         }
-    }
-
-    private class DigestResponse
-    {
-        [JsonPropertyName("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [JsonPropertyName("content")]
-        public string Content { get; set; } = string.Empty;
-
-        [JsonPropertyName("references")]
-        public List<ReferenceResponse> References { get; set; } = new();
-    }
-
-    private class ReferenceResponse
-    {
-        [JsonPropertyName("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [JsonPropertyName("url")]
-        public string Url { get; set; } = string.Empty;
-
-        [JsonPropertyName("reason")]
-        public string Reason { get; set; } = string.Empty;
     }
 } 

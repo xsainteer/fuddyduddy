@@ -1,10 +1,8 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using FuddyDuddy.Core.Domain.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Text.Json.Serialization;
+using FuddyDuddy.Core.Application.Models.AI;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -12,19 +10,19 @@ public class SummaryValidationService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SummaryValidationService> _logger;
+    private readonly IOllamaService _ollamaService;
 
     public SummaryValidationService(
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
-        IHttpClientFactory httpClientFactory,
-        ILogger<SummaryValidationService> logger)
+        ILogger<SummaryValidationService> logger,
+        IOllamaService ollamaService)
     {
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
-        _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _ollamaService = ollamaService;
     }
 
     public async Task ValidateNewSummariesAsync(CancellationToken cancellationToken = default)
@@ -63,77 +61,34 @@ public class SummaryValidationService
 
     private async Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, CancellationToken cancellationToken)
     {
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
-        var request = new
-        {
-            model = "owl/t-lite",
-            messages = new[]
-            {
-                new
-                {
-                    role = "system", 
-                    content = @"Ты - ассистент по валидации. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
-                               Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid) и почему (reason).
-                               Учитывай: 1) Релевантность заголовка 2) Точность краткого изложения 3) Общее качество.
-                               Если isValid=false, в reason укажи причину отклонения. Если isValid=true, в reason укажи подтверждение качества.
-                               Если isValid=false, можешь семантику ссылки на статью (она может идти в транслитерации заголовка)."
-                },
-                new
-                {
-                    role = "user",
-                    content = $"Оригинальный заголовок: {summary.NewsArticle.Title}\nОригинальная ссылка: {summary.NewsArticle.Url}\nЗаголовок краткого изложения: {summary.Title}\nСодержание краткого изложения: {summary.Article}"
-                }
-            },
-            format = new
-            {
-                type = "object",
-                properties = new
-                {
-                    isValid = new { type = "boolean" },
-                    reason = new { type = "string" }
-                },
-                required = new[] { "isValid", "reason" }
-            },
-            stream = false,
-            options = new { temperature = 0.3 }
-        };
-
-        using var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        
-        var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);
-        if (result?.Message?.Content == null)
-            return new ValidationResponse { IsValid = false, Reason = "Failed to get validation response" };
-
         try
         {
-            var validation = JsonSerializer.Deserialize<ValidationResponse>(result.Message.Content);
-            return validation ?? new ValidationResponse { IsValid = false, Reason = "Failed to parse validation response" };
+            var systemPrompt = @"Ты - ассистент по валидации. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
+                                Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid) и почему (reason).
+                                Учитывай: 1) Релевантность заголовка 2) Точность краткого изложения 3) Общее качество.
+                                Если isValid=false, в reason укажи причину отклонения. Если isValid=true, в reason укажи подтверждение качества.
+                                Если isValid=false, можешь семантику ссылки на статью (она может идти в транслитерации заголовка).";
+            
+            var userInput = @$"Оригинальный заголовок: {summary.NewsArticle.Title}
+                                Оригинальная ссылка: {summary.NewsArticle.Url}
+                                Заголовок краткого изложения: {summary.Title}
+                                Содержание краткого изложения: {summary.Article}";
+
+            var response = await _ollamaService.GenerateStructuredResponseAsync<ValidationResponse>(
+                systemPrompt,
+                userInput,
+                new ValidationResponse(),
+                cancellationToken
+            );
+            
+            if (response == null)
+                return new ValidationResponse { IsValid = false, Reason = "Failed to get validation response" };
+
+            return response;
         }
         catch (Exception ex)
         {
             return new ValidationResponse { IsValid = false, Reason = $"Validation error: {ex.Message}" };
         }
-    }
-
-    private class OllamaResponse
-    {
-        [JsonPropertyName("message")]
-        public Message? Message { get; set; }
-    }
-
-    private class Message
-    {
-        [JsonPropertyName("content")]
-        public string? Content { get; set; }
-    }
-
-    private class ValidationResponse
-    {
-        [JsonPropertyName("isValid")]
-        public bool IsValid { get; set; }
-
-        [JsonPropertyName("reason")]
-        public string Reason { get; set; } = string.Empty;
     }
 } 

@@ -70,7 +70,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICacheService, RedisCacheService>();
 
         // Register AI service
-        services.AddScoped<IAiService, GeminiAiService>();
+        services.AddScoped<IGeminiService, GeminiAiService>();
+        services.AddScoped<IOllamaService, OllamaAiService>();
 
         // Register crawler middleware
         services.AddSingleton<ICrawlerMiddleware, CrawlerMiddleware>();

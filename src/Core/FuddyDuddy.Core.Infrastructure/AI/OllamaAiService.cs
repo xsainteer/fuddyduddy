@@ -3,10 +3,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Net.Http.Json;
 using FuddyDuddy.Core.Application.Interfaces;
-using FuddyDuddy.Core.Application;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Infrastructure.Configuration;
+using FuddyDuddy.Core.Application.Constants;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
@@ -54,7 +54,7 @@ public class OllamaAiService : IOllamaService
             }
         };
 
-        using var httpClient = _httpClientFactory.CreateClient(Constants.OLLAMA);
+        using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.OLLAMA);
         var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
         response.EnsureSuccessStatusCode();
         

@@ -16,9 +16,8 @@ using Polly.Extensions.Http;
 using System.Net.Security;
 using RabbitMQ.Client;
 using FuddyDuddy.Core.Infrastructure.Messaging;
-using Constants = FuddyDuddy.Core.Application.Constants;
 using Microsoft.Extensions.Options;
-
+using FuddyDuddy.Core.Application.Constants;
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
@@ -77,18 +76,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IProxyPoolManager, ProxyPoolManager>();
 
         // Register http clients
-        services.AddHttpClient(Constants.OLLAMA, client =>
+        services.AddHttpClient(HttpClientConstants.OLLAMA, client =>
         {
             client.BaseAddress = new Uri(ollamaOptions.Url);
         });
 
-        services.AddHttpClient(Constants.GEMINI, client =>
+        services.AddHttpClient(HttpClientConstants.GEMINI, client =>
         {
             client.BaseAddress = new Uri(geminiOptions.Url);
             client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
         });
 
-        services.AddHttpClient(Constants.CRAWLER, client =>
+        services.AddHttpClient(HttpClientConstants.CRAWLER, client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
         })

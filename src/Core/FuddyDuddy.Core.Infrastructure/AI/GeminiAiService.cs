@@ -4,7 +4,7 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Infrastructure.Configuration;
-using FuddyDuddy.Core.Application;
+using FuddyDuddy.Core.Application.Constants;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
@@ -29,7 +29,7 @@ public class GeminiAiService : IGeminiService
     {
         try
         {
-            using var httpClient = _httpClientFactory.CreateClient(Constants.GEMINI);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.GEMINI);
             var sampleJson = JsonSerializer.Serialize(sample, IAiService.SampleJsonOptions);
             _logger.LogInformation("Sample digest: {Sample}", sampleJson);
             var sampleText = $"Format your response as a JSON object with the following structure:\n{sampleJson}";

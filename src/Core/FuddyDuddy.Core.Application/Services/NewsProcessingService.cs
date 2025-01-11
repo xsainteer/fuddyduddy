@@ -4,6 +4,8 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Application.Models.AI;
 using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Constants;
+
 namespace FuddyDuddy.Core.Application.Services;
 
 public interface INewsProcessingService
@@ -57,7 +59,7 @@ internal class NewsProcessingService : INewsProcessingService
         {
             try
             {
-                using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER);
+                using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CRAWLER);
                 var dialect = _dialectFactory.CreateDialect(source.DialectType);
                 _logger.LogInformation("Processing news source: {Domain} using dialect {Dialect}", 
                     source.Domain, source.DialectType);
@@ -152,7 +154,7 @@ internal class NewsProcessingService : INewsProcessingService
             }
 
             // Get article content with crawler middleware
-            using var httpClient = _httpClientFactory.CreateClient(Constants.CRAWLER);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CRAWLER);
             var request = new HttpRequestMessage(HttpMethod.Get, newsItem.Url);
             request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
             var response = await httpClient.SendAsync(request, cancellationToken);

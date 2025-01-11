@@ -1,6 +1,6 @@
-namespace FuddyDuddy.Core.Application;
+namespace FuddyDuddy.Core.Application.Constants;
 
-public static class Constants
+public static class HttpClientConstants
 {
     public static readonly string GEMINI = "GEMINI";
     public static readonly string OLLAMA = "OLLAMA";

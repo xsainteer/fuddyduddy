@@ -8,11 +8,11 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         // Register services
-        services.AddScoped<NewsProcessingService>();
-        services.AddScoped<SummaryValidationService>();
-        services.AddScoped<SummaryTranslationService>();
-        services.AddScoped<NewsSourceDialectFactory>();
-        services.AddScoped<DigestCookService>();
+        services.AddScoped<INewsSourceDialectFactory, NewsSourceDialectFactory>();
+        services.AddScoped<INewsProcessingService, NewsProcessingService>();
+        services.AddScoped<ISummaryValidationService, SummaryValidationService>();
+        services.AddScoped<ISummaryTranslationService, SummaryTranslationService>();
+        services.AddScoped<IDigestCookService, DigestCookService>();
 
         return services;
     }

@@ -6,7 +6,12 @@ using FuddyDuddy.Core.Application.Models.AI;
 
 namespace FuddyDuddy.Core.Application.Services;
 
-public class SummaryValidationService
+public interface ISummaryValidationService
+{
+    Task ValidateNewSummariesAsync(CancellationToken cancellationToken = default);
+}
+
+internal class SummaryValidationService : ISummaryValidationService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;

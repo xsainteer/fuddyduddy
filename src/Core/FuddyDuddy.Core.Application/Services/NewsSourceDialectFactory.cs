@@ -2,7 +2,12 @@ using FuddyDuddy.Core.Application.Dialects;
 
 namespace FuddyDuddy.Core.Application.Services;
 
-public class NewsSourceDialectFactory
+public interface INewsSourceDialectFactory
+{
+    INewsSourceDialect CreateDialect(string dialectType);
+}
+
+internal class NewsSourceDialectFactory : INewsSourceDialectFactory
 {
     public NewsSourceDialectFactory()
     {

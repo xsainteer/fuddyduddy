@@ -9,12 +9,12 @@ namespace FuddyDuddy.Api.Controllers;
 [Route("api/[controller]")]
 public class DigestsController : ControllerBase
 {
-    private readonly DigestCookService _digestCookService;
+    private readonly IDigestCookService _digestCookService;
     private readonly IDigestRepository _digestRepository;
     private readonly ILogger<DigestsController> _logger;
 
     public DigestsController(
-        DigestCookService digestCookService,
+        IDigestCookService digestCookService,
         IDigestRepository digestRepository,
         ILogger<DigestsController> logger)
     {

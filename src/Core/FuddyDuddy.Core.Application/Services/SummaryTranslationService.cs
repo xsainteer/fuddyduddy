@@ -6,7 +6,13 @@ using FuddyDuddy.Core.Application.Models.AI;
 
 namespace FuddyDuddy.Core.Application.Services;
 
-public class SummaryTranslationService
+public interface ISummaryTranslationService
+{
+    Task TranslatePendingAsync(Language targetLanguage, CancellationToken cancellationToken = default);
+    Task<NewsSummary?> TranslateSummaryAsync(Guid summaryId, Language targetLanguage, CancellationToken cancellationToken = default);
+}
+
+internal class SummaryTranslationService : ISummaryTranslationService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;

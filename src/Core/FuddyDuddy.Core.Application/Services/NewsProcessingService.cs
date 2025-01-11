@@ -6,14 +6,19 @@ using FuddyDuddy.Core.Application.Models.AI;
 using FuddyDuddy.Core.Domain.Entities;
 namespace FuddyDuddy.Core.Application.Services;
 
-public class NewsProcessingService
+public interface INewsProcessingService
+{
+    Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default);
+}
+
+internal class NewsProcessingService : INewsProcessingService
 {
     private readonly INewsSourceRepository _newsSourceRepository;
     private readonly INewsArticleRepository _newsArticleRepository;
     private readonly INewsSummaryRepository _newsSummaryRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly NewsSourceDialectFactory _dialectFactory;
+    private readonly INewsSourceDialectFactory _dialectFactory;
     private readonly ICrawlerMiddleware _crawlerMiddleware;
     private readonly ILogger<NewsProcessingService> _logger;
     private readonly IOllamaService _ollamaService;
@@ -26,7 +31,7 @@ public class NewsProcessingService
         INewsSummaryRepository newsSummaryRepository,
         ICategoryRepository categoryRepository,
         IHttpClientFactory httpClientFactory,
-        NewsSourceDialectFactory dialectFactory,
+        INewsSourceDialectFactory dialectFactory,
         ICrawlerMiddleware crawlerMiddleware,
         IOllamaService ollamaService,
         ILogger<NewsProcessingService> logger)
@@ -40,37 +45,6 @@ public class NewsProcessingService
         _crawlerMiddleware = crawlerMiddleware;
         _ollamaService = ollamaService;
         _logger = logger;
-    }
-
-    private static async Task<string> ReadResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        
-        // Check content encoding
-        var contentEncoding = response.Content.Headers.ContentEncoding;
-        
-        if (contentEncoding.Contains("gzip"))
-        {
-            using var gzipStream = new GZipStream(contentStream, CompressionMode.Decompress);
-            using var reader = new StreamReader(gzipStream);
-            return await reader.ReadToEndAsync(cancellationToken);
-        }
-        else if (contentEncoding.Contains("deflate"))
-        {
-            using var deflateStream = new DeflateStream(contentStream, CompressionMode.Decompress);
-            using var reader = new StreamReader(deflateStream);
-            return await reader.ReadToEndAsync(cancellationToken);
-        }
-        else if (contentEncoding.Contains("br"))
-        {
-            using var brStream = new BrotliStream(contentStream, CompressionMode.Decompress);
-            using var reader = new StreamReader(brStream);
-            return await reader.ReadToEndAsync(cancellationToken);
-        }
-        
-        // No compression
-        using var defaultReader = new StreamReader(contentStream);
-        return await defaultReader.ReadToEndAsync(cancellationToken);
     }
 
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
@@ -122,6 +96,37 @@ public class NewsProcessingService
                 _logger.LogError(ex, "Error processing news source {Domain}", source.Domain);
             }
         }
+    }
+
+    private static async Task<string> ReadResponseContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        
+        // Check content encoding
+        var contentEncoding = response.Content.Headers.ContentEncoding;
+        
+        if (contentEncoding.Contains("gzip"))
+        {
+            using var gzipStream = new GZipStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(gzipStream);
+            return await reader.ReadToEndAsync(cancellationToken);
+        }
+        else if (contentEncoding.Contains("deflate"))
+        {
+            using var deflateStream = new DeflateStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(deflateStream);
+            return await reader.ReadToEndAsync(cancellationToken);
+        }
+        else if (contentEncoding.Contains("br"))
+        {
+            using var brStream = new BrotliStream(contentStream, CompressionMode.Decompress);
+            using var reader = new StreamReader(brStream);
+            return await reader.ReadToEndAsync(cancellationToken);
+        }
+        
+        // No compression
+        using var defaultReader = new StreamReader(contentStream);
+        return await defaultReader.ReadToEndAsync(cancellationToken);
     }
 
     private async Task ProcessNewsItemAsync(

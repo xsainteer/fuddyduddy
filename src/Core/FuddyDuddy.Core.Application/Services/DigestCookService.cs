@@ -10,7 +10,12 @@ using FuddyDuddy.Core.Application.Models.AI;
 
 namespace FuddyDuddy.Core.Application.Services;
 
-public class DigestCookService
+public interface IDigestCookService
+{
+    Task GenerateDigestAsync(Language language, CancellationToken cancellationToken = default);
+}
+
+internal class DigestCookService : IDigestCookService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly IDigestRepository _digestRepository;

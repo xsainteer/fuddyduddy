@@ -67,9 +67,9 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             await _pipelineLock.WaitAsync(cancellationToken);
 
             using var scope = _serviceProvider.CreateScope();
-            var newsProcessingService = scope.ServiceProvider.GetRequiredService<NewsProcessingService>();
-            var validationService = scope.ServiceProvider.GetRequiredService<SummaryValidationService>();
-            var translationService = scope.ServiceProvider.GetRequiredService<SummaryTranslationService>();
+            var newsProcessingService = scope.ServiceProvider.GetRequiredService<INewsProcessingService>();
+            var validationService = scope.ServiceProvider.GetRequiredService<ISummaryValidationService>();
+            var translationService = scope.ServiceProvider.GetRequiredService<ISummaryTranslationService>();
 
             _logger.LogInformation("Starting summary pipeline execution");
 
@@ -126,7 +126,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             }
 
             using var scope = _serviceProvider.CreateScope();
-            var digestCookService = scope.ServiceProvider.GetRequiredService<DigestCookService>();
+            var digestCookService = scope.ServiceProvider.GetRequiredService<IDigestCookService>();
 
             _logger.LogInformation("Starting digest pipeline execution");
 

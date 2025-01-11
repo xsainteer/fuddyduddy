@@ -9,19 +9,19 @@ namespace FuddyDuddy.Api.Controllers;
 [Route("api/[controller]")]
 public class MaintenanceController : ControllerBase
 {
-    private readonly NewsProcessingService _newsProcessingService;
-    private readonly SummaryValidationService _validationService;
+    private readonly INewsProcessingService _newsProcessingService;
+    private readonly ISummaryValidationService _validationService;
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;
     private readonly ILogger<MaintenanceController> _logger;
-    private readonly SummaryTranslationService _translationService;
+    private readonly ISummaryTranslationService _translationService;
     public MaintenanceController(
-        NewsProcessingService newsProcessingService,
-        SummaryValidationService validationService,
+        INewsProcessingService newsProcessingService,
+        ISummaryValidationService validationService,
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
         ILogger<MaintenanceController> logger,
-        SummaryTranslationService translationService)
+        ISummaryTranslationService translationService)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;

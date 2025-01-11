@@ -18,7 +18,6 @@ public class SummariesController : ControllerBase
     public SummariesController(
         ICacheService cacheService,
         INewsSummaryRepository summaryRepository,
-        SummaryTranslationService translationService,
         ILogger<SummariesController> logger)
     {
         _cacheService = cacheService;

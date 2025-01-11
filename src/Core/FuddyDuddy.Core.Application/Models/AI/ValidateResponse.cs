@@ -9,4 +9,7 @@ public class ValidationResponse
 
     [JsonPropertyName("reason")]
     public string Reason { get; set; } = string.Empty;
+
+    [JsonPropertyName("category")]
+    public int? Category { get; set; }
 }

@@ -22,4 +22,9 @@ internal class CategoryRepository : ICategoryRepository
     {
         return await _context.Categories.FindAsync(new object[] { id }, cancellationToken);
     }
+
+    public async Task<bool> IsValidCategoryAsync(int categoryId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories.AnyAsync(c => c.Id == categoryId, cancellationToken);
+    }
 } 

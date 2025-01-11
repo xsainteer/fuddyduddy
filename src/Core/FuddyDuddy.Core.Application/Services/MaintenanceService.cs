@@ -33,8 +33,13 @@ internal class MaintenanceService : IMaintenanceService
         var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToDictionary(c=>c.Local, c=>c);
         var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Key} ({c.Value.KeywordsLocal})"));
 
+        var total = summaries.Count();
+        var index = 0;
         foreach (var summary in summaries)
         {
+            index++;
+            var progress = $"PROGRESS: {index}/{total}";
+            yield return progress;
             var response = await _summaryValidationService.ValidateSummaryAsync(summary, categoryPrompt, cancellationToken);
             if (response.IsValid 
                 && categories.TryGetValue(response.Topic, out var newCategory)

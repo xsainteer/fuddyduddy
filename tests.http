@@ -12,5 +12,10 @@ POST https://api.fuddy-duddy.org/api/maintenance/rebuild-cache
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 
+### revisit categories
+POST http://localhost:5102/api/maintenance/revisit-categories/20250110T0536
+Content-Type: application/json
+api-key: fuddy-duddy-secret
+
 ### get a list of models using ollama
 GET https://ollama.fuddy-duddy.org/api/tags

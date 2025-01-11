@@ -15,6 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISummaryValidationService, SummaryValidationService>();
         services.AddScoped<ISummaryTranslationService, SummaryTranslationService>();
         services.AddScoped<IDigestCookService, DigestCookService>();
+        
+        // Maintenance
+        services.AddScoped<IMaintenanceService, MaintenanceService>();
 
         // Business logic options
         services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.SectionName));

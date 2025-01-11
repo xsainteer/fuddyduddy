@@ -15,13 +15,15 @@ public class MaintenanceController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly ILogger<MaintenanceController> _logger;
     private readonly ISummaryTranslationService _translationService;
+    private readonly IMaintenanceService _maintenanceService;
     public MaintenanceController(
         INewsProcessingService newsProcessingService,
         ISummaryValidationService validationService,
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
         ILogger<MaintenanceController> logger,
-        ISummaryTranslationService translationService)
+        ISummaryTranslationService translationService,
+        IMaintenanceService maintenanceService)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
@@ -29,6 +31,7 @@ public class MaintenanceController : ControllerBase
         _cacheService = cacheService;
         _logger = logger;
         _translationService = translationService;
+        _maintenanceService = maintenanceService;
     }
 
     [HttpPost("process-news")]
@@ -58,6 +61,25 @@ public class MaintenanceController : ControllerBase
         {
             _logger.LogError(ex, "Error validating summaries");
             return StatusCode(500, new { message = "An error occurred while validating summaries" });
+        }
+    }
+
+    [HttpPost("revisit-categories/{since}")]
+    public async Task<IActionResult> RevisitCategories(
+        string since,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var sinceDate = DateTimeOffset.ParseExact(since, "yyyyMMddTHHmm", null);
+            var result = await _maintenanceService.RevisitCategoriesAsync(sinceDate, cancellationToken);
+
+            return Ok(new { message = result });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error revisiting categories");
+            return StatusCode(500, new { message = "An error occurred while revisiting categories" });
         }
     }
 

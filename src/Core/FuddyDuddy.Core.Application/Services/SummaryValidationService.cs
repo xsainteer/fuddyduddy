@@ -11,6 +11,7 @@ namespace FuddyDuddy.Core.Application.Services;
 public interface ISummaryValidationService
 {
     Task ValidateNewSummariesAsync(CancellationToken cancellationToken = default);
+    Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, string categoryPrompt, CancellationToken cancellationToken);
 }
 
 internal class SummaryValidationService : ISummaryValidationService
@@ -78,21 +79,19 @@ internal class SummaryValidationService : ISummaryValidationService
         }
     }
 
-    private async Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, string categoryPrompt, CancellationToken cancellationToken)
+    public async Task<ValidationResponse> ValidateSummaryAsync(NewsSummary summary, string categoryPrompt, CancellationToken cancellationToken)
     {
         try
         {
-            var systemPrompt = @$"Ты - главный редактор новостной колонки. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
+            var systemPrompt = @$"Ты - ассистент главного редактора новостной колонки. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
                                 Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid) и почему (reason).
                                 Учитывай: 1) Релевантность заголовка 2) Точность краткого изложения 3) Общее качество.
                                 Если isValid=false, в reason укажи причину отклонения. Если isValid=true, в reason укажи подтверждение качества.
-                                Если isValid=false, можешь семантику ссылки на статью (она может идти в транслитерации заголовка).
                                 
-                                Также определи тематику (topic) из списка по ключевым словам в скобках:
+                                Также определи тематику (topic) из списка (ключевые слова в скобках):
                                 {categoryPrompt}";
             
             var userInput = @$"Оригинальный заголовок: {summary.NewsArticle.Title}
-                                Оригинальная ссылка: {summary.NewsArticle.Url}
                                 Заголовок краткого изложения: {summary.Title}
                                 Содержание краткого изложения: {summary.Article}";
 

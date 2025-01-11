@@ -1,11 +1,13 @@
 using FuddyDuddy.Core.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
+using FuddyDuddy.Core.Application.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace FuddyDuddy.Core.Application.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Register services
         services.AddScoped<INewsSourceDialectFactory, NewsSourceDialectFactory>();
@@ -13,6 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISummaryValidationService, SummaryValidationService>();
         services.AddScoped<ISummaryTranslationService, SummaryTranslationService>();
         services.AddScoped<IDigestCookService, DigestCookService>();
+
+        // Business logic options
+        services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.SectionName));
 
         return services;
     }

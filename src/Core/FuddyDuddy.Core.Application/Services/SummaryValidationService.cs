@@ -1,3 +1,4 @@
+using System.Linq;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Interfaces;
@@ -38,8 +39,8 @@ internal class SummaryValidationService : ISummaryValidationService
         var newSummaries = (await _summaryRepository.GetByStateAsync([NewsSummaryState.Created], cancellationToken: cancellationToken))
             .OrderBy(s => s.GeneratedAt);
 
-        var categories = await _categoryRepository.GetAllAsync(cancellationToken);
-        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Id}. {c.Local}"));
+        var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToDictionary(c=>c.Local, c=>c);
+        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Key} ({c.Value.KeywordsLocal})"));
 
         foreach (var summary in newSummaries)
         {
@@ -49,18 +50,11 @@ internal class SummaryValidationService : ISummaryValidationService
                 
                 if (validation.IsValid)
                 {
-                    if (validation.Category.HasValue)
+                    if (validation.Topic != summary.Category.Local && categories.TryGetValue(validation.Topic, out var newCategory))
                     {
-                        if (await _categoryRepository.IsValidCategoryAsync(validation.Category.Value, cancellationToken) && validation.Category.Value != summary.Category.Id)
-                        {
-                            _logger.LogInformation("LLM suggested category {OldCategoryId} for summary {SummaryId}, updating to {NewCategoryId}", 
-                                summary.Category.Id, summary.Id, validation.Category.Value);
-                            summary.UpdateCategory(validation.Category.Value);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Invalid category {CategoryId} for summary {SummaryId}", validation.Category.Value, summary.Id);
-                        }
+                        _logger.LogInformation("Category {OldCategoryId} for summary {SummaryId} updated to {NewCategoryId}", 
+                            summary.Category.Id, summary.Id, newCategory.Id);
+                        summary.UpdateCategory(newCategory.Id);
                     }
 
                     summary.Validate(validation.Reason);
@@ -88,23 +82,19 @@ internal class SummaryValidationService : ISummaryValidationService
     {
         try
         {
-            var systemPrompt = @$"Ты - ассистент по валидации. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
+            var systemPrompt = @$"Ты - главный редактор новостной колонки. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
                                 Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid) и почему (reason).
                                 Учитывай: 1) Релевантность заголовка 2) Точность краткого изложения 3) Общее качество.
                                 Если isValid=false, в reason укажи причину отклонения. Если isValid=true, в reason укажи подтверждение качества.
                                 Если isValid=false, можешь семантику ссылки на статью (она может идти в транслитерации заголовка).
-
-                                Также оцени категорию, если ты считаешь, что она не соответствует содержанию статьи, предложи правильную из списка:
-                                {categoryPrompt}
                                 
-                                И скажи почему ты так решил (дополни reason).
-                                Для category верни только ID категории (число от 1 до 16).";
+                                Также определи тематику (topic) из списка по ключевым словам в скобках:
+                                {categoryPrompt}";
             
             var userInput = @$"Оригинальный заголовок: {summary.NewsArticle.Title}
                                 Оригинальная ссылка: {summary.NewsArticle.Url}
                                 Заголовок краткого изложения: {summary.Title}
-                                Содержание краткого изложения: {summary.Article}
-                                Категория: {summary.Category.Local}";
+                                Содержание краткого изложения: {summary.Article}";
 
             var response = await _ollamaService.GenerateStructuredResponseAsync<ValidationResponse>(
                 systemPrompt,

@@ -10,7 +10,4 @@ public class SummaryResponse
 
     [JsonPropertyName("article")]
     public string Article { get; set; } = string.Empty;
-
-    [JsonPropertyName("category")]
-    public int CategoryId { get; set; } = 0;
 }

@@ -1,6 +1,3 @@
-using FuddyDuddy.Core.Domain.ValueObjects;
-using FuddyDuddy.Core.Domain.Exceptions;
-
 namespace FuddyDuddy.Core.Domain.Entities;
 
 public class NewsSource

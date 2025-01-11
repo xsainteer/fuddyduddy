@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Application.Models.AI;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Constants;
+using FuddyDuddy.Core.Application.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -18,42 +20,38 @@ internal class NewsProcessingService : INewsProcessingService
     private readonly INewsSourceRepository _newsSourceRepository;
     private readonly INewsArticleRepository _newsArticleRepository;
     private readonly INewsSummaryRepository _newsSummaryRepository;
-    private readonly ICategoryRepository _categoryRepository;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly INewsSourceDialectFactory _dialectFactory;
     private readonly ICrawlerMiddleware _crawlerMiddleware;
     private readonly ILogger<NewsProcessingService> _logger;
     private readonly IOllamaService _ollamaService;
-
-    private const int DEFAULT_CATEGORY_ID = 16; // "Other" category
+    private readonly IOptions<ProcessingOptions> _processingOptions;
 
     public NewsProcessingService(
         INewsSourceRepository newsSourceRepository,
         INewsArticleRepository newsArticleRepository,
         INewsSummaryRepository newsSummaryRepository,
-        ICategoryRepository categoryRepository,
         IHttpClientFactory httpClientFactory,
         INewsSourceDialectFactory dialectFactory,
         ICrawlerMiddleware crawlerMiddleware,
         IOllamaService ollamaService,
-        ILogger<NewsProcessingService> logger)
+        ILogger<NewsProcessingService> logger,
+        IOptions<ProcessingOptions> processingOptions)
     {
         _newsSourceRepository = newsSourceRepository;
         _newsArticleRepository = newsArticleRepository;
         _newsSummaryRepository = newsSummaryRepository;
-        _categoryRepository = categoryRepository;
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
         _crawlerMiddleware = crawlerMiddleware;
         _ollamaService = ollamaService;
         _logger = logger;
+        _processingOptions = processingOptions;
     }
 
     public async Task ProcessNewsSourcesAsync(CancellationToken cancellationToken = default)
     {
         var activeSources = await _newsSourceRepository.GetActiveSourcesAsync(cancellationToken);
-        var categories = await _categoryRepository.GetAllAsync(cancellationToken);
-        var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Id}. {c.Local} ({c.Name})"));
         
         foreach (var source in activeSources)
         {
@@ -86,7 +84,7 @@ internal class NewsProcessingService : INewsProcessingService
 
                 foreach (var newsItem in newsItems)
                 {
-                    await ProcessNewsItemAsync(newsItem!, source!, dialect!, categoryPrompt, cancellationToken);
+                    await ProcessNewsItemAsync(newsItem!, source!, dialect!, cancellationToken);
                 }
 
                 // Update last crawled timestamp
@@ -135,7 +133,6 @@ internal class NewsProcessingService : INewsProcessingService
         Dialects.NewsItem newsItem,
         NewsSource source,
         Dialects.INewsSourceDialect dialect,
-        string categoryPrompt,
         CancellationToken cancellationToken)
     {
         try
@@ -178,7 +175,7 @@ internal class NewsProcessingService : INewsProcessingService
             await _newsArticleRepository.AddAsync(article, cancellationToken);
 
             // Process with Ollama
-            var summary = await GetOllamaSummaryAsync(articleContent, categoryPrompt, cancellationToken);
+            var summary = await GetOllamaSummaryAsync(articleContent, cancellationToken);
             
             if (summary != null)
             {
@@ -186,7 +183,7 @@ internal class NewsProcessingService : INewsProcessingService
                     article.Id,
                     summary.Title,
                     summary.Article,
-                    summary.CategoryId
+                    _processingOptions.Value.DefaultCategoryId
                 );
                 await _newsSummaryRepository.AddAsync(newsSummary, cancellationToken);
             }
@@ -199,19 +196,17 @@ internal class NewsProcessingService : INewsProcessingService
         }
     }
 
-    private async Task<SummaryResponse?> GetOllamaSummaryAsync(string content, string categoryPrompt, CancellationToken cancellationToken)
+    private async Task<SummaryResponse?> GetOllamaSummaryAsync(string content, CancellationToken cancellationToken)
     {
-        var systemPrompt = $@"Ты - умный ассистент, который делится своими краткими впечателниями (максимум 3 предложения) о прочитанных новостях.
-                                Прочитай новостной материал и поделись своим кратким впечателлением/перессказом о нем.
+        var systemPrompt = $@"Ты - умный ассистент, который делится своими краткими перессказами (максимум 3 предложения) о прочитанных новостях.
+                                Прочитай новостной материал и поделись своим кратким перессказом о нем.
                                 
-                                В поле title укажи заголовок статьи (оригинальный заголовок).
-                                В поле article поделись своим кратким впечатлением о сути новости в трех предложениях, не копируя оригинальный текст.
-                                В поле category определи точную категорию новости из следующего списка:
-                                {categoryPrompt}
+                                В поле title укажи заголовок статьи (оригинальный заголовок статьи).
+                                В поле article поделись своим кратким изложением сути новости в трех предложениях, не копируй оригинальный текст.
 
-                                Отвечай строго в JSON формате, для category верни только ID категории (число от 1 до 16).
+                                Отвечай строго в JSON формате.
                                 
-                                Помни: ты делишься своим впечатлением, а не копируешь или пересказываешь текст. Используй собственные формулировки.";
+                                Помни: ты делишься пересказом своими словами, а не копируешь текст. Используй собственные формулировки. Избегай проблем с авторскими правами.";
 
         var userInput = content;
 
@@ -221,12 +216,6 @@ internal class NewsProcessingService : INewsProcessingService
             new SummaryResponse(),
             cancellationToken
         );
-
-        if (response?.CategoryId == 0)
-        {
-            _logger.LogWarning("No category id generated, setting to default: {Response}", response);
-            response.CategoryId = DEFAULT_CATEGORY_ID;
-        }
 
         return response;
     }

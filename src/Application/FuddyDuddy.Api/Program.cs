@@ -25,7 +25,7 @@ builder.Services.AddSwaggerGen(c => c.OperationFilter<AddRequiredHeaderParameter
 builder.Services.AddScoped<AuthMiddleware>();
 
 // Add our application services
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Add task scheduler service

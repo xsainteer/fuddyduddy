@@ -3,6 +3,9 @@ using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using System.Runtime.CompilerServices;
+
 namespace FuddyDuddy.Api.Controllers;
 
 [ApiController]
@@ -64,23 +67,22 @@ public class MaintenanceController : ControllerBase
         }
     }
 
-    [HttpPost("revisit-categories/{since}")]
-    public async Task<IActionResult> RevisitCategories(
-        string since,
-        CancellationToken cancellationToken = default)
+    [HttpGet("revisit-categories")]
+    public async Task RevisitCategories(string since, CancellationToken cancellationToken)
     {
-        try
+        Response.ContentType = "text/event-stream";
+        // Response.Headers.Add("Cache-Control", "no-cache");
+        // Response.Headers.Add("Connection", "keep-alive");
+        
+        var sinceDate = DateTimeOffset.ParseExact(since, "yyyyMMddTHHmm", null);
+        
+        await foreach (var result in _maintenanceService.RevisitCategoriesAsync(sinceDate, cancellationToken))
         {
-            var sinceDate = DateTimeOffset.ParseExact(since, "yyyyMMddTHHmm", null);
-            var result = await _maintenanceService.RevisitCategoriesAsync(sinceDate, cancellationToken);
-
-            return Ok(new { message = result });
+            await Response.WriteAsync($"data: {result}\n\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revisiting categories");
-            return StatusCode(500, new { message = "An error occurred while revisiting categories" });
-        }
+        
+        await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
     }
 
     [HttpPost("rebuild-cache")]

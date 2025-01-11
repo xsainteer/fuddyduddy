@@ -1,12 +1,12 @@
-using System.Text;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
+using System.Runtime.CompilerServices;
 
 namespace FuddyDuddy.Core.Application.Services;
 
 public interface IMaintenanceService
 {
-    Task<string> RevisitCategoriesAsync(DateTimeOffset since, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<string> RevisitCategoriesAsync(DateTimeOffset since, CancellationToken cancellationToken = default);
 }
 
 internal class MaintenanceService : IMaintenanceService
@@ -24,14 +24,15 @@ internal class MaintenanceService : IMaintenanceService
         _categoryRepository = categoryRepository;
     }
 
-    public async Task<string> RevisitCategoriesAsync(DateTimeOffset since, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<string> RevisitCategoriesAsync(
+        DateTimeOffset since, 
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var summaries = await _summaryRepository.GetByStateAsync([NewsSummaryState.Validated, NewsSummaryState.Digested], since, cancellationToken);
 
         var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToDictionary(c=>c.Local, c=>c);
         var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Key} ({c.Value.KeywordsLocal})"));
 
-        var result = new StringBuilder();
         foreach (var summary in summaries)
         {
             var response = await _summaryValidationService.ValidateSummaryAsync(summary, categoryPrompt, cancellationToken);
@@ -39,11 +40,15 @@ internal class MaintenanceService : IMaintenanceService
                 && categories.TryGetValue(response.Topic, out var newCategory)
                 && newCategory.Id != summary.Category.Id)
             {
-                result.AppendLine($"Title: {summary.Title}, Article: {summary.Article}, Category updated from {summary.Category.Local} to {newCategory.Local}");
+                var result = $"Category updated from {summary.Category.Local.ToUpper()} to {newCategory.Local.ToUpper()} for TITLE: {summary.Title}, ARTICLE: {summary.Article}";
                 summary.UpdateCategory(newCategory.Id);
                 await _summaryRepository.UpdateAsync(summary, cancellationToken);
+                yield return result;
+            }
+            else
+            {
+                yield return $"Category NOT updated for TITLE: {summary.Title}, ARTICLE: {summary.Article}";
             }
         }
-        return result.ToString();
     }
 }

@@ -8,21 +8,19 @@ namespace FuddyDuddy.Api.HostedServices;
 public class SimpleTaskScheduler : IHostedService, IDisposable
 {
     private readonly ILogger<SimpleTaskScheduler> _logger;
-    private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptions<TaskSchedulerSettings> _schedulerSettings;
     private Timer? _summaryPipelineTimer;
     private Timer? _digestPipelineTimer;
     private readonly SemaphoreSlim _pipelineLock = new(1, 1);
+    private readonly SemaphoreSlim _digestLock = new(1, 1);
 
     public SimpleTaskScheduler(
         ILogger<SimpleTaskScheduler> logger,
-        IConfiguration configuration,
         IServiceProvider serviceProvider,
         IOptions<TaskSchedulerSettings> schedulerSettings)
     {
         _logger = logger;
-        _configuration = configuration;
         _serviceProvider = serviceProvider;
         _schedulerSettings = schedulerSettings;
     }
@@ -110,7 +108,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
     {
         try
         {
-            await _pipelineLock.WaitAsync(cancellationToken);
+            await _digestLock.WaitAsync(cancellationToken);
 
             if (!_schedulerSettings.Value.DigestTask)
             {
@@ -146,7 +144,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         }
         finally
         {
-            _pipelineLock.Release();
+            _digestLock.Release();
         }
     }
 

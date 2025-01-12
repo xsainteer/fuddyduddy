@@ -1,26 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <!-- Digest pages -->
   <url>
     <loc>https://fuddy-duddy.org/ru/digests</loc>
+    <lastmod>2024-03-21</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/digests"/>
+    <news:news>
+      <news:publication>
+        <news:name>FuddyDuddy News</news:name>
+        <news:language>ru</news:language>
+      </news:publication>
+      <news:title>Новости Кыргызстана - Последние дайджесты новостей</news:title>
+      <news:keywords>новости кыргызстана, дайджест новостей, кыргызстан новости, бишкек новости</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://fuddy-duddy.org/en/digests</loc>
+    <lastmod>2024-03-21</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/digests"/>
+    <news:news>
+      <news:publication>
+        <news:name>FuddyDuddy News</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:title>Kyrgyzstan News - Latest News Digests</news:title>
+      <news:keywords>kyrgyzstan news, news digest, kyrgyzstan latest news, bishkek news</news:keywords>
+    </news:news>
   </url>
 
   <!-- About pages -->
   <url>
     <loc>https://fuddy-duddy.org/ru/about</loc>
+    <lastmod>2024-03-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/about"/>
+    <news:news>
+      <news:publication>
+        <news:name>FuddyDuddy News</news:name>
+        <news:language>ru</news:language>
+      </news:publication>
+      <news:title>О проекте FuddyDuddy News - AI-powered новостная платформа Кыргызстана</news:title>
+      <news:keywords>новостной агрегатор, искусственный интеллект, новости кыргызстана, ai новости</news:keywords>
+    </news:news>
   </url>
   <url>
     <loc>https://fuddy-duddy.org/en/about</loc>
+    <lastmod>2024-03-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/about"/>
+    <news:news>
+      <news:publication>
+        <news:name>FuddyDuddy News</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:title>About FuddyDuddy News - AI-powered News Platform for Kyrgyzstan</news:title>
+      <news:keywords>news aggregator, artificial intelligence, kyrgyzstan news, ai news</news:keywords>
+    </news:news>
   </url>
 </urlset>

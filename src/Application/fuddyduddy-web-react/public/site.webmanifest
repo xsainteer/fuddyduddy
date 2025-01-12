@@ -1,22 +1,51 @@
 {
-  "name": "FuddyDuddy News",
+  "name": "FuddyDuddy News - AI-powered News Platform for Kyrgyzstan",
   "short_name": "FuddyDuddy",
-  "description": "AI-powered news aggregation service for Kyrgyzstan",
+  "description": "AI-powered news aggregation service for Kyrgyzstan. Get the latest news and hourly digests in Russian and English languages. Powered by artificial intelligence for smart news summaries.",
+  "categories": ["news", "ai", "kyrgyzstan"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/fuddyduddy_logo_192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/fuddyduddy_logo_512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#1f2937",
   "background_color": "#1f2937",
   "display": "standalone",
   "start_url": "/",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Latest Digests",
+      "url": "/en/digests",
+      "description": "View latest news digests"
+    },
+    {
+      "name": "About",
+      "url": "/en/about",
+      "description": "About FuddyDuddy News"
+    }
+  ],
+  "related_applications": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/digest-page.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Digest Page"
+    }
+  ]
 } 

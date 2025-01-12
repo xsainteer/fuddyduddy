@@ -20,7 +20,7 @@ export default function NewsPanel({ className = '', filters = {} }: NewsPanelPro
     parseInt(localStorage.getItem(LAST_VIEWED_KEY) || '0')
   )
 
-  const { data: summaries, isLoading, error } = useQuery({
+  const { data: summaries, isLoading, error } = useQuery<Summary[]>({
     queryKey: summaryKeys.latest(filters.language || 'RU', 10),
     queryFn: () => fetchLatestSummaries(filters.language || 'RU', 10),
     refetchInterval: POLLING_INTERVAL,

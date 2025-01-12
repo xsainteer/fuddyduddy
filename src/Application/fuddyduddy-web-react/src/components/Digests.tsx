@@ -36,7 +36,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
     parseInt(localStorage.getItem(LAST_VIEWED_KEY) || '0')
   )
 
-  const { data: digests, isLoading, error } = useQuery({
+  const { data: digests, isLoading, error } = useQuery<Digest[]>({
     queryKey: digestKeys.latest(filters.language || 'RU', 5),
     queryFn: () => fetchLatestDigests(filters.language || 'RU', 5),
     refetchInterval: POLLING_INTERVAL,

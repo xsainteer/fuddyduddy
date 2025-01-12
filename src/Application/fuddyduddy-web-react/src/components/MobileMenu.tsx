@@ -8,15 +8,13 @@ import logoWhite from '../assets/fuddyduddy_logo_white.jpg'
 interface MobileMenuProps {
   isOpen: boolean
   onClose: () => void
-  children: ReactNode
 }
 
-export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProps) {
+export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const { t, language } = useLocalization()
   const { theme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
-  const isNotHomePage = location.pathname !== '/'
 
   // Close menu when pressing Escape
   useEffect(() => {

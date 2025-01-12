@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { Category, NewsSource, Language, Filters as FiltersType } from '../types'
+import type { Category, NewsSource, Filters as FiltersType } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
 
 interface FilterBarProps {

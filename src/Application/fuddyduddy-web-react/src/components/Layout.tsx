@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
 import Header from './Header'
-import FilterBar from './FilterBar'
 import Digests from './Digests'
 import NewsPanel from './NewsPanel'
 import MobileMenu from './MobileMenu'
@@ -55,11 +54,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header onMobileMenuClick={() => setIsMobileMenuOpen(true)} />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
-        <nav className="p-4 border-b dark:border-gray-800">
-          {/* Mobile menu content */}
-        </nav>
-      </MobileMenu>
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
         {/* Main content */}

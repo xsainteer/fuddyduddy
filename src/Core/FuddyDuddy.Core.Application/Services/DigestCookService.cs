@@ -94,7 +94,7 @@ internal class DigestCookService : IDigestCookService
 
             var sample = new DigestResponse
             {
-                Title = "Digest title",
+                Title = "Digest title for last hour",
                 Content = "Main digest content (no links here, only tailored content)",
                 References = new List<ReferenceResponse>
                 {
@@ -114,7 +114,7 @@ For each remarkable event, provide:
 
 Keep the content succinct and focused on truly significant events.
 Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.
-The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}. We're looking for summaries from the last 1 hour.";
+The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
 
             // Generate digest using AI
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(

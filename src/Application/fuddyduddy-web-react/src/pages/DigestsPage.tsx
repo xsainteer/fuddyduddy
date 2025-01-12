@@ -87,7 +87,7 @@ export default function DigestsPage() {
               {page.map(digest => {
                 const uniqueSources = Array.from(new Set(digest.references.map(ref => ref.source)))
                   .filter(Boolean)
-                  .slice(0, 3)
+                  .slice(0, 5)
 
                 const isNew = new Date(digest.generatedAt).getTime() > lastViewedTimestamp
 
@@ -110,26 +110,30 @@ export default function DigestsPage() {
                     <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-3">
                       {digest.content.split('\n')[0]}
                     </div>
-                    {uniqueSources.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {uniqueSources.map((source, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                          >
-                            {source}
-                          </span>
-                        ))}
-                        {digest.references.length > uniqueSources.length && (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                            +{digest.references.length - uniqueSources.length}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDateTime(digest.generatedAt, interfaceLanguage)}
-                    </p>
+                    <div className="flex items-center flex-wrap gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span>{formatDateTime(digest.generatedAt, interfaceLanguage)}</span>
+                      {uniqueSources.length > 0 && (
+                        <>
+                          <span>·</span>
+                          <div className="flex items-center flex-wrap gap-2">
+                            {uniqueSources.map((source, index) => (
+                              <div key={source} className="flex items-center">
+                                {index > 0 && <span className="mx-1">·</span>}
+                                <span className="text-blue-600 dark:text-blue-400">
+                                  {source}
+                                </span>
+                              </div>
+                            ))}
+                            {digest.references.length > uniqueSources.length && (
+                              <>
+                                <span>·</span>
+                                <span>{digest.references.length} {t.common.links}</span>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </Link>
                 )
               })}
@@ -151,7 +155,7 @@ export default function DigestsPage() {
             </div>
           )}
 
-          {hasNextPage && !isFetchingNextPage && data?.pages?.length > 0 && (
+          {hasNextPage && !isFetchingNextPage && data?.pages && data.pages.length > 0 && (
             <button
               onClick={() => fetchNextPage()}
               className="w-full p-4 text-center text-blue-600 dark:text-blue-400 hover:underline"

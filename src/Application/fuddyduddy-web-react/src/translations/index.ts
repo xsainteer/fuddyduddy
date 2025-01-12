@@ -55,6 +55,7 @@ interface Translation {
     }
   }
   common: {
+    links: string
     readMore: string
     share: string
     loading: string
@@ -143,7 +144,8 @@ const translations: Record<Language, Translation> = {
       back: 'Back',
       new: 'New',
       latestNews: 'Latest News',
-      viewAllNews: 'View feed'
+      viewAllNews: 'View feed',
+      links: 'links'
     },
     errors: {
       failedToLoadDigests: 'Failed to load digests',
@@ -217,7 +219,8 @@ const translations: Record<Language, Translation> = {
       back: 'Назад',
       new: 'Новое',
       latestNews: 'Последние новости',
-      viewAllNews: 'Перейти к ленте'
+      viewAllNews: 'Перейти к ленте',
+      links: 'ссылок'
     },
     errors: {
       failedToLoadDigests: 'Не удалось загрузить дайджесты',

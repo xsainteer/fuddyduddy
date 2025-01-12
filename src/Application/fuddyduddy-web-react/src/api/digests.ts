@@ -1,6 +1,13 @@
 import axios from 'axios'
 import type { Digest } from '../types'
 
+export const digestKeys = {
+  all: ['digests'] as const,
+  latest: (language: string, pageSize: number = 10, page: number = 0) => 
+    [...digestKeys.all, 'latest', language, pageSize, page] as const,
+  detail: (id: string) => [...digestKeys.all, 'detail', id] as const,
+}
+
 export async function fetchLatestDigests(language: string = 'RU', pageSize: number = 10, page: number = 0) {
   try {
     const params = new URLSearchParams({

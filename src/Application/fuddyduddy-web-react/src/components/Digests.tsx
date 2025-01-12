@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import type { Digest, Filters } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
-import { fetchLatestDigests } from '../api/digests'
+import { fetchLatestDigests, digestKeys } from '../api/digests'
 import DigestSkeleton from './DigestSkeleton'
 import { formatDateTime } from '../utils/dateFormat'
 
@@ -31,44 +32,20 @@ const LAST_VIEWED_KEY = 'lastViewedDigestTimestamp'
 
 export default function Digests({ className = '', filters = {} }: DigestsProps) {
   const { t, language: interfaceLanguage } = useLocalization()
-  const [digests, setDigests] = useState<Digest[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [lastViewedTimestamp, setLastViewedTimestamp] = useState<number>(
     parseInt(localStorage.getItem(LAST_VIEWED_KEY) || '0')
   )
-  const pollingTimeoutRef = useRef<number>()
 
-  const loadDigests = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await fetchLatestDigests(filters.language || 'RU', 5)
-      setDigests(data)
-    } catch (err) {
-      setError(t.errors.failedToLoadDigests)
-      console.error('Failed to load digests:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: digests, isLoading, error } = useQuery({
+    queryKey: digestKeys.latest(filters.language || 'RU', 5),
+    queryFn: () => fetchLatestDigests(filters.language || 'RU', 5),
+    refetchInterval: POLLING_INTERVAL,
+    staleTime: POLLING_INTERVAL / 2,
+  })
 
+  // Update last viewed timestamp when digests change
   useEffect(() => {
-    loadDigests()
-
-    // Set up polling
-    pollingTimeoutRef.current = window.setInterval(loadDigests, POLLING_INTERVAL)
-
-    return () => {
-      if (pollingTimeoutRef.current) {
-        clearInterval(pollingTimeoutRef.current)
-      }
-    }
-  }, [filters.language])
-
-  // Update last viewed timestamp when component mounts or digests change
-  useEffect(() => {
-    if (digests.length > 0) {
+    if (digests?.length) {
       const latestTimestamp = Math.max(
         ...digests.map(d => new Date(d.generatedAt).getTime())
       )
@@ -83,14 +60,14 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
         {t.digests.title}
       </h2>
 
-      {loading ? (
+      {isLoading ? (
         <DigestSkeleton />
       ) : error ? (
-        <p className="text-red-500 dark:text-red-400">{error}</p>
+        <p className="text-red-500 dark:text-red-400">{t.errors.failedToLoadDigests}</p>
       ) : (
         <>
           <div className="space-y-3">
-            {digests.map(digest => {
+            {digests?.map(digest => {
               const isNew = new Date(digest.generatedAt).getTime() > lastViewedTimestamp
               return (
                 <Link
@@ -118,7 +95,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
             })}
           </div>
 
-          {digests.length > 0 && (
+          {digests?.length > 0 && (
             <Link
               to={`/${filters.language?.toLowerCase()}/digests`}
               className="block text-sm text-blue-600 dark:text-blue-400 hover:underline"

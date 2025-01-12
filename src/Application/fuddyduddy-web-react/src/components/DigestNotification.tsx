@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useLocalization } from '../hooks/useLocalization'
-import { fetchLatestDigests } from '../api/digests'
+import { fetchLatestDigests, digestKeys } from '../api/digests'
 import type { Filters } from '../types'
 
 interface DigestNotificationProps {
@@ -16,35 +17,25 @@ export default function DigestNotification({ filters }: DigestNotificationProps)
   const navigate = useNavigate()
   const [hasNewDigest, setHasNewDigest] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const pollingTimeoutRef = useRef<number>()
 
-  const checkNewDigests = async () => {
-    try {
-      const lastChecked = parseInt(localStorage.getItem(LAST_CHECKED_KEY) || '0')
-      const digests = await fetchLatestDigests(filters.language || 'RU', 1)
-      
-      if (digests.length > 0) {
-        const latestDigestTime = new Date(digests[0].generatedAt).getTime()
-        if (latestDigestTime > lastChecked) {
-          setHasNewDigest(true)
-          setIsVisible(true)
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for new digests:', error)
-    }
-  }
+  const { data: digests } = useQuery({
+    queryKey: digestKeys.latest(filters.language || 'RU', 1),
+    queryFn: () => fetchLatestDigests(filters.language || 'RU', 1),
+    refetchInterval: POLLING_INTERVAL,
+    staleTime: POLLING_INTERVAL / 2,
+  })
 
   useEffect(() => {
-    checkNewDigests()
-    pollingTimeoutRef.current = window.setInterval(checkNewDigests, POLLING_INTERVAL)
-
-    return () => {
-      if (pollingTimeoutRef.current) {
-        clearInterval(pollingTimeoutRef.current)
+    if (digests?.length) {
+      const lastChecked = parseInt(localStorage.getItem(LAST_CHECKED_KEY) || '0')
+      const latestDigestTime = new Date(digests[0].generatedAt).getTime()
+      
+      if (latestDigestTime > lastChecked) {
+        setHasNewDigest(true)
+        setIsVisible(true)
       }
     }
-  }, [filters.language])
+  }, [digests])
 
   const handleClick = () => {
     if (hasNewDigest) {

@@ -5,6 +5,8 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using FuddyDuddy.Core.Application.Models.AI;
+using FuddyDuddy.Core.Application.Configuration;
+using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Models;
 
 namespace FuddyDuddy.Core.Application.Services;
@@ -21,19 +23,21 @@ internal class DigestCookService : IDigestCookService
     private readonly IGeminiService _aiService;
     private readonly ICacheService _cacheService;
     private readonly ILogger<DigestCookService> _logger;
-
+    private readonly IOptions<ProcessingOptions> _processingOptions;
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
         IDigestRepository digestRepository,
         IGeminiService aiService,
         ICacheService cacheService,
-        ILogger<DigestCookService> logger)
+        ILogger<DigestCookService> logger,
+        IOptions<ProcessingOptions> processingOptions)
     {
         _summaryRepository = summaryRepository;
         _digestRepository = digestRepository;
         _aiService = aiService;
         _cacheService = cacheService;
         _logger = logger;
+        _processingOptions = processingOptions;
     }
 
     public async Task GenerateDigestAsync(Language language, CancellationToken cancellationToken = default)
@@ -98,7 +102,7 @@ internal class DigestCookService : IDigestCookService
                 }
             };
 
-            var systemPrompt = $@"You are a skilled news analyst who creates concise and informative digests.
+            var systemPrompt = $@"You are a skilled news analyst from {_processingOptions.Value.Country} who creates concise and informative digests.
 Your task is to analyze news summaries and create a digest that highlights the most remarkable events.
 The digest should be in {language.GetDescription()}.
 
@@ -109,7 +113,8 @@ For each remarkable event, provide:
 2. A reference to the original source (use provided URLs as string references only)
 
 Keep the content succinct and focused on truly significant events.
-Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.";
+Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.
+The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
 
             // Generate digest using AI
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(

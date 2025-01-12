@@ -1,8 +1,13 @@
 # Allow all crawlers
 User-agent: *
-Allow: /
+Allow: /ru/digests
+Allow: /en/digests
+Allow: /ru/about
+Allow: /en/about
+Disallow: /ru/feed
+Disallow: /en/feed
+Disallow: /api/
 
-# Sitemap location
 Sitemap: https://fuddy-duddy.org/sitemap.xml 
 
 # Yandex specific

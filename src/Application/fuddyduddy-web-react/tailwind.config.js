@@ -40,6 +40,9 @@ export default {
         'slide-down': 'slide-down 0.3s ease-out',
         'highlight-pulse': 'highlight-pulse 2s ease-in-out infinite',
       },
+      screens: {
+        'xs': '480px',
+      },
     },
   },
   plugins: [

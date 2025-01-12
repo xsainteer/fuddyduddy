@@ -2,12 +2,12 @@ import { useLocalization } from '../hooks/useLocalization'
 import { Link } from 'react-router-dom'
 
 export default function AboutPage() {
-  const { t } = useLocalization()
+  const { t, language } = useLocalization()
 
   return (
     <>
       <Link
-        to="/"
+        to={`/${language.toLowerCase()}/feed`}
         className="inline-block mb-4 text-blue-600 dark:text-blue-400 hover:underline"
       >
         {t.common.backToFeed}

@@ -1,71 +1,56 @@
-import { Routes, Route } from 'react-router-dom'
-import { useState } from 'react'
-import Header from './components/Header'
-import NewsFeed from './components/NewsFeed'
-import AboutPage from './pages/AboutPage'
-import SummaryPage from './pages/SummaryPage'
-import DigestPage from './pages/DigestPage'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import Layout from './components/Layout'
+import HomePage from './pages/HomePage'
 import DigestsPage from './pages/DigestsPage'
-import Filters from './components/Filters'
-import Digests from './components/Digests'
-import MobileMenu from './components/MobileMenu'
-import { LanguageProvider } from './contexts/LanguageContext'
-import { LayoutProvider, useLayout } from './contexts/LayoutContext'
-import type { Filters as FiltersType } from './types'
+import DigestPage from './pages/DigestPage'
+import SummaryPage from './pages/SummaryPage'
+import AboutPage from './pages/AboutPage'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
+import { LayoutProvider } from './contexts/LayoutContext'
 
-function AppContent() {
-  const [filters, setFilters] = useState<FiltersType>({})
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { showSidePanels } = useLayout()
+function LanguageRedirect() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { language } = useLanguage()
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header onMobileMenuClick={() => setIsMobileMenuOpen(true)} />
-      
-      {/* Mobile menu */}
-      <MobileMenu 
-        isOpen={isMobileMenuOpen} 
-        onClose={() => setIsMobileMenuOpen(false)}
-      >
-        <Filters filters={filters} onFiltersChange={setFilters} />
-      </MobileMenu>
+  useEffect(() => {
+    // Only redirect if we're at the root
+    if (location.pathname === '/') {
+      navigate(`/${language.toLowerCase()}/digests${location.search}${location.hash}`, { replace: true })
+    }
+  }, [navigate, location, language])
 
-      <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-12 gap-6">
-        {/* Left sidebar - Filters */}
-        {showSidePanels && (
-          <div className="hidden md:block md:col-span-3 lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-            <Filters filters={filters} onFiltersChange={setFilters} />
-          </div>
-        )}
-
-        {/* Main content */}
-        <main className={`col-span-12 ${showSidePanels ? 'md:col-span-6 lg:col-span-6' : 'md:col-span-12 lg:col-span-12 max-w-4xl mx-auto w-full'}`}>
-          <Routes>
-            <Route path="/" element={<NewsFeed filters={filters} />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/summary/:id" element={<SummaryPage />} />
-            <Route path="/digests" element={<DigestsPage filters={filters} />} />
-            <Route path="/digests/:id" element={<DigestPage />} />
-          </Routes>
-        </main>
-
-        {/* Right sidebar - Digests */}
-        {showSidePanels && (
-          <div className="hidden md:block md:col-span-3 lg:col-span-3 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
-            <Digests filters={filters} />
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  return null
 }
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <LayoutProvider>
-        <AppContent />
-      </LayoutProvider>
-    </LanguageProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <LanguageProvider>
+          <LayoutProvider>
+            <Routes>
+              {/* Root redirect */}
+              <Route path="/" element={<LanguageRedirect />} />
+
+              {/* Language-specific routes */}
+              <Route path="/:lang" element={<Layout />}>
+                <Route index element={<Navigate to="digests" replace />} />
+                <Route path="feed" element={<HomePage />} />
+                <Route path="digests" element={<DigestsPage />} />
+                <Route path="digests/:id" element={<DigestPage />} />
+                <Route path="summary/:id" element={<SummaryPage />} />
+                <Route path="about" element={<AboutPage />} />
+              </Route>
+
+              {/* Catch-all redirect to root for language detection */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </LayoutProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   )
 } 

@@ -6,6 +6,8 @@ interface Translation {
     subtitle: string
     about: string
     digests: string
+    feed: string
+    language: string
   }
   filters: {
     title: string
@@ -76,7 +78,9 @@ const translations: Record<Language, Translation> = {
       title: 'FuddyDuddy News',
       subtitle: 'KYRGYZSTAN NEWS',
       about: 'About',
-      digests: 'Digests'
+      digests: 'Digests',
+      feed: 'Feed',
+      language: 'Language'
     },
     filters: {
       title: 'Filters',
@@ -145,7 +149,9 @@ const translations: Record<Language, Translation> = {
       title: 'FuddyDuddy News',
       subtitle: 'НОВОСТИ КЫРГЫЗСТАНА',
       about: 'О проекте',
-      digests: 'Дайджесты'
+      digests: 'Дайджесты',
+      feed: 'Лента',
+      language: 'Язык'
     },
     filters: {
       title: 'Фильтры',

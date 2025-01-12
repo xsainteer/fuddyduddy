@@ -10,20 +10,20 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ summary }: NewsCardProps) {
-  const { t, language: interfaceLanguage } = useLocalization()  
+  const { t, language } = useLocalization()  
 
   return (
     <article className="p-4 rounded-xl transition-all duration-300 border dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:text-gray-100">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div>
-          <Link to={`/summary/${summary.id}`}>
+          <Link to={`/${language.toLowerCase()}/summary/${summary.id}`}>
             <h2 className="font-bold text-lg leading-tight mb-1 hover:underline">
               {summary.title}
             </h2>
           </Link>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <span>{formatDateTime(summary.generatedAt, interfaceLanguage)}</span>
+            <span>{formatDateTime(summary.generatedAt, language)}</span>
             <span>·</span>
             <span className="text-blue-600 dark:text-blue-400">{summary.source}</span>
             <span>·</span>
@@ -53,7 +53,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
                    text-blue-600 dark:text-blue-300 rounded-full
                    transition-colors"
         >
-          {interfaceLanguage === 'RU' ? summary.categoryLocal : summary.category}
+          {language === 'RU' ? summary.categoryLocal : summary.category}
         </span>
       </div>
 

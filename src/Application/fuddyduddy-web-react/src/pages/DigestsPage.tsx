@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
 import { useLayout } from '../contexts/LayoutContext'
 import { fetchLatestDigests } from '../api/digests'
@@ -9,11 +9,12 @@ import { formatDateTime } from '../utils/dateFormat'
 const PAGE_SIZE = 24
 const LAST_VIEWED_KEY = 'lastViewedDigestTimestamp'
 
-interface DigestsPageProps {
+interface ContextType {
   filters: Filters
 }
 
-export default function DigestsPage({ filters }: DigestsPageProps) {
+export default function DigestsPage() {
+  const { filters } = useOutletContext<ContextType>()
   const { t, language: interfaceLanguage } = useLocalization()
   const { setShowSidePanels } = useLayout()
   const [digests, setDigests] = useState<Digest[]>([])
@@ -95,7 +96,7 @@ export default function DigestsPage({ filters }: DigestsPageProps) {
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
         <div className="text-center py-8">
           <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
-          <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+          <Link to={`/${filters.language?.toLowerCase()}`} className="text-blue-600 dark:text-blue-400 hover:underline">
             {t.common.backToFeed}
           </Link>
         </div>
@@ -105,13 +106,6 @@ export default function DigestsPage({ filters }: DigestsPageProps) {
 
   return (
     <>
-      <Link
-        to="/"
-        className="inline-block mb-4 text-blue-600 dark:text-blue-400 hover:underline"
-      >
-        ← {t.common.backToFeed}
-      </Link>
-
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
           {t.digests.title}
@@ -134,13 +128,13 @@ export default function DigestsPage({ filters }: DigestsPageProps) {
             return (
               <Link
                 key={digest.id}
-                to={`/digests/${digest.id}`}
+                to={`/${filters.language?.toLowerCase()}/digests/${digest.id}`}
                 className={`block p-4 rounded-lg border dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors relative ${
-                  isNew ? 'border-blue-500 dark:border-blue-400' : ''
+                  isNew ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-500/5 animate-highlight-pulse' : ''
                 }`}
               >
                 {isNew && (
-                  <span className="absolute -top-2 -right-2 px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">
+                  <span className="absolute -top-2 -right-2 px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full shadow-sm">
                     {t.common.new}
                   </span>
                 )}

@@ -95,7 +95,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
               return (
                 <Link
                   key={digest.id}
-                  to={`/digests/${digest.id}`}
+                  to={`/${filters.language?.toLowerCase()}/digests/${digest.id}`}
                   className={`block p-3 rounded-lg border dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors relative
                     ${isNew ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-500/5 animate-highlight-pulse' : 'bg-white dark:bg-gray-900'}`}
                 >
@@ -120,7 +120,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
 
           {digests.length > 0 && (
             <Link
-              to="/digests"
+              to={`/${filters.language?.toLowerCase()}/digests`}
               className="block text-sm text-blue-600 dark:text-blue-400 hover:underline"
             >
               {t.digests.viewAll}

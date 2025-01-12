@@ -83,7 +83,7 @@ export default function DigestPage() {
           ← {t.common.back}
         </button>
         <Link
-          to="/"
+          to={`/${interfaceLanguage.toLowerCase()}/feed`}
           className="text-blue-600 dark:text-blue-400 hover:underline"
         >
           {t.common.backToFeed}

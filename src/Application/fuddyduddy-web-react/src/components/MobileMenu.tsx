@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
 import { useTheme } from '../contexts/ThemeContext'
 import logoTransparent from '../assets/fuddyduddy_logo_transparent.png'
@@ -12,9 +12,10 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProps) {
-  const { t } = useLocalization()
+  const { t, language } = useLocalization()
   const { theme } = useTheme()
   const location = useLocation()
+  const navigate = useNavigate()
   const isNotHomePage = location.pathname !== '/'
 
   // Close menu when pressing Escape
@@ -75,34 +76,64 @@ export default function MobileMenu({ isOpen, onClose, children }: MobileMenuProp
 
           {/* Navigation */}
           <nav className="p-4 border-b dark:border-gray-800">
-            {isNotHomePage && (
-              <Link
-                to="/"
-                className="block px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                onClick={onClose}
-              >
-                {t.common.backToFeed}
-              </Link>
-            )}
             <Link
-              to="/about"
+              to={`/${language.toLowerCase()}/feed`}
               className="block px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
               onClick={onClose}
             >
-              {t.header.about}
+              {t.header.feed}
             </Link>
             <Link
-              to="/digests"
+              to={`/${language.toLowerCase()}/digests`}
               className="block px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
               onClick={onClose}
             >
               {t.header.digests}
             </Link>
+            <Link
+              to={`/${language.toLowerCase()}/about`}
+              className="block px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              onClick={onClose}
+            >
+              {t.header.about}
+            </Link>
           </nav>
 
-          {/* Filters */}
-          <div className="flex-1 overflow-y-auto">
-            {children}
+          {/* Language switcher */}
+          <div className="p-4 border-b dark:border-gray-800">
+            <h3 className="px-3 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t.header.language}
+            </h3>
+            <div className="flex gap-2 px-3">
+              <button
+                onClick={() => {
+                  const path = location.pathname.replace(`/${language.toLowerCase()}`, '/ru')
+                  navigate(path)
+                  onClose()
+                }}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  language === 'RU'
+                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                }`}
+              >
+                RU
+              </button>
+              <button
+                onClick={() => {
+                  const path = location.pathname.replace(`/${language.toLowerCase()}`, '/en')
+                  navigate(path)
+                  onClose()
+                }}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  language === 'EN'
+                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                }`}
+              >
+                EN
+              </button>
+            </div>
           </div>
         </div>
       </div>

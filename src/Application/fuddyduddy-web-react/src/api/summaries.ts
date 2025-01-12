@@ -1,11 +1,19 @@
 import axios from 'axios'
 import type { Summary } from '../types'
 
-export async function fetchSummaries(page: number) {
+export const summaryKeys = {
+  all: ['summaries'] as const,
+  latest: (language: string, pageSize: number = 10, page: number = 0) => 
+    [...summaryKeys.all, 'latest', language, pageSize, page] as const,
+  detail: (id: string) => [...summaryKeys.all, 'detail', id] as const,
+}
+
+export async function fetchLatestSummaries(language: string = 'RU', pageSize: number = 10, page: number = 0) {
   try {
     const params = new URLSearchParams({
-      page: page.toString(),
-      pageSize: '20',
+      language,
+      pageSize: pageSize.toString(),
+      page: page.toString()
     })
 
     const { data } = await axios.get<Summary[]>(`/api/summaries`, { params })

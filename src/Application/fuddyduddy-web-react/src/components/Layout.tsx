@@ -3,6 +3,7 @@ import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
 import Header from './Header'
 import FilterBar from './FilterBar'
 import Digests from './Digests'
+import NewsPanel from './NewsPanel'
 import MobileMenu from './MobileMenu'
 import { useLanguage, type Language } from '../contexts/LanguageContext'
 import { useLayout } from '../contexts/LayoutContext'
@@ -24,6 +25,7 @@ export default function Layout() {
   const location = useLocation()
   const { setShowSidePanels } = useLayout()
   const showSidePanels = !location.pathname.includes('/digests/') && !location.pathname.includes('/summary/')
+  const isDigestsPage = location.pathname.includes('/digests')
 
   // Handle language from URL
   useEffect(() => {
@@ -65,12 +67,16 @@ export default function Layout() {
           <Outlet context={{ filters, setFilters, showFilters: showSidePanels }} />
         </main>
 
-        {/* Right sidebar - Digests */}
+        {/* Right sidebar - Digests or News */}
         {showSidePanels && (
           <aside className="hidden lg:block lg:col-span-3">
-            <div className="sticky top-[88px]">
+            <div className="sticky top-24">
               <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar">
-                <Digests filters={filters} />
+                {isDigestsPage ? (
+                  <NewsPanel filters={filters} />
+                ) : (
+                  <Digests filters={filters} />
+                )}
               </div>
             </div>
           </aside>

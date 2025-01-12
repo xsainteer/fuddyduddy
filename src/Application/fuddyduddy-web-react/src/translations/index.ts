@@ -66,9 +66,12 @@ interface Translation {
     backToFeed: string
     back: string
     new: string
+    latestNews: string
+    viewAllNews: string
   }
   errors: {
     failedToLoadDigests: string
+    failedToLoadSummaries: string
   }
 }
 
@@ -128,20 +131,23 @@ const translations: Record<Language, Translation> = {
       }
     },
     common: {
-      readMore: 'Read full article',
+      readMore: 'Read more',
       share: 'Share',
       loading: 'Loading...',
       error: 'Something went wrong',
       retry: 'Try again',
       originalSource: 'Original source',
-      newSummariesAvailable: 'New summaries available. Click to refresh.',
+      newSummariesAvailable: 'New updates available',
       loadMore: 'Load more',
       backToFeed: 'Back to feed',
       back: 'Back',
-      new: 'New'
+      new: 'New',
+      latestNews: 'Latest News',
+      viewAllNews: 'View feed'
     },
     errors: {
-      failedToLoadDigests: 'Failed to load digests'
+      failedToLoadDigests: 'Failed to load digests',
+      failedToLoadSummaries: 'Failed to load feed'
     }
   },
   RU: {
@@ -199,20 +205,23 @@ const translations: Record<Language, Translation> = {
       }
     },
     common: {
-      readMore: 'Читать полностью',
+      readMore: 'Читать далее',
       share: 'Поделиться',
       loading: 'Загрузка...',
       error: 'Что-то пошло не так',
       retry: 'Попробовать снова',
       originalSource: 'Оригинальный источник',
-      newSummariesAvailable: 'Доступны новые новости. Нажмите, чтобы обновить.',
+      newSummariesAvailable: 'Доступны новые сводки',
       loadMore: 'Загрузить еще',
-      backToFeed: 'Лента новостей',
+      backToFeed: 'Вернуть к ленте',
       back: 'Назад',
-      new: 'Новое'
+      new: 'Новое',
+      latestNews: 'Последние новости',
+      viewAllNews: 'Перейти к ленте'
     },
     errors: {
-      failedToLoadDigests: 'Не удалось загрузить дайджесты'
+      failedToLoadDigests: 'Не удалось загрузить дайджесты',
+      failedToLoadSummaries: 'Не удалось загрузить новости'
     }
   }
 }

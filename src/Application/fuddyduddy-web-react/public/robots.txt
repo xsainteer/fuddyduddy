@@ -4,3 +4,11 @@ Allow: /
 
 # Sitemap location
 Sitemap: https://fuddy-duddy.org/sitemap.xml 
+
+# Yandex specific
+User-agent: Yandex
+Clean-param: utm_source&utm_medium&utm_campaign
+
+# Bing specific
+User-agent: bingbot
+Crawl-delay: 10 

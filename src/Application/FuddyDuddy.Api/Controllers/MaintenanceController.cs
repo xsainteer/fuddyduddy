@@ -5,6 +5,7 @@ using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
+using FuddyDuddy.Core.Application.Models;
 
 namespace FuddyDuddy.Api.Controllers;
 
@@ -19,6 +20,7 @@ public class MaintenanceController : ControllerBase
     private readonly ILogger<MaintenanceController> _logger;
     private readonly ISummaryTranslationService _translationService;
     private readonly IMaintenanceService _maintenanceService;
+    private readonly IDigestRepository _digestRepository;
     public MaintenanceController(
         INewsProcessingService newsProcessingService,
         ISummaryValidationService validationService,
@@ -26,7 +28,8 @@ public class MaintenanceController : ControllerBase
         ICacheService cacheService,
         ILogger<MaintenanceController> logger,
         ISummaryTranslationService translationService,
-        IMaintenanceService maintenanceService)
+        IMaintenanceService maintenanceService,
+        IDigestRepository digestRepository)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
@@ -35,6 +38,7 @@ public class MaintenanceController : ControllerBase
         _logger = logger;
         _translationService = translationService;
         _maintenanceService = maintenanceService;
+        _digestRepository = digestRepository;
     }
 
     [HttpPost("process-news")]
@@ -100,6 +104,13 @@ public class MaintenanceController : ControllerBase
             foreach (var summary in summaries)
             {
                 await _cacheService.AddSummaryAsync(summary, cancellationToken);
+            }
+
+            // Add digests back to cache
+            var digests = await _digestRepository.GetLatestAsync(100, cancellationToken);
+            foreach (var digest in digests)
+            {
+                await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(digest), cancellationToken);
             }
 
             return Ok(new { message = $"Cache rebuilt with {summaries.Count()} summaries" });

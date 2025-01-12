@@ -19,13 +19,29 @@ internal class DigestRepository : IDigestRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Digest>> GetLatestAsync(int count, Language language, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Digest>> GetLatestAsync(int count, CancellationToken cancellationToken = default)
+    {
+        return await _context.Digests
+            .OrderByDescending(d => d.GeneratedAt)
+            .Take(count)
+            .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.NewsArticle)
+            .ThenInclude(na => na.NewsSource)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Digest>> GetLatestAsync(int count, Language language, int skip = 0, CancellationToken cancellationToken = default)
     {
         return await _context.Digests
             .Where(d => d.Language == language)
             .OrderByDescending(d => d.GeneratedAt)
+            .Skip(skip)
             .Take(count)
             .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.NewsArticle)
+            .ThenInclude(na => na.NewsSource)
             .ToListAsync(cancellationToken);
     }
 
@@ -33,6 +49,9 @@ internal class DigestRepository : IDigestRepository
     {
         return await _context.Digests
             .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.NewsArticle)
+            .ThenInclude(na => na.NewsSource)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
     }
 

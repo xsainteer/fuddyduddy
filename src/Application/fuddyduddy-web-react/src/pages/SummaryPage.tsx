@@ -2,9 +2,11 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchSummaryById } from '../api/summaries'
 import NewsCard from '../components/NewsCard'
+import { useLocalization } from '../hooks/useLocalization'
 
 export default function SummaryPage() {
   const { id } = useParams<{ id: string }>()
+  const { t } = useLocalization()
   
   const { data: summary, isLoading, error } = useQuery({
     queryKey: ['summary', id],
@@ -28,7 +30,7 @@ export default function SummaryPage() {
           to="/"
           className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          ← Back to news feed
+          ← {t.common.backToFeed}
         </Link>
       </div>
     )
@@ -44,7 +46,7 @@ export default function SummaryPage() {
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Back to news feed
+          {t.common.backToFeed}
         </Link>
       </div>
       <NewsCard summary={summary} isHighlighted={false} />

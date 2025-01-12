@@ -17,6 +17,11 @@ public class RedisCacheService : ICacheService
     private const string SUMMARIES_BY_SOURCE_KEY = "summaries:by:source:{0}";  // Source index
     private const int MAX_SUMMARIES = 1000;  // Per language
 
+    // New constants for digest caching
+    private const string DIGEST_KEY = "digest:{0}";  // Individual digest
+    private const string DIGESTS_BY_LANGUAGE_KEY = "latest:digests:{0}";  // Timeline by language
+    private const int MAX_DIGESTS = 100;  // Per language
+
     public RedisCacheService(
         IConnectionMultiplexer redis,
         ILogger<RedisCacheService> logger)
@@ -150,6 +155,98 @@ public class RedisCacheService : ICacheService
         }
     }
 
+    public async Task AddDigestAsync(CachedDigestDto digest, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            var score = digest.GeneratedAt.ToUnixTimeSeconds();
+            var digestJson = JsonSerializer.Serialize(digest);
+            
+            // Store the digest itself
+            await db.StringSetAsync(
+                string.Format(DIGEST_KEY, digest.Id),
+                digestJson,
+                TimeSpan.FromDays(7));  // TTL for individual digests
+
+            // Add to the language-specific timeline
+            var timelineKey = string.Format(DIGESTS_BY_LANGUAGE_KEY, digest.Language.ToString().ToLower());
+            await db.SortedSetAddAsync(timelineKey, digestJson, score);
+
+            // Trim the language-specific timeline
+            await db.SortedSetRemoveRangeByRankAsync(timelineKey, 0, -MAX_DIGESTS - 1);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding digest to cache");
+            throw;
+        }
+    }
+
+    public async Task<IEnumerable<T>> GetLatestDigestsAsync<T>(
+        int skip,
+        int take,
+        Language language = Language.RU,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            var timelineKey = string.Format(DIGESTS_BY_LANGUAGE_KEY, language.ToString().ToLower());
+
+            var digests = await db.SortedSetRangeByRankAsync(
+                timelineKey,
+                skip,
+                skip + take - 1,
+                Order.Descending);
+
+            return DeserializeDigests<T>(digests);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting latest digests from cache");
+            return Enumerable.Empty<T>();
+        }
+    }
+
+    public async Task<T?> GetDigestByIdAsync<T>(string id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            var digestJson = await db.StringGetAsync(string.Format(DIGEST_KEY, id));
+            
+            if (digestJson.IsNull)
+                return default;
+
+            return JsonSerializer.Deserialize<T>(digestJson!);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting digest by ID from cache");
+            return default;
+        }
+    }
+
+    public async Task CacheDigestDtoAsync<T>(string id, T digest, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            var digestJson = JsonSerializer.Serialize(digest);
+            
+            await db.StringSetAsync(
+                string.Format(DIGEST_KEY, id),
+                digestJson,
+                TimeSpan.FromDays(7));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error caching digest DTO");
+            throw;
+        }
+    }
+
     public async Task ClearCacheAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -157,16 +254,19 @@ public class RedisCacheService : ICacheService
             var db = _redis.GetDatabase();
             var server = _redis.GetServer(_redis.GetEndPoints().First());
 
-            // Clear all language-specific timelines
+            // Clear all language-specific timelines (summaries and digests)
             foreach (var language in Enum.GetValues<Language>())
             {
-                var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, language.ToString().ToLower());
-                await db.KeyDeleteAsync(timelineKey);
+                var summaryTimelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, language.ToString().ToLower());
+                var digestTimelineKey = string.Format(DIGESTS_BY_LANGUAGE_KEY, language.ToString().ToLower());
+                await db.KeyDeleteAsync(summaryTimelineKey);
+                await db.KeyDeleteAsync(digestTimelineKey);
             }
 
-            // Clear all summary keys
+            // Clear all summary and digest keys
             var summaryKeys = server.Keys(pattern: "summary:*");
-            foreach (var key in summaryKeys)
+            var digestKeys = server.Keys(pattern: "digest:*");
+            foreach (var key in summaryKeys.Concat(digestKeys))
             {
                 await db.KeyDeleteAsync(key);
             }
@@ -233,6 +333,14 @@ public class RedisCacheService : ICacheService
         return summaries
             .Select(s => JsonSerializer.Deserialize<T>(s!))
             .Where(s => s != null)
+            .Cast<T>();
+    }
+
+    private IEnumerable<T> DeserializeDigests<T>(RedisValue[] digests)
+    {
+        return digests
+            .Select(d => JsonSerializer.Deserialize<T>(d!))
+            .Where(d => d != null)
             .Cast<T>();
     }
 } 

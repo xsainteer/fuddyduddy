@@ -116,13 +116,6 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
                 return;
             }
 
-            var (startHour, endHour) = _schedulerSettings.Value.DigestTaskInactivityHoursRangeTuple;
-            if (DateTime.Now.Hour >= startHour || DateTime.Now.Hour < endHour)
-            {
-                _logger.LogInformation("Digest pipeline is disabled due to current time");
-                return;
-            }
-
             using var scope = _serviceProvider.CreateScope();
             var digestCookService = scope.ServiceProvider.GetRequiredService<IDigestCookService>();
 

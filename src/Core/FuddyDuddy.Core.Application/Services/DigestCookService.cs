@@ -1,12 +1,11 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;
-using System.Text.RegularExpressions;
 using FuddyDuddy.Core.Application.Models.AI;
+using FuddyDuddy.Core.Application.Models;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -20,17 +19,20 @@ internal class DigestCookService : IDigestCookService
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly IDigestRepository _digestRepository;
     private readonly IGeminiService _aiService;
+    private readonly ICacheService _cacheService;
     private readonly ILogger<DigestCookService> _logger;
 
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
         IDigestRepository digestRepository,
         IGeminiService aiService,
+        ICacheService cacheService,
         ILogger<DigestCookService> logger)
     {
         _summaryRepository = summaryRepository;
         _digestRepository = digestRepository;
         _aiService = aiService;
+        _cacheService = cacheService;
         _logger = logger;
     }
 
@@ -45,7 +47,7 @@ internal class DigestCookService : IDigestCookService
 
             if (lastDigest != null && Math.Abs((DateTimeOffset.UtcNow - lastDigest.GeneratedAt).TotalHours) < 1)
             {
-                _logger.LogWarning("Digest already generated within the last hour for {Language}", language);
+                _logger.LogInformation("Digest already generated within the last hour for {Language}", language);
                 return;
             }
 
@@ -56,15 +58,22 @@ internal class DigestCookService : IDigestCookService
                 .OrderByDescending(s => s.GeneratedAt)
                 .ToList();
 
+            // If no relevant summaries, generate an empty digest anyway
             if (!relevantSummaries.Any())
             {
-                _logger.LogInformation("No new summaries to generate digest for {Language}", language);
-                return;
-            }
+                _logger.LogInformation("No new summaries to generate digest for {Language}. Generating an empty digest.", language);
+                var emptyDigest = new Digest(
+                    language == Language.RU ? "Пустой дайджест" : "Empty digest",
+                    language == Language.RU ? "Событий нет за прошедший час, но, возможно появятся в ближайшее время! Оставайтесь на связи!" : "No events in the last hour, but new events may appear soon! Stay tuned!",
+                    language,
+                    periodStart,
+                    periodEnd,
+                    new List<DigestReference>(),
+                    DigestState.Published);
 
-            if (relevantSummaries.Count < 10)
-            {
-                _logger.LogInformation("Not enough summaries to generate digest for {Language}", language);
+                await _digestRepository.AddAsync(emptyDigest, cancellationToken);
+                await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(emptyDigest), cancellationToken);
+
                 return;
             }
 
@@ -147,7 +156,18 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
                 await _summaryRepository.UpdateAsync(summary, cancellationToken);
             }
 
-            _logger.LogInformation("Generated digest for {Language} with {Count} references", language, references.Count);
+            var savedDigest = await _digestRepository.GetByIdAsync(digest.Id, cancellationToken);
+
+            if (savedDigest == null)
+            {
+                _logger.LogError("Failed to get saved digest");
+                return;
+            }
+
+            // Cache the new digest
+            await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(savedDigest), cancellationToken);
+
+            _logger.LogInformation("Generated and cached digest for {Language} with {Count} references", language, references.Count);
         }
         catch (Exception ex)
         {

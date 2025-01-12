@@ -46,6 +46,7 @@ export interface DigestReference {
   title: string
   url: string
   reason: string
+  source: string
 }
 
 export interface Digest {

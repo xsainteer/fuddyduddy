@@ -1,7 +1,9 @@
 using FuddyDuddy.Core.Application.Services;
 using FuddyDuddy.Core.Application.Repositories;
+using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using FuddyDuddy.Core.Application.Models;
 
 namespace FuddyDuddy.Api.Controllers;
 
@@ -11,84 +13,97 @@ public class DigestsController : ControllerBase
 {
     private readonly IDigestCookService _digestCookService;
     private readonly IDigestRepository _digestRepository;
+    private readonly ICacheService _cacheService;
     private readonly ILogger<DigestsController> _logger;
 
     public DigestsController(
         IDigestCookService digestCookService,
         IDigestRepository digestRepository,
+        ICacheService cacheService,
         ILogger<DigestsController> logger)
     {
         _digestCookService = digestCookService;
         _digestRepository = digestRepository;
+        _cacheService = cacheService;
         _logger = logger;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetLatestDigests(
-        [FromQuery] string language = "RU",
-        [FromQuery] int count = 10,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] Language? language = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            if (!Enum.TryParse<Language>(language, true, out var parsedLanguage))
+            var parsedLanguage = language ?? Language.RU;
+            
+            // Try to get from cache first
+            var digests = await _cacheService.GetLatestDigestsAsync<CachedDigestDto>(
+                page * pageSize,
+                pageSize,
+                parsedLanguage,
+                cancellationToken);
+
+            // If not in cache, get from database and cache them
+            if (!digests.Any())
             {
-                return BadRequest(new { message = "Invalid language" });
+                var dbDigests = await _digestRepository.GetLatestAsync(pageSize, parsedLanguage, page * pageSize, cancellationToken);
+                var digestDtos = dbDigests.Select(d => CachedDigestDto.FromDigest(d)).ToList();
+
+                // Cache each digest
+                foreach (var digest in dbDigests)
+                {
+                    await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(digest), cancellationToken);
+                }
+
+                return Ok(digestDtos);
             }
 
-            var digests = await _digestRepository.GetLatestAsync(count, parsedLanguage, cancellationToken);
-            return Ok(digests.Select(d => new DigestDto
-            {
-                Id = d.Id,
-                Title = d.Title,
-                Content = d.Content,
-                GeneratedAt = d.GeneratedAt,
-                PeriodStart = d.PeriodStart,
-                PeriodEnd = d.PeriodEnd,
-                References = d.References.Select(r => new DigestReferenceDto
-                {
-                    Title = r.Title,
-                    Url = r.Url,
-                    Reason = r.Reason
-                }).ToList()
-            }));
+            return Ok(digests);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting latest digests");
-            return StatusCode(500, new { message = "An error occurred while getting digests" });
+            _logger.LogError(ex, "Error getting digests. Page: {Page}", page);
+            return StatusCode(500, new { message = "An error occurred while fetching digests" });
         }
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetDigestById(Guid id, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetDigestById(string id, CancellationToken cancellationToken = default)
     {
         try
         {
-            var digest = await _digestRepository.GetByIdAsync(id, cancellationToken);
+            // Try to get from cache first
+            var digest = await _cacheService.GetDigestByIdAsync<CachedDigestDto>(id, cancellationToken);
+            
             if (digest == null)
-                return NotFound();
-
-            return Ok(new DigestDto
             {
-                Id = digest.Id,
-                Title = digest.Title,
-                Content = digest.Content,
-                GeneratedAt = digest.GeneratedAt,
-                PeriodStart = digest.PeriodStart,
-                PeriodEnd = digest.PeriodEnd,
-                References = digest.References.Select(r => new DigestReferenceDto
+                // Try to get from database if not in cache
+                if (Guid.TryParse(id, out var digestId))
                 {
-                    Title = r.Title,
-                    Url = r.Url,
-                    Reason = r.Reason
-                }).ToList()
-            });
+                    var dbDigest = await _digestRepository.GetByIdAsync(digestId, cancellationToken);
+                    if (dbDigest != null)
+                    {
+                        digest = CachedDigestDto.FromDigest(dbDigest);
+                        
+                        // Cache asynchronously without waiting
+                        _ = _cacheService.CacheDigestDtoAsync(id, digest, cancellationToken);
+                        
+                        return Ok(digest);
+                    }
+                }
+                
+                return NotFound(new { message = "Digest not found" });
+            }
+
+            return Ok(digest);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting digest by ID {Id}", id);
-            return StatusCode(500, new { message = "An error occurred while getting the digest" });
+            _logger.LogError(ex, "Error getting digest by ID. Id: {Id}", id);
+            return StatusCode(500, new { message = "An error occurred while fetching the digest" });
         }
     }
 
@@ -114,21 +129,3 @@ public class DigestsController : ControllerBase
         }
     }
 }
-
-public class DigestDto
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public DateTimeOffset GeneratedAt { get; set; }
-    public DateTimeOffset PeriodStart { get; set; }
-    public DateTimeOffset PeriodEnd { get; set; }
-    public List<DigestReferenceDto> References { get; set; } = new();
-}
-
-public class DigestReferenceDto
-{
-    public string Title { get; set; } = string.Empty;
-    public string Url { get; set; } = string.Empty;
-    public string Reason { get; set; } = string.Empty;
-} 

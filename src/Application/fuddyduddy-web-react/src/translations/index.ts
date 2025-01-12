@@ -16,6 +16,7 @@ interface Translation {
   }
   digests: {
     title: string
+    description: string
     generatedEveryHour: string
     viewAll: string
   }
@@ -60,6 +61,8 @@ interface Translation {
     newSummariesAvailable: string
     loadMore: string
     backToFeed: string
+    back: string
+    new: string
   }
   errors: {
     failedToLoadDigests: string
@@ -83,6 +86,7 @@ const translations: Record<Language, Translation> = {
     },
     digests: {
       title: 'Latest Digests',
+      description: 'A digest is a short summary of the most important news in Kyrgyzstan over the past hour. Our AI reads multiple news sources, identifies key events, and combines them into one easy-to-read overview with links to original articles.',
       generatedEveryHour: 'Digests are generated every hour',
       viewAll: 'View all digests'
     },
@@ -126,7 +130,9 @@ const translations: Record<Language, Translation> = {
       originalSource: 'Original source',
       newSummariesAvailable: 'New summaries available. Click to refresh.',
       loadMore: 'Load more',
-      backToFeed: 'Back to news feed'
+      backToFeed: 'Back to feed',
+      back: 'Back',
+      new: 'New'
     },
     errors: {
       failedToLoadDigests: 'Failed to load digests'
@@ -148,6 +154,7 @@ const translations: Record<Language, Translation> = {
     },
     digests: {
       title: 'Последние дайджесты',
+      description: 'Дайджест — это краткий обзор самых важных новостей Кыргызстана за последний час. Наш ИИ читает множество новостных источников, выделяет ключевые события и объединяет их в один удобный обзор со ссылками на оригинальные статьи.',
       generatedEveryHour: 'Дайджесты генерируются каждый час',
       viewAll: 'Смотреть все дайджесты'
     },
@@ -191,7 +198,9 @@ const translations: Record<Language, Translation> = {
       originalSource: 'Оригинальный источник',
       newSummariesAvailable: 'Доступны новые новости. Нажмите, чтобы обновить.',
       loadMore: 'Загрузить еще',
-      backToFeed: 'Вернуться к ленте новостей'
+      backToFeed: 'Лента новостей',
+      back: 'Назад',
+      new: 'Новое'
     },
     errors: {
       failedToLoadDigests: 'Не удалось загрузить дайджесты'

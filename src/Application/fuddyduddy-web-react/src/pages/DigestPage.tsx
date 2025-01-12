@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
+import { useLayout } from '../contexts/LayoutContext'
 import { fetchDigestById } from '../api/digests'
 import type { Digest } from '../types'
 import { formatDateTime } from '../utils/dateFormat'
 
 export default function DigestPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { t, language: interfaceLanguage } = useLocalization()
+  const { setShowSidePanels } = useLayout()
   const [digest, setDigest] = useState<Digest | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Hide side panels when component mounts, show them when unmounts
+  useEffect(() => {
+    setShowSidePanels(false)
+    return () => setShowSidePanels(true)
+  }, [setShowSidePanels])
 
   useEffect(() => {
     const loadDigest = async () => {
@@ -53,9 +62,12 @@ export default function DigestPage() {
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
         <div className="text-center py-8">
           <p className="text-red-500 dark:text-red-400 mb-4">{error || t.common.error}</p>
-          <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
             {t.common.backToFeed}
-          </Link>
+          </button>
         </div>
       </div>
     )
@@ -63,12 +75,20 @@ export default function DigestPage() {
 
   return (
     <>
-      <Link
-        to="/"
-        className="inline-block mb-4 text-blue-600 dark:text-blue-400 hover:underline"
-      >
-        {t.common.backToFeed}
-      </Link>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          ← {t.common.back}
+        </button>
+        <Link
+          to="/"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {t.common.backToFeed}
+        </Link>
+      </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 space-y-6">
         <div>
@@ -94,16 +114,21 @@ export default function DigestPage() {
             <div className="space-y-3">
               {digest.references.map((ref, i) => (
                 <div key={i} className="p-4 rounded-lg border dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                  <a
-                    href={ref.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {ref.title}
-                  </a>
+                  <div className="flex items-center justify-between mb-2">
+                    <a
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {ref.title}
+                    </a>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {ref.source}
+                    </span>
+                  </div>
                   {ref.reason && (
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {ref.reason}
                     </p>
                   )}

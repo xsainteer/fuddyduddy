@@ -114,7 +114,7 @@ For each remarkable event, provide:
 
 Keep the content succinct and focused on truly significant events.
 Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.
-The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
+The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}. We're looking for summaries from the last 1 hour.";
 
             // Generate digest using AI
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(

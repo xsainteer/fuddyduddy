@@ -93,7 +93,7 @@ export default function NewsPanel({ className = '', filters = {} }: NewsPanelPro
             })}
           </div>
 
-          {summaries?.length > 0 && (
+          {(summaries && summaries.length > 0) && (
             <Link
               to={`/${filters.language?.toLowerCase()}/feed`}
               className="block text-sm text-blue-600 dark:text-blue-400 hover:underline"

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useLocalization } from '../hooks/useLocalization'
 import { useTheme } from '../contexts/ThemeContext'

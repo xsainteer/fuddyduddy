@@ -95,7 +95,7 @@ export default function Digests({ className = '', filters = {} }: DigestsProps) 
             })}
           </div>
 
-          {digests?.length > 0 && (
+          {(digests && digests.length > 0) && (
             <Link
               to={`/${filters.language?.toLowerCase()}/digests`}
               className="block text-sm text-blue-600 dark:text-blue-400 hover:underline"

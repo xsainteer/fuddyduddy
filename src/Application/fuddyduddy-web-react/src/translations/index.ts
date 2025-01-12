@@ -19,6 +19,7 @@ interface Translation {
     description: string
     generatedEveryHour: string
     viewAll: string
+    newDigestAvailable: string
   }
   about: {
     title: string
@@ -88,7 +89,8 @@ const translations: Record<Language, Translation> = {
       title: 'Latest Digests',
       description: 'A digest is a short summary of the most important news in Kyrgyzstan over the past hour. Our AI reads multiple news sources, identifies key events, and combines them into one easy-to-read overview with links to original articles.',
       generatedEveryHour: 'Digests are generated every hour',
-      viewAll: 'View all digests'
+      viewAll: 'View all digests',
+      newDigestAvailable: 'New digest available'
     },
     about: {
       title: 'About FuddyDuddy News',
@@ -156,7 +158,8 @@ const translations: Record<Language, Translation> = {
       title: 'Последние дайджесты',
       description: 'Дайджест — это краткий обзор самых важных новостей Кыргызстана за последний час. Наш ИИ читает множество новостных источников, выделяет ключевые события и объединяет их в один удобный обзор со ссылками на оригинальные статьи.',
       generatedEveryHour: 'Дайджесты генерируются каждый час',
-      viewAll: 'Смотреть все дайджесты'
+      viewAll: 'Смотреть все дайджесты',
+      newDigestAvailable: 'Доступен новый дайджест'
     },
     about: {
       title: 'О FuddyDuddy News',

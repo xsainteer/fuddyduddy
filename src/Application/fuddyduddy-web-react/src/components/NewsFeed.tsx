@@ -4,6 +4,7 @@ import type { Summary, Filters } from '../types'
 import NewsCard from './NewsCard'
 import { useLocalization } from '../hooks/useLocalization'
 import UpdateNotification from './UpdateNotification'
+import DigestNotification from './DigestNotification'
 
 interface PageData {
   items: Summary[]
@@ -110,6 +111,7 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
   return (
     <>
       <UpdateNotification filters={filters} onRefresh={refetch} />
+      <DigestNotification filters={filters} />
 
       <div className="space-y-4">
         {data.pages.map((page, i) => (
@@ -130,7 +132,7 @@ export default function NewsFeed({ filters }: NewsFeedProps) {
           <button
             onClick={scrollToTop}
             className="fixed bottom-4 right-4 p-3 bg-blue-600 dark:bg-blue-500 text-white rounded-full 
-                     shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                     shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors z-30"
             aria-label="Scroll to top"
           >
             <svg

@@ -22,15 +22,27 @@ export default {
         },
       },
       keyframes: {
+        'slide-up': {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
         'slide-down': {
           '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(0)' }
-        }
+          '100%': { transform: 'translateY(0)' },
+        },
+        'highlight-pulse': {
+          '0%, 100%': { backgroundColor: 'var(--tw-bg-opacity, 1) rgb(59 130 246 / 0.05)' },
+          '50%': { backgroundColor: 'var(--tw-bg-opacity, 1) rgb(59 130 246 / 0.1)' },
+        },
       },
       animation: {
-        'slide-down': 'slide-down 0.3s ease-out'
-      }
+        'slide-up': 'slide-up 0.3s ease-out',
+        'slide-down': 'slide-down 0.3s ease-out',
+        'highlight-pulse': 'highlight-pulse 2s ease-in-out infinite',
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 } 

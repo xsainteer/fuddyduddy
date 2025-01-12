@@ -30,3 +30,7 @@ GET https://ollama.fuddy-duddy.org/api/tags
 POST http://localhost:5102/api/maintenance/rebuild-cache
 Content-Type: application/json
 api-key: fuddy-duddy-secret
+
+### generate digest
+POST http://localhost:5102/api/digests/generate?language=RU
+Content-Type: application/json

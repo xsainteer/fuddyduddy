@@ -135,7 +135,9 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
                     r.Title,
                     r.Url,
                     r.Reason
-                )).ToList();
+                ))
+                .DistinctBy(r => (r.NewsSummaryId, r.DigestId))
+                .ToList();
 
             // Create and save the digest
             var digest = new Digest(

@@ -60,9 +60,6 @@ internal class SummaryValidationService : ISummaryValidationService
 
                     summary.Validate(validation.Reason);
                     _logger.LogInformation("Summary {Id} validated successfully: {Reason}", summary.Id, validation.Reason);
-                    
-                    // Add to cache only if validation passed
-                    await _cacheService.AddSummaryAsync(summary, cancellationToken);
                 }
                 else
                 {
@@ -71,6 +68,12 @@ internal class SummaryValidationService : ISummaryValidationService
                 }
 
                 await _summaryRepository.UpdateAsync(summary, cancellationToken);
+
+                if (summary.State == NewsSummaryState.Validated)
+                {
+                    // Add to cache only if validation passed
+                    await _cacheService.AddSummaryAsync(summary, cancellationToken);
+                }
             }
             catch (Exception ex)
             {

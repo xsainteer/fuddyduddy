@@ -10,28 +10,30 @@ using FuddyDuddy.Core.Application.Constants;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
-public class OllamaAiService : IOllamaService
+internal class OllamaClient : IAiClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<OllamaAiService> _logger;
-    private readonly IOptions<OllamaOptions> _ollamaOptions;
+    private readonly ILogger<OllamaClient> _logger;
+    private readonly AiModels.ModelOptions _ollamaOptions;
+    private readonly string _model;
 
-    public OllamaAiService(IHttpClientFactory httpClientFactory, ILogger<OllamaAiService> logger, IOptions<OllamaOptions> ollamaOptions)
+    public OllamaClient(AiModels.ModelOptions ollamaOptions, AiModels.Type type, IHttpClientFactory httpClientFactory, ILogger<OllamaClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _ollamaOptions = ollamaOptions;
+        _model = ollamaOptions.Models.First(m => m.Type == type).Name;
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
         string systemPrompt,
         string userInput,
         T sample,
-        CancellationToken cancellationToken = default) where T : class
+        CancellationToken cancellationToken = default) where T : IAiModelResponse
     {
         var request = new
         {
-            model = _ollamaOptions.Value.Model,
+            model = _model,
             messages = new[]
             {
                 new
@@ -49,8 +51,8 @@ public class OllamaAiService : IOllamaService
             stream = false,
             options = new
             {
-                temperature = _ollamaOptions.Value.Temperature,
-                num_ctx = _ollamaOptions.Value.MaxTokens
+                temperature = _ollamaOptions.Temperature,
+                num_ctx = _ollamaOptions.MaxTokens
             }
         };
 
@@ -63,7 +65,7 @@ public class OllamaAiService : IOllamaService
         if (summary == null)
         {
             _logger.LogError("No summary generated, response: {Response}", response.Content);
-            return null;
+            return default;
         }
 
         _logger.LogInformation("Summary generated: {Summary}", summary);

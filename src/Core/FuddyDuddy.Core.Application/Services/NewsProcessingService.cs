@@ -24,7 +24,7 @@ internal class NewsProcessingService : INewsProcessingService
     private readonly INewsSourceDialectFactory _dialectFactory;
     private readonly ICrawlerMiddleware _crawlerMiddleware;
     private readonly ILogger<NewsProcessingService> _logger;
-    private readonly IOllamaService _ollamaService;
+    private readonly IAiService _aiService;
     private readonly IOptions<ProcessingOptions> _processingOptions;
 
     public NewsProcessingService(
@@ -34,7 +34,7 @@ internal class NewsProcessingService : INewsProcessingService
         IHttpClientFactory httpClientFactory,
         INewsSourceDialectFactory dialectFactory,
         ICrawlerMiddleware crawlerMiddleware,
-        IOllamaService ollamaService,
+        IAiService aiService,
         ILogger<NewsProcessingService> logger,
         IOptions<ProcessingOptions> processingOptions)
     {
@@ -44,7 +44,7 @@ internal class NewsProcessingService : INewsProcessingService
         _httpClientFactory = httpClientFactory;
         _dialectFactory = dialectFactory;
         _crawlerMiddleware = crawlerMiddleware;
-        _ollamaService = ollamaService;
+        _aiService = aiService;
         _logger = logger;
         _processingOptions = processingOptions;
     }
@@ -210,7 +210,7 @@ internal class NewsProcessingService : INewsProcessingService
 
         var userInput = content;
 
-        var response = await _ollamaService.GenerateStructuredResponseAsync<SummaryResponse>(
+        var response = await _aiService.GenerateStructuredResponseAsync<SummaryResponse>(
             systemPrompt,
             userInput,
             new SummaryResponse(),

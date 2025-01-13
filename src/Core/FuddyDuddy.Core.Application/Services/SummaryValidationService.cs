@@ -19,19 +19,19 @@ internal class SummaryValidationService : ISummaryValidationService
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;
     private readonly ILogger<SummaryValidationService> _logger;
-    private readonly IOllamaService _ollamaService;
+    private readonly IAiService _aiService;
     private readonly ICategoryRepository _categoryRepository;
     public SummaryValidationService(
         INewsSummaryRepository summaryRepository,
         ICategoryRepository categoryRepository,
         ICacheService cacheService,
         ILogger<SummaryValidationService> logger,
-        IOllamaService ollamaService)
+        IAiService aiService)
     {
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
         _logger = logger;
-        _ollamaService = ollamaService;
+        _aiService = aiService;
         _categoryRepository = categoryRepository;
     }
 
@@ -87,18 +87,18 @@ internal class SummaryValidationService : ISummaryValidationService
         try
         {
             var systemPrompt = @$"Ты - ассистент главного редактора новостной колонки. Сравни оригинальный заголовок статьи с заголовком и содержанием краткого изложения.
-                                Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid), тематика (topic) и почему (reason).
+                                Верни JSON-ответ, указывающий, совпадают ли они семантически (isValid), почему (reason) и определи тематика (topic).
                                 Учитывай: 1) Релевантность заголовка 2) Точность краткого изложения 3) Общее качество.
                                 Если isValid=false, в reason укажи причину отклонения. Если isValid=true, в reason укажи подтверждение качества.
                                 
-                                Тематику (topic) определи из списка (ключевые слова в скобках):
+                                Тематику (topic) определи из списка (ключевые слова в скобках), верни только название тематики:
                                 {categoryPrompt}";
             
             var userInput = @$"Оригинальный заголовок: {summary.NewsArticle.Title}
                                 Заголовок краткого изложения: {summary.Title}
                                 Содержание краткого изложения: {summary.Article}";
 
-            var response = await _ollamaService.GenerateStructuredResponseAsync<ValidationResponse>(
+            var response = await _aiService.GenerateStructuredResponseAsync<ValidationResponse>(
                 systemPrompt,
                 userInput,
                 new ValidationResponse(),

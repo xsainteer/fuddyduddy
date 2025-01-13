@@ -2,30 +2,30 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Application.Constants;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
-public class GeminiAiService : IGeminiService
+internal class GeminiClient : IAiClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<GeminiAiService> _logger;
-    private readonly IOptions<GeminiOptions> _geminiOptions;
-
-    public GeminiAiService(IOptions<GeminiOptions> geminiOptions, ILogger<GeminiAiService> logger, IHttpClientFactory httpClientFactory)
+    private readonly ILogger<GeminiClient> _logger;
+    private readonly AiModels.ModelOptions _geminiOptions;
+    private readonly string _model;
+    public GeminiClient(AiModels.ModelOptions geminiOptions, AiModels.Type type, ILogger<GeminiClient> logger, IHttpClientFactory httpClientFactory)
     {
         _geminiOptions = geminiOptions;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
+        _model = geminiOptions.Models.First(m => m.Type == type).Name;
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
         string systemPrompt,
         string userInput,
         T sample,
-        CancellationToken cancellationToken = default) where T : class
+        CancellationToken cancellationToken = default) where T : IAiModelResponse
     {
         try
         {
@@ -56,7 +56,7 @@ public class GeminiAiService : IGeminiService
             _logger.LogInformation("Sending request: {Request}", requestJson);
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, 
-                $"v1beta/models/{_geminiOptions.Value.Model}:generateContent?key={_geminiOptions.Value.ApiKey}");
+                $"v1beta/models/{_model}:generateContent?key={_geminiOptions.ApiKey}");
             httpRequest.Content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
             _logger.LogInformation("Sending request uri: {Request}", httpRequest.RequestUri);
@@ -75,7 +75,7 @@ public class GeminiAiService : IGeminiService
             if (string.IsNullOrEmpty(content))
             {
                 _logger.LogError("Empty response from Gemini API");
-                return null;
+                return default;
             }
 
             _logger.LogInformation("Parsed content: {Content}", content);
@@ -84,7 +84,7 @@ public class GeminiAiService : IGeminiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating response from Gemini API");
-            return null;
+            return default;
         }
     }
 

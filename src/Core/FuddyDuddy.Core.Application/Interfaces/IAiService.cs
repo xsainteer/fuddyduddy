@@ -21,5 +21,7 @@ public interface IAiService
         string systemPrompt,
         string userInput,
         T sample,
-        CancellationToken cancellationToken = default) where T : class;
+        CancellationToken cancellationToken = default) where T : IAiModelResponse;
 }
+
+public interface IAiModelResponse {}

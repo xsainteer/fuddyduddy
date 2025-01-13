@@ -2,7 +2,6 @@ using Tweetinvi;
 using Tweetinvi.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using Language = FuddyDuddy.Core.Domain.Entities.Language;

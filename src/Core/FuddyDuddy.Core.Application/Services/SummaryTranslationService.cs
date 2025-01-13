@@ -17,18 +17,18 @@ internal class SummaryTranslationService : ISummaryTranslationService
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ICacheService _cacheService;
     private readonly ILogger<SummaryTranslationService> _logger;
-    private readonly IOllamaService _ollamaService;
+    private readonly IAiService _aiService;
 
     public SummaryTranslationService(
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
         ILogger<SummaryTranslationService> logger,
-        IOllamaService ollamaService)
+        IAiService aiService)
     {
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
         _logger = logger;
-        _ollamaService = ollamaService;
+        _aiService = aiService;
     }
 
     public async Task TranslatePendingAsync(Language targetLanguage, CancellationToken cancellationToken = default)
@@ -119,7 +119,7 @@ internal class SummaryTranslationService : ISummaryTranslationService
 
             var userPrompt = $"Title: {summary.Title}\nArticle: {summary.Article}";
 
-            var response = await _ollamaService.GenerateStructuredResponseAsync<TranslationResponse>(
+            var response = await _aiService.GenerateStructuredResponseAsync<TranslationResponse>(
                 systemPrompt,
                 userPrompt,
                 new TranslationResponse(),

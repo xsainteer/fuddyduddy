@@ -1,8 +1,9 @@
 using System.Text.Json.Serialization;
+using FuddyDuddy.Core.Application.Interfaces;
 
 namespace FuddyDuddy.Core.Application.Models.AI;
 
-public class ValidationResponse
+public class ValidationResponse : IAiModelResponse
 {
     [JsonPropertyName("isValid")]
     public bool IsValid { get; set; }

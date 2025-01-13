@@ -22,8 +22,7 @@ internal class DigestCookService : IDigestCookService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly IDigestRepository _digestRepository;
-    private readonly IGeminiService _gemini;
-    private readonly IGeminiSmartService _geminiSmart;
+    private readonly IAiService _aiService;
     private readonly ICacheService _cacheService;
     private readonly ILogger<DigestCookService> _logger;
     private readonly IOptions<ProcessingOptions> _processingOptions;
@@ -32,8 +31,7 @@ internal class DigestCookService : IDigestCookService
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
         IDigestRepository digestRepository,
-        IGeminiService geminiService,
-        IGeminiSmartService geminiSmartService,
+        IAiService aiService,
         ICacheService cacheService,
         ITwitterConnectorFactory twitterConnectorFactory,
         ILogger<DigestCookService> logger,
@@ -41,8 +39,7 @@ internal class DigestCookService : IDigestCookService
     {
         _summaryRepository = summaryRepository;
         _digestRepository = digestRepository;
-        _gemini = geminiService;
-        _geminiSmart = geminiSmartService;
+        _aiService = aiService;
         _cacheService = cacheService;
         _twitterConnectorFactory = twitterConnectorFactory;
         _logger = logger;
@@ -126,7 +123,7 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
 The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
 
             // Generate digest using AI
-            var digestData = await _gemini.GenerateStructuredResponseAsync<DigestResponse>(
+            var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(
                 systemPrompt,
                 summariesText.ToString(),
                 sample,
@@ -265,7 +262,7 @@ IMPORTANT: if you think there is no news to tweet about, just return an empty st
 Remember: The goal is to inform and engage while being concise and professional.";
 
             // Generate tweet using AI
-            var tweetData = await _geminiSmart.GenerateStructuredResponseAsync<TweetCreationResponse>(
+            var tweetData = await _aiService.GenerateStructuredResponseAsync<TweetCreationResponse>(
                 systemPrompt,
                 digestsText.ToString(),
                 sample,

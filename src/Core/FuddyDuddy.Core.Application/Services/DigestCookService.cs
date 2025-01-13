@@ -257,7 +257,7 @@ Create a tweet that:
 4. Includes the provided URL
 5. MUST be under 280 characters (including the URL and hashtag)
 6. Maintains journalistic integrity
-7. Includes the URL: https://fuddy-duddy.org/{language.GetDescription().ToLower()}/digests
+7. Includes the URL: https://{_processingOptions.Value.Domain}/{language.GetDescription().ToLower()}/digests
 8. add just one hashtag: #kgnews
 
 Remember: The goal is to inform and engage while being concise and professional.";
@@ -282,12 +282,12 @@ Remember: The goal is to inform and engage while being concise and professional.
             }
 
             // Post tweet
-            await _twitterConnector.PostTweetAsync(language, finalTweet, cancellationToken);
+            await _twitterConnector.PostTweetAsync(language, tweetData.Tweet, cancellationToken);
 
             // Update last tweet timestamp
             await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);
 
-            _logger.LogInformation("Tweet posted successfully: {Tweet}", finalTweet);
+            _logger.LogInformation("Tweet posted successfully: {Tweet}", tweetData.Tweet);
 
             return true;
         }

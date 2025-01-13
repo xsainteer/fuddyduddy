@@ -9,6 +9,7 @@ public class ProcessingOptions
     public string Timezone { get; set; }
     public string TweetPostHours { get; set; } = string.Empty;
     public int MaxTweetLength { get; set; }
+    public string Domain { get; set; } = string.Empty;
     public int[] TweetPostHoursList => TweetPostHours.Split('-').Select(int.Parse).ToArray();
 
 }

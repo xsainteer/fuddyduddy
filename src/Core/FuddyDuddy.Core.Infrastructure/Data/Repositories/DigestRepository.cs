@@ -45,6 +45,16 @@ internal class DigestRepository : IDigestRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Digest>> GetLatestAsync(Language language, DateTimeOffset lastTweetTime, CancellationToken cancellationToken = default)
+    {
+        return await _context.Digests
+            .Where(d => d.Language == language && d.GeneratedAt > lastTweetTime)
+            .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .OrderByDescending(d => d.GeneratedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Digest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Digests

@@ -129,6 +129,10 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             await digestCookService.GenerateDigestAsync(Language.EN, cancellationToken);
             _logger.LogInformation("English digest generation completed");
 
+            // Generate English tweet
+            await digestCookService.GenerateTweetAsync(Language.EN, cancellationToken);
+            _logger.LogInformation("English tweet generation completed");
+
             _logger.LogInformation("Digest pipeline execution completed successfully");
         }
         catch (Exception ex)

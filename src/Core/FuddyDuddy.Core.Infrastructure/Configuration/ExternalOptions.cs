@@ -23,6 +23,13 @@ public class GeminiOptions
     public string Url { get; set; }
 }
 
+public class GeminiSmartOptions
+{
+    public string ApiKey { get; set; }
+    public string Model { get; set; }
+    public string Url { get; set; }
+}
+
 public class RedisOptions
 {
     public string ConnectionString { get; set; }

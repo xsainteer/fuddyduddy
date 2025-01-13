@@ -18,6 +18,8 @@ using RabbitMQ.Client;
 using FuddyDuddy.Core.Infrastructure.Messaging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Constants;
+using FuddyDuddy.Core.Infrastructure.Social;
+
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
@@ -30,13 +32,17 @@ public static class ServiceCollectionExtensions
         services.Configure<MySQLOptions>(section.GetSection("MySQL"));
         services.Configure<RedisOptions>(section.GetSection("Redis")); 
         services.Configure<GeminiOptions>(section.GetSection("Gemini"));
+        services.Configure<GeminiSmartOptions>(section.GetSection("GeminiSmart"));
         services.Configure<OllamaOptions>(section.GetSection("Ollama"));
         services.Configure<RabbitMqOptions>(section.GetSection("RabbitMQ"));
+        services.Configure<TwitterOptions>(section.GetSection("Twitter"));
 
         var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
         var redisOptions = section.GetSection("Redis").Get<RedisOptions>() ?? throw new Exception("Redis options are not configured");
         var ollamaOptions = section.GetSection("Ollama").Get<OllamaOptions>() ?? throw new Exception("Ollama options are not configured");
         var geminiOptions = section.GetSection("Gemini").Get<GeminiOptions>() ?? throw new Exception("Gemini options are not configured");
+        var geminiSmartOptions = section.GetSection("GeminiSmart").Get<GeminiSmartOptions>() ?? throw new Exception("GeminiSmart options are not configured");
+        var twitterOptions = section.GetSection("Twitter").Get<TwitterOptions>() ?? throw new Exception("Twitter options are not configured");
         
         // Crawler options
         services.Configure<CrawlerOptions>(configuration.GetSection("Crawler"));
@@ -67,6 +73,7 @@ public static class ServiceCollectionExtensions
 
         // Register AI service
         services.AddScoped<IGeminiService, GeminiAiService>();
+        services.AddScoped<IGeminiSmartService, GeminiSmartService>();
         services.AddScoped<IOllamaService, OllamaAiService>();
 
         // Register crawler middleware
@@ -127,6 +134,14 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Add("User-Agent", crawlerOptions.DefaultUserAgent);
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+
+        services.AddHttpClient(HttpClientConstants.TWITTER, client =>
+        {
+            client.BaseAddress = new Uri("https://api.x.com/2/");
+        });
+
+        // Register Twitter connector
+        services.AddScoped<ITwitterConnector, TwitterConnector>();
 
         return services;
     }

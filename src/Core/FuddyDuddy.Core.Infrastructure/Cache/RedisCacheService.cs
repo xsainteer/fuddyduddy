@@ -22,6 +22,9 @@ public class RedisCacheService : ICacheService
     private const string DIGESTS_BY_LANGUAGE_KEY = "latest:digests:{0}";  // Timeline by language
     private const int MAX_DIGESTS = 100;  // Per language
 
+    // Digest tweet timestamp
+    private const string LAST_TWEET_KEY = "lastTweetTimestamp:{0}";
+
     public RedisCacheService(
         IConnectionMultiplexer redis,
         ILogger<RedisCacheService> logger)
@@ -292,6 +295,21 @@ public class RedisCacheService : ICacheService
             _logger.LogError(ex, "Error clearing cache");
             throw;
         }
+    }
+
+    public async Task<long?> GetLastTweetTimestampAsync(Language language, CancellationToken cancellationToken = default)
+    {
+        var db = _redis.GetDatabase();
+        var key = string.Format(LAST_TWEET_KEY, language.ToString().ToLower());
+        var timestamp = await db.StringGetAsync(key);
+        return long.TryParse(timestamp, out var result) ? result : null;
+    }
+
+    public async Task SetLastTweetTimestampAsync(Language language, long timestamp, CancellationToken cancellationToken = default)
+    {
+        var db = _redis.GetDatabase();
+        var key = string.Format(LAST_TWEET_KEY, language.ToString().ToLower());
+        await db.StringSetAsync(key, timestamp.ToString());
     }
 
     private async Task<HashSet<string>> GetFilteredSummaryIdsAsync(

@@ -28,4 +28,8 @@ public interface ICacheService
         CancellationToken cancellationToken = default);
     Task<T?> GetDigestByIdAsync<T>(string id, CancellationToken cancellationToken = default);
     Task CacheDigestDtoAsync<T>(string id, T digest, CancellationToken cancellationToken = default);
+
+    // Digest tweet timestamp
+    Task<long?> GetLastTweetTimestampAsync(Language language, CancellationToken cancellationToken = default);
+    Task SetLastTweetTimestampAsync(Language language, long timestamp, CancellationToken cancellationToken = default);
 } 

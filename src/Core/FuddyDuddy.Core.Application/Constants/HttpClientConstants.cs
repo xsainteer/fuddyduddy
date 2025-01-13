@@ -2,7 +2,8 @@ namespace FuddyDuddy.Core.Application.Constants;
 
 public static class HttpClientConstants
 {
-    public static readonly string GEMINI = "GEMINI";
-    public static readonly string OLLAMA = "OLLAMA";
-    public static readonly string CRAWLER = "CRAWLER";
+    public const string OLLAMA = "Ollama";
+    public const string GEMINI = "Gemini";
+    public const string CRAWLER = "Crawler";
+    public const string TWITTER = "Twitter";
 }

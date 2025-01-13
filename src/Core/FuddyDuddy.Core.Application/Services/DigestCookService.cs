@@ -8,34 +8,43 @@ using FuddyDuddy.Core.Application.Models.AI;
 using FuddyDuddy.Core.Application.Configuration;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Models;
+using FuddyDuddy.Core.Application.Extensions;
 
 namespace FuddyDuddy.Core.Application.Services;
 
 public interface IDigestCookService
 {
     Task GenerateDigestAsync(Language language, CancellationToken cancellationToken = default);
+    Task<bool> GenerateTweetAsync(Language language, CancellationToken cancellationToken = default);
 }
 
 internal class DigestCookService : IDigestCookService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly IDigestRepository _digestRepository;
-    private readonly IGeminiService _aiService;
+    private readonly IGeminiService _gemini;
+    private readonly IGeminiSmartService _geminiSmart;
     private readonly ICacheService _cacheService;
+    private readonly ITwitterConnector _twitterConnector;
     private readonly ILogger<DigestCookService> _logger;
     private readonly IOptions<ProcessingOptions> _processingOptions;
+
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
         IDigestRepository digestRepository,
-        IGeminiService aiService,
+        IGeminiService geminiService,
+        IGeminiSmartService geminiSmartService,
         ICacheService cacheService,
+        ITwitterConnector twitterConnector,
         ILogger<DigestCookService> logger,
         IOptions<ProcessingOptions> processingOptions)
     {
         _summaryRepository = summaryRepository;
         _digestRepository = digestRepository;
-        _aiService = aiService;
+        _gemini = geminiService;
+        _geminiSmart = geminiSmartService;
         _cacheService = cacheService;
+        _twitterConnector = twitterConnector;
         _logger = logger;
         _processingOptions = processingOptions;
     }
@@ -85,7 +94,7 @@ internal class DigestCookService : IDigestCookService
             var summariesText = new StringBuilder();
             foreach (var summary in relevantSummaries)
             {
-                summariesText.AppendLine($"Time: {summary.GeneratedAt:HH:mm}");
+                summariesText.AppendLine($"Time: {summary.GeneratedAt.ConvertToTimeZone(_processingOptions.Value.Timezone):HH:mm}");
                 summariesText.AppendLine($"Title: {summary.Title}");
                 summariesText.AppendLine($"Article: {summary.Article}");
                 summariesText.AppendLine($"URL: {summary.NewsArticle.Url} (DO NOT VISIT - reference only)");
@@ -117,7 +126,7 @@ Remember: Do not attempt to visit any URLs - use them only as reference strings 
 The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
 
             // Generate digest using AI
-            var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(
+            var digestData = await _gemini.GenerateStructuredResponseAsync<DigestResponse>(
                 systemPrompt,
                 summariesText.ToString(),
                 sample,
@@ -180,6 +189,112 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
         {
             _logger.LogError(ex, "Error generating digest for {Language}", language);
             throw;
+        }
+    }
+
+    public async Task<bool> GenerateTweetAsync(Language language, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var hours = _processingOptions.Value.TweetPostHoursList;
+            var currentHour = DateTimeOffset.UtcNow.Hour;
+
+            if (hours.Length == 2 && (currentHour < hours[0] || currentHour > hours[1]))
+            {
+                _logger.LogInformation("It's not time to tweet yet. Allowed hours: {Hours}", string.Join("-", hours));
+                return false;
+            }
+
+            // Get the timestamp of the last tweet
+            var lastTweetTimestamp = await _cacheService.GetLastTweetTimestampAsync(language, cancellationToken)
+                ?? DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds();
+
+            var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
+            var currentTime = DateTimeOffset.UtcNow;
+
+            // Check if 2 hours have passed since the last tweet
+            if (currentTime - lastTweetTime < TimeSpan.FromHours(1))
+            {
+                _logger.LogInformation("Not enough time passed since last tweet at {LastTweetTime}", lastTweetTime);
+                return false;
+            }
+
+            // Get digests since last tweet
+            var digests = await _digestRepository.GetLatestAsync(language, lastTweetTime, cancellationToken);
+            var relevantDigests = digests
+                .Where(d => d.State == DigestState.Published)
+                .Where(d => d.References.Any(r => r.NewsSummary.Language == language))
+                .OrderByDescending(d => d.GeneratedAt)
+                .ToList();
+
+            _logger.LogInformation("Found {Count} relevant digests", relevantDigests.Count);
+
+            if (relevantDigests.Count == 0)
+            {
+                _logger.LogInformation("No new digests to tweet about since {LastTweetTime}", lastTweetTime);
+                return false;
+            }
+
+            // Format digests content for AI
+            var digestsText = new StringBuilder();
+            foreach (var digest in relevantDigests)
+            {
+                digestsText.AppendLine($"Time: {digest.GeneratedAt.ConvertToTimeZone(_processingOptions.Value.Timezone):HH:mm}");
+                digestsText.AppendLine($"Content: {digest.Content}");
+                digestsText.AppendLine();
+            }
+
+            var sample = new TweetCreationResponse
+            {
+                Tweet = "Just-in in KG. Extremely unhealthy air quality in Bishkek posing significant health risks to residents. Meanwhile, the Alatau Reservoir offers successful fishing opportunities for anglers catching large perch."
+            };
+
+            var systemPrompt = $@"You are a social media expert crafting engaging tweets about {_processingOptions.Value.Country} news.
+Create a tweet that:
+1. Highlights the most-most important news from the provided digests (because of the length constraint of 245 characters)
+2. Feel free to rephrase the news to make it more engaging and succinct (because of the length constraint of 245 characters)
+3. Uses engaging but professional language
+4. Includes the provided URL
+5. MUST be under 245 characters
+6. Maintains journalistic integrity
+
+Remember: The goal is to inform and engage while being concise and professional.";
+
+            // Generate tweet using AI
+            var tweetData = await _geminiSmart.GenerateStructuredResponseAsync<TweetCreationResponse>(
+                systemPrompt,
+                digestsText.ToString(),
+                sample,
+                cancellationToken);
+
+            if (string.IsNullOrEmpty(tweetData?.Tweet))
+            {
+                _logger.LogError("Failed to generate tweet");
+                return false;
+            }
+
+            if (tweetData.Tweet.Length > _processingOptions.Value.MaxTweetLength)
+            {
+                _logger.LogError("Tweet is too long: {TweetLength}. Tweet: {Tweet}", tweetData.Tweet.Length, tweetData.Tweet);
+                return false;
+            }
+
+            var finalTweet = $"{tweetData.Tweet} Read more: https://fuddy-duddy.org/{language.GetDescription().ToLower()}/digests";
+
+            // Post tweet
+            await _twitterConnector.PostTweetAsync(language, finalTweet, cancellationToken);
+
+            // Update last tweet timestamp
+            await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);
+
+            _logger.LogInformation("Tweet posted successfully: {Tweet}", finalTweet);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating tweet");
+            return false;
         }
     }
 } 

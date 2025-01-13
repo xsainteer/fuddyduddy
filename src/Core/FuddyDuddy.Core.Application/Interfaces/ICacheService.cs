@@ -32,4 +32,8 @@ public interface ICacheService
     // Digest tweet timestamp
     Task<long?> GetLastTweetTimestampAsync(Language language, CancellationToken cancellationToken = default);
     Task SetLastTweetTimestampAsync(Language language, long timestamp, CancellationToken cancellationToken = default);
+
+    // Twitter token
+    Task<string?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default);
+    Task SetTwitterTokenAsync(Language language, string token, TimeSpan expiration, CancellationToken cancellationToken = default);
 } 

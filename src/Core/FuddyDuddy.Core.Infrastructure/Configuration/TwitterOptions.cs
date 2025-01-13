@@ -9,6 +9,8 @@ public class TwitterOptions
 
     public class Details
     {
-        public string BearerToken { get; set; } = string.Empty;
+        // for OAuth 2.0
+        public string ApiKey { get; set; } = string.Empty;
+        public string SecretKey { get; set; } = string.Empty;
     }
 }

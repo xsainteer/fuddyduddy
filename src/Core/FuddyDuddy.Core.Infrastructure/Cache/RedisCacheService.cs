@@ -24,6 +24,7 @@ public class RedisCacheService : ICacheService
 
     // Digest tweet timestamp
     private const string LAST_TWEET_KEY = "lastTweetTimestamp:{0}";
+    private const string TWITTER_TOKEN_KEY = "twitter:token:{0}"; // {0} is language
 
     public RedisCacheService(
         IConnectionMultiplexer redis,
@@ -310,6 +311,21 @@ public class RedisCacheService : ICacheService
         var db = _redis.GetDatabase();
         var key = string.Format(LAST_TWEET_KEY, language.ToString().ToLower());
         await db.StringSetAsync(key, timestamp.ToString());
+    }
+
+    public async Task<string?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default)
+    {
+        var db = _redis.GetDatabase();
+        var key = string.Format(TWITTER_TOKEN_KEY, language.ToString().ToLower());
+        var redisValue = await db.StringGetAsync(key);
+        return redisValue == RedisValue.Null ? null : redisValue.ToString();
+    }
+
+    public async Task SetTwitterTokenAsync(Language language, string token, TimeSpan expiration, CancellationToken cancellationToken = default)
+    {
+        var db = _redis.GetDatabase();
+        var key = string.Format(TWITTER_TOKEN_KEY, language.ToString().ToLower());
+        await db.StringSetAsync(key, token, expiration);
     }
 
     private async Task<HashSet<string>> GetFilteredSummaryIdsAsync(

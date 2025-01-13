@@ -25,9 +25,9 @@ internal class DigestCookService : IDigestCookService
     private readonly IGeminiService _gemini;
     private readonly IGeminiSmartService _geminiSmart;
     private readonly ICacheService _cacheService;
-    private readonly ITwitterConnector _twitterConnector;
     private readonly ILogger<DigestCookService> _logger;
     private readonly IOptions<ProcessingOptions> _processingOptions;
+    private readonly ITwitterConnectorFactory _twitterConnectorFactory;
 
     public DigestCookService(
         INewsSummaryRepository summaryRepository,
@@ -35,7 +35,7 @@ internal class DigestCookService : IDigestCookService
         IGeminiService geminiService,
         IGeminiSmartService geminiSmartService,
         ICacheService cacheService,
-        ITwitterConnector twitterConnector,
+        ITwitterConnectorFactory twitterConnectorFactory,
         ILogger<DigestCookService> logger,
         IOptions<ProcessingOptions> processingOptions)
     {
@@ -44,7 +44,7 @@ internal class DigestCookService : IDigestCookService
         _gemini = geminiService;
         _geminiSmart = geminiSmartService;
         _cacheService = cacheService;
-        _twitterConnector = twitterConnector;
+        _twitterConnectorFactory = twitterConnectorFactory;
         _logger = logger;
         _processingOptions = processingOptions;
     }
@@ -260,6 +260,8 @@ Create a tweet that:
 7. Includes the URL: https://{_processingOptions.Value.Domain}/{language.GetDescription().ToLower()}/digests
 8. add just one hashtag: #kgnews
 
+IMPORTANT: if you think there is no news to tweet about, just return an empty string.
+
 Remember: The goal is to inform and engage while being concise and professional.";
 
             // Generate tweet using AI
@@ -282,7 +284,16 @@ Remember: The goal is to inform and engage while being concise and professional.
             }
 
             // Post tweet
-            await _twitterConnector.PostTweetAsync(language, tweetData.Tweet, cancellationToken);
+            var twitterConnector = _twitterConnectorFactory.Create(language);
+            var tweetId = await twitterConnector.PostTweetAsync(tweetData.Tweet);
+
+            if (tweetId == null)
+            {
+                _logger.LogError("Failed to post tweet: {Tweet}", tweetData.Tweet);
+                return false;
+            }
+
+            _logger.LogInformation("Tweet posted successfully: {TweetId}", tweetId);
 
             // Update last tweet timestamp
             await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);

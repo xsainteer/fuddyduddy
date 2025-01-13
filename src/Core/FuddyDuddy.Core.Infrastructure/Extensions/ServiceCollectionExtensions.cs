@@ -82,6 +82,9 @@ public static class ServiceCollectionExtensions
         // Register proxy pool manager
         services.AddSingleton<IProxyPoolManager, ProxyPoolManager>();
 
+        // Register twitter connector factory
+        services.AddSingleton<ITwitterConnectorFactory, TwitterConnectorFactory>();
+
         // Register http clients
         services.AddHttpClient(HttpClientConstants.OLLAMA, client =>
         {

@@ -1,120 +1,64 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using Tweetinvi;
+using Tweetinvi.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Infrastructure.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using FuddyDuddy.Core.Domain.Entities;
-using System.Text.Json.Serialization;
-using System.Net.Http.Json;
+using Language = FuddyDuddy.Core.Domain.Entities.Language;
 
 namespace FuddyDuddy.Core.Infrastructure.Social;
 
 internal class TwitterConnector : ITwitterConnector
 {
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<TwitterConnector> _logger;
     private readonly TwitterOptions _options;
-    private readonly ICacheService _cacheService;
+    private readonly ITwitterClient _client;
 
     public TwitterConnector(
-        IHttpClientFactory httpClientFactory,
         IOptions<TwitterOptions> options,
-        ICacheService cacheService,
-        ILogger<TwitterConnector> logger)
+        ILogger<TwitterConnector> logger,
+        Language language)
     {
-        _httpClientFactory = httpClientFactory;
         _options = options.Value;
-        _cacheService = cacheService;
         _logger = logger;
+        
+        // Initialize clients for each language
+        var creds = _options.LanguageDict[language];
+        var twitterCredentials = new TwitterCredentials(
+            creds.ConsumerKey,
+            creds.ConsumerSecret,
+            creds.AccessToken,
+            creds.AccessTokenSecret
+        );
+        _client = new TwitterClient(twitterCredentials);
     }
 
-    public async Task<bool> PostTweetAsync(Language language, string content, CancellationToken cancellationToken = default)
+    public async Task<long?> PostTweetAsync(string content)
     {
         if (!_options.Enabled)
         {
             _logger.LogInformation("Twitter posting is disabled");
-            return false;
+            return null;
         }
 
         try
         {
-            var accessToken = await GetAccessTokenAsync(language, cancellationToken);
-            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.TWITTER);
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var tweet = await _client.Tweets.PublishTweetAsync(content);
             
-            var response = await httpClient.PostAsync("tweets", 
-                new StringContent(JsonSerializer.Serialize(new { text = content }), 
-                Encoding.UTF8, 
-                "application/json"), 
-                cancellationToken);
-            
-            if (!response.IsSuccessStatusCode)
+            if (tweet != null)
             {
-                var error = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Failed to post tweet. Status: {Status}, Error: {Error}", 
-                    response.StatusCode, error);
-                return false;
+                _logger.LogInformation("Successfully posted tweet: {Content} with id {TweetId}", content, tweet.Id);
+                return tweet.Id;
             }
-
-            _logger.LogInformation("Successfully posted tweet: {Content}", content);
-            return true;
+            
+            _logger.LogError("Failed to post tweet: {Content}", content);
+            return null;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error posting tweet: {Content}", content);
-            return false;
+            return null;
         }
-    }
-
-    private async Task<string> GetAccessTokenAsync(Language language, CancellationToken cancellationToken)
-    {
-        var cachedToken = await _cacheService.GetTwitterTokenAsync(language, cancellationToken);
-        
-        if (cachedToken != null)
-            return cachedToken;
-
-        using var client = _httpClientFactory.CreateClient(HttpClientConstants.TWITTER);
-        
-        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-            $"{_options.LanguageDict[language].ApiKey}:{_options.LanguageDict[language].SecretKey}"));
-        
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
-        
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("grant_type", "client_credentials"),
-            new KeyValuePair<string, string>("scope", "tweet.read tweet.write users.read")
-        });
-
-        var response = await client.PostAsync("oauth2/token", content, cancellationToken);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"Failed to obtain Twitter access token: {error}");
-        }
-
-        var result = await response.Content.ReadFromJsonAsync<TwitterAuthResponse>(cancellationToken: cancellationToken);
-        
-        if (result?.AccessToken == null)
-            throw new InvalidOperationException("Failed to obtain Twitter access token");
-
-        await _cacheService.SetTwitterTokenAsync(language, result.AccessToken, 
-            TimeSpan.FromSeconds(result.ExpiresIn - 60),
-            cancellationToken);
-
-        return result.AccessToken;
-    }
-
-    private record TwitterAuthResponse(
-        [property: JsonPropertyName("access_token")] string AccessToken,
-        [property: JsonPropertyName("token_type")] string TokenType,
-        [property: JsonPropertyName("expires_in")] int ExpiresIn
-    )
-    {
-        public bool IsValid => !string.IsNullOrEmpty(AccessToken);
     }
 } 

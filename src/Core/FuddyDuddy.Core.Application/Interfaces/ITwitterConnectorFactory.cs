@@ -2,7 +2,7 @@ using FuddyDuddy.Core.Domain.Entities;
 
 namespace FuddyDuddy.Core.Application.Interfaces;
 
-public interface ITwitterConnector
+public interface ITwitterConnectorFactory
 {
-    Task<long?> PostTweetAsync(string content);
-} 
+    ITwitterConnector Create(Language language);
+}

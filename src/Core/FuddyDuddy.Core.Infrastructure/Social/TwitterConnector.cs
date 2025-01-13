@@ -28,6 +28,12 @@ internal class TwitterConnector : ITwitterConnector
 
     public async Task<bool> PostTweetAsync(Language language, string content, CancellationToken cancellationToken = default)
     {
+        if (!_options.Enabled)
+        {
+            _logger.LogInformation("Twitter posting is disabled");
+            return false;
+        }
+
         try
         {
             using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.TWITTER);

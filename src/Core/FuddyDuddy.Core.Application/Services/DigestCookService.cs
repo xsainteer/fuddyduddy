@@ -251,12 +251,14 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
 
             var systemPrompt = $@"You are a social media expert crafting engaging tweets about {_processingOptions.Value.Country} news.
 Create a tweet that:
-1. Highlights the most-most important news from the provided digests (because of the length constraint of 245 characters)
-2. Feel free to rephrase the news to make it more engaging and succinct (because of the length constraint of 245 characters)
+1. Highlights the most-most important news from the provided digests (because of the length constraint of 280 characters)
+2. Feel free to rephrase the news to make it more engaging and succinct (because of the length constraint of 280 characters)
 3. Uses engaging but professional language
 4. Includes the provided URL
-5. MUST be under 245 characters
+5. MUST be under 280 characters (including the URL and hashtag)
 6. Maintains journalistic integrity
+7. Includes the URL: https://fuddy-duddy.org/{language.GetDescription().ToLower()}/digests
+8. add just one hashtag: #kgnews
 
 Remember: The goal is to inform and engage while being concise and professional.";
 
@@ -278,8 +280,6 @@ Remember: The goal is to inform and engage while being concise and professional.
                 _logger.LogError("Tweet is too long: {TweetLength}. Tweet: {Tweet}", tweetData.Tweet.Length, tweetData.Tweet);
                 return false;
             }
-
-            var finalTweet = $"{tweetData.Tweet} Read more: https://fuddy-duddy.org/{language.GetDescription().ToLower()}/digests";
 
             // Post tweet
             await _twitterConnector.PostTweetAsync(language, finalTweet, cancellationToken);

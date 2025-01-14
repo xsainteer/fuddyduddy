@@ -39,12 +39,12 @@ internal class OllamaClient : IAiClient
                 new
                 {
                     role = "system",
-                    content = systemPrompt
+                    content = @$"{systemPrompt}"
                 },
                 new
                 {
                     role = "user",
-                    content = userInput
+                    content = @$"{userInput}"
                 }
             },
             format = JsonSchemaGenerator.GenerateJsonSchema(typeof(T)),

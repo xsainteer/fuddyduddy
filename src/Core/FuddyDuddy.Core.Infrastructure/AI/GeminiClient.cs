@@ -42,7 +42,11 @@ internal class GeminiClient : IAiClient
                     {
                         parts = new[]
                         {
-                            new { text = systemPrompt + "\n\n" + sampleText + "\n\n" + userInput }
+                            new { text = @$"{systemPrompt}
+
+{sampleText}
+
+{userInput}" }
                         }
                     }
                 },
@@ -52,7 +56,13 @@ internal class GeminiClient : IAiClient
                 }
             };
 
-            var requestJson = JsonSerializer.Serialize(request, IAiService.RequestJsonOptions);
+            var requestJsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, requestJsonOptions);
             _logger.LogInformation("Sending request: {Request}", requestJson);
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, 

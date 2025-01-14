@@ -12,4 +12,5 @@ public class ProcessingOptions
     public string Domain { get; set; } = string.Empty;
     public int[] TweetPostHoursList => TweetPostHours.Split('-').Select(int.Parse).ToArray();
 
+    public int TweetPostMinutesBack { get; set; } = 60;
 }

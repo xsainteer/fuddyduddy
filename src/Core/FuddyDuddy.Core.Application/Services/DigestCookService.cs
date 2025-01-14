@@ -205,7 +205,7 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
 
             // Get the timestamp of the last tweet
             var lastTweetTimestamp = await _cacheService.GetLastTweetTimestampAsync(language, cancellationToken)
-                ?? DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds();
+                ?? DateTimeOffset.UtcNow.AddMinutes(-_processingOptions.Value.TweetPostMinutesBack).ToUnixTimeSeconds();
 
             var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
 

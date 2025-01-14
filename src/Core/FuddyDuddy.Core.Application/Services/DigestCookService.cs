@@ -247,7 +247,7 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
             };
 
             var systemPrompt = $@"You are a social media expert crafting engaging tweets about {_processingOptions.Value.Country} news.
-Create a tweet that:
+Create a tweet in {language.GetDescription()} language that:
 1. Highlights the most-most important news from the provided digests (because of the length constraint of 280 characters)
 2. Feel free to rephrase the news to make it more engaging and succinct (because of the length constraint of 280 characters)
 3. Uses engaging but professional language
@@ -255,7 +255,7 @@ Create a tweet that:
 5. MUST be under 280 characters (including the URL and hashtag)
 6. Maintains journalistic integrity
 7. Includes the URL: https://{_processingOptions.Value.Domain}/{language.GetDescription().ToLower()}/digests
-8. add just one hashtag: #kgnews
+8. Add just one hashtag: #kgnews
 
 IMPORTANT: if you think there is no news to tweet about, just return an empty string.
 
@@ -282,15 +282,13 @@ Remember: The goal is to inform and engage while being concise and professional.
 
             // Post tweet
             var twitterConnector = _twitterConnectorFactory.Create(language);
-            var tweetId = await twitterConnector.PostTweetAsync(tweetData.Tweet);
+            var result = await twitterConnector.PostTweetAsync(tweetData.Tweet, cancellationToken);
 
-            if (tweetId == null)
+            if (!result)
             {
                 _logger.LogError("Failed to post tweet: {Tweet}", tweetData.Tweet);
                 return false;
             }
-
-            _logger.LogInformation("Tweet posted successfully: {TweetId}", tweetId);
 
             // Update last tweet timestamp
             await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);

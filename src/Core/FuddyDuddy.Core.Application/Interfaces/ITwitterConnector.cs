@@ -4,5 +4,5 @@ namespace FuddyDuddy.Core.Application.Interfaces;
 
 public interface ITwitterConnector
 {
-    Task<long?> PostTweetAsync(string content);
+    Task<bool> PostTweetAsync(string content, CancellationToken cancellationToken = default);
 } 

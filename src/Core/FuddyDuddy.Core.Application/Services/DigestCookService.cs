@@ -122,6 +122,11 @@ Keep the content succinct and focused on truly significant events.
 Remember: Do not attempt to visit any URLs - use them only as reference strings in your response.
 The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.Currency}.";
 
+            if (language == Language.RU)
+            {
+                systemPrompt += $"{Environment.NewLine}The correct spelling of the country is: {_processingOptions.Value.CountrySpell}.";
+            }
+
             // Generate digest using AI
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(
                 systemPrompt,
@@ -260,6 +265,11 @@ Create a tweet in {language.GetDescription()} language that:
 IMPORTANT: if you think there is no news to tweet about, just return an empty string.
 
 Remember: The goal is to inform and engage while being concise and professional.";
+
+            if (language == Language.RU)
+            {
+                systemPrompt += $"{Environment.NewLine}The correct spelling of the country is: {_processingOptions.Value.CountrySpell}.";
+            }
 
             // Generate tweet using AI
             var tweetData = await _aiService.GenerateStructuredResponseAsync<TweetCreationResponse>(

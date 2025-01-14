@@ -191,6 +191,7 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
 
     public async Task<bool> GenerateTweetAsync(Language language, CancellationToken cancellationToken = default)
     {
+        var currentTime = DateTimeOffset.UtcNow;
         try
         {
             var hours = _processingOptions.Value.TweetPostHoursList;
@@ -207,7 +208,6 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
                 ?? DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds();
 
             var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
-            var currentTime = DateTimeOffset.UtcNow;
 
             // Check if 2 hours have passed since the last tweet
             if (currentTime - lastTweetTime < TimeSpan.FromHours(1))
@@ -270,7 +270,7 @@ Remember: The goal is to inform and engage while being concise and professional.
 
             if (string.IsNullOrEmpty(tweetData?.Tweet))
             {
-                _logger.LogError("Failed to generate tweet");
+                _logger.LogError("Failed to generate tweet, generated tweet is empty");
                 return false;
             }
 
@@ -290,9 +290,6 @@ Remember: The goal is to inform and engage while being concise and professional.
                 return false;
             }
 
-            // Update last tweet timestamp
-            await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);
-
             _logger.LogInformation("Tweet posted successfully: {Tweet}", tweetData.Tweet);
 
             return true;
@@ -301,6 +298,12 @@ Remember: The goal is to inform and engage while being concise and professional.
         {
             _logger.LogError(ex, "Error generating tweet");
             return false;
+        }
+        finally
+        {
+            // Update last tweet timestamp to prevent generating tweets too often
+            await _cacheService.SetLastTweetTimestampAsync(language, currentTime.ToUnixTimeSeconds(), cancellationToken);
+            _logger.LogInformation("Tweet generation finished at {CurrentTime}", currentTime);
         }
     }
 } 

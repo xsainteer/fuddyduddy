@@ -43,10 +43,11 @@ internal class AiService : IAiService
 
     private IAiClient GetModelClient<T>() where T : IAiModelResponse
     {
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
         return typeof(T).Name switch
         {
-            nameof(TweetCreationResponse) => _geminiClients[ModelType.Pro],
-            nameof(DigestResponse) => _geminiClients[ModelType.Light],
+            nameof(TweetCreationResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Pro],
+            nameof(DigestResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Light],
             nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],

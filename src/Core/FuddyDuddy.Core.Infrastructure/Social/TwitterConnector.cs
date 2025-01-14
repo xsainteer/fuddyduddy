@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Interfaces;
@@ -18,6 +17,7 @@ internal class TwitterConnector : ITwitterConnector
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly Language _language;
     private const string TWITTER_API_V2_ENDPOINT = "https://api.x.com/2/tweets";
+    private const string TWITTER_OAUTH_TOKEN_ENDPOINT = "https://api.x.com/2/oauth2/token";
 
     public TwitterConnector(
         IOptions<TwitterOptions> options,
@@ -29,6 +29,43 @@ internal class TwitterConnector : ITwitterConnector
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _language = language;
+    }
+
+    private async Task<string?> GetBearerTokenAsync(TwitterOptions.Credentials credentials, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.TWITTER);
+            
+            var auth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{credentials.ClientId}:{credentials.ClientSecret}"));
+            var request = new HttpRequestMessage(HttpMethod.Post, TWITTER_OAUTH_TOKEN_ENDPOINT)
+            {
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "grant_type", "client_credentials" }
+                })
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", auth);
+
+            var response = await httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to get bearer token. Response: {ErrorContent}", error);
+                return null;
+            }
+
+            var tokenResponse = await JsonSerializer.DeserializeAsync<JsonElement>(
+                await response.Content.ReadAsStreamAsync(cancellationToken), 
+                cancellationToken: cancellationToken);
+            
+            return tokenResponse.GetProperty("access_token").GetString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting bearer token");
+            return null;
+        }
     }
 
     public async Task<bool> PostTweetAsync(string content, CancellationToken cancellationToken = default)
@@ -47,15 +84,11 @@ internal class TwitterConnector : ITwitterConnector
                 return false;
             }
 
-            var oAuthRequest = OAuthRequest.ForProtectedResource(
-                "POST",
-                credentials.ConsumerKey,
-                credentials.ConsumerSecret,
-                credentials.AccessToken,
-                credentials.AccessTokenSecret);
-
-            oAuthRequest.RequestUrl = TWITTER_API_V2_ENDPOINT;
-            var authHeader = oAuthRequest.GetAuthorizationHeader();
+            var bearerToken = await GetBearerTokenAsync(credentials, cancellationToken);
+            if (bearerToken == null)
+            {
+                return false;
+            }
 
             using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.TWITTER);
             var request = new HttpRequestMessage(HttpMethod.Post, TWITTER_API_V2_ENDPOINT)
@@ -66,7 +99,7 @@ internal class TwitterConnector : ITwitterConnector
                     "application/json")
             };
 
-            request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", authHeader.Replace("OAuth ", ""));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
 
             var response = await httpClient.SendAsync(request, cancellationToken);
             

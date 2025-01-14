@@ -2,6 +2,7 @@ using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Repositories;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace FuddyDuddy.Core.Infrastructure.Data.Repositories;
 
 internal class NewsSummaryRepository : INewsSummaryRepository
@@ -31,15 +32,23 @@ internal class NewsSummaryRepository : INewsSummaryRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<NewsSummary>> GetValidatedOrDigestedAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<NewsSummary>> GetValidatedOrDigestedAsync(int? first = null, CancellationToken cancellationToken = default)
     {
-        return await _context
+        var query = _context
             .NewsSummaries
             .Where(s => s.State == NewsSummaryState.Validated || s.State == NewsSummaryState.Digested)
             .Include(s => s.Category)
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(s => s.GeneratedAt)
+            .AsQueryable();
+
+        if (first != null)
+        {
+            query = query.Take(first.Value);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(NewsSummary summary, CancellationToken cancellationToken = default)

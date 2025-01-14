@@ -98,7 +98,7 @@ public class MaintenanceController : ControllerBase
             await _cacheService.ClearCacheAsync(cancellationToken);
 
             // Get all validated summaries
-            var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken);
+            var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(2000, cancellationToken);
 
             // Add each summary back to cache
             foreach (var summary in summaries)

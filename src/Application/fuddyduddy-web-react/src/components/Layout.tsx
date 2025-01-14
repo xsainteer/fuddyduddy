@@ -7,6 +7,7 @@ import MobileMenu from './MobileMenu'
 import { useLanguage, type Language } from '../contexts/LanguageContext'
 import { useLayout } from '../contexts/LayoutContext'
 import type { Filters as FiltersType } from '../types'
+import MetaTags from './MetaTags'
 
 const SUPPORTED_LANGUAGES = ['en', 'ru'] as const
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]
@@ -52,31 +53,34 @@ export default function Layout() {
   }, [showSidePanels, setShowSidePanels])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header onMobileMenuClick={() => setIsMobileMenuOpen(true)} />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-      
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
-        {/* Main content */}
-        <main className={`col-span-12 ${showSidePanels ? 'lg:col-span-9' : 'lg:col-span-12 max-w-4xl mx-auto w-full'}`}>
-          <Outlet context={{ filters, setFilters, showFilters: showSidePanels }} />
-        </main>
+    <>
+      <MetaTags />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <Header onMobileMenuClick={() => setIsMobileMenuOpen(true)} />
+        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+        
+        <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-12 gap-6">
+          {/* Main content */}
+          <main className={`col-span-12 ${showSidePanels ? 'lg:col-span-9' : 'lg:col-span-12 max-w-4xl mx-auto w-full'}`}>
+            <Outlet context={{ filters, setFilters, showFilters: showSidePanels }} />
+          </main>
 
-        {/* Right sidebar - Digests or News */}
-        {showSidePanels && (
-          <aside className="hidden lg:block lg:col-span-3">
-            <div className="sticky top-24">
-              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar">
-                {isDigestsPage ? (
-                  <NewsPanel filters={filters} />
-                ) : (
-                  <Digests filters={filters} />
-                )}
+          {/* Right sidebar - Digests or News */}
+          {showSidePanels && (
+            <aside className="hidden lg:block lg:col-span-3">
+              <div className="sticky top-24">
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm max-h-[calc(100vh-120px)] overflow-y-auto no-scrollbar">
+                  {isDigestsPage ? (
+                    <NewsPanel filters={filters} />
+                  ) : (
+                    <Digests filters={filters} />
+                  )}
+                </div>
               </div>
-            </div>
-          </aside>
-        )}
+            </aside>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 } 

@@ -254,7 +254,7 @@ Create a tweet in {language.GetDescription()} language that:
 4. Includes the provided URL
 5. MUST be under 280 characters (including the URL and hashtag)
 6. Maintains journalistic integrity
-7. Includes the URL: https://{_processingOptions.Value.Domain}/{language.GetDescription().ToLower()}/digests
+7. Includes the URL: https://{_processingOptions.Value.Domain}/{language.ToString("g").ToLower()}/digests
 8. Add just one hashtag: #kgnews
 
 IMPORTANT: if you think there is no news to tweet about, just return an empty string.

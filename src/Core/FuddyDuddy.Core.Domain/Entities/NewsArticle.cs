@@ -22,8 +22,8 @@ public class NewsArticle
     {
         Id = Guid.NewGuid();
         NewsSourceId = newsSourceId;
-        Url = url;
-        Title = title;
+        Url = url.Length > 2048 ? url[..2048] : url;
+        Title = title.Length > 500 ? title[..500] : title;
         PublishedAt = publishedAt;
         CollectedAt = DateTimeOffset.UtcNow;
         IsProcessed = false;

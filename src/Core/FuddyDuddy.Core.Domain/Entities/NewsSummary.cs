@@ -56,8 +56,8 @@ public class NewsSummary
     {
         Id = Guid.NewGuid();
         NewsArticleId = newsArticleId;
-        Title = title;
-        Article = article;
+        Title = title.Length > 500 ? title[..500] : title;
+        Article = article.Length > 2048 ? article[..2048] : article;
         CategoryId = categoryId;
         Language = language;
         GeneratedAt = DateTimeOffset.UtcNow;

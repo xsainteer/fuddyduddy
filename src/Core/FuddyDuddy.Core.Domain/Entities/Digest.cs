@@ -34,8 +34,8 @@ public class Digest
         DigestState state)
     {
         Id = Guid.NewGuid();
-        Title = title;
-        Content = content;
+        Title = title.Length > 500 ? title[..500] : title;
+        Content = content.Length > 4096 ? content[..4096] : content;
         Language = language;
         GeneratedAt = DateTimeOffset.UtcNow;
         PeriodStart = periodStart;
@@ -71,9 +71,9 @@ public class DigestReference
     {
         Id = Guid.NewGuid();
         NewsSummaryId = newsSummaryId;
-        Title = title;
-        Url = url;
-        Reason = reason;
+        Title = title.Length > 500 ? title[..500] : title;
+        Url = url.Length > 2048 ? url[..2048] : url;
+        Reason = reason.Length > 1000 ? reason[..1000] : reason;
     }
 
     internal void SetDigest(Digest digest)

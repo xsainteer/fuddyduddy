@@ -34,11 +34,6 @@ public interface ICacheService
     Task SetLastTweetTimestampAsync(Language language, long timestamp, CancellationToken cancellationToken = default);
 
     // Twitter token
-    Task<CachedTwitterTokenResponseDto?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default);
-    Task SetTwitterTokenAsync(Language language, CachedTwitterTokenResponseDto token, CancellationToken cancellationToken = default);
-
-    // Twitter auth state
-    Task<CachedTwitterAuthStateDto?> GetTwitterAuthStateAsync(string state, CancellationToken cancellationToken = default);
-    Task SetTwitterAuthStateAsync(string state, CachedTwitterAuthStateDto authState, CancellationToken cancellationToken = default);
-    Task RemoveTwitterAuthStateAsync(string state, CancellationToken cancellationToken = default);
+    Task<string?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default);
+    Task SetTwitterTokenAsync(Language language, string token, TimeSpan expiration, CancellationToken cancellationToken = default);
 } 

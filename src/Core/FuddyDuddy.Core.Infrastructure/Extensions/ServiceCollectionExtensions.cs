@@ -76,9 +76,8 @@ public static class ServiceCollectionExtensions
         // Register proxy pool manager
         services.AddSingleton<IProxyPoolManager, ProxyPoolManager>();
 
-        // Register twitter connector factory and auth service
+        // Register twitter connector factory
         services.AddSingleton<ITwitterConnectorFactory, TwitterConnectorFactory>();
-        services.AddScoped<ITwitterAuthService, TwitterAuthService>();
 
         // Register http clients
         services.AddHttpClient(HttpClientConstants.OLLAMA, client =>
@@ -135,7 +134,7 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpClient(HttpClientConstants.TWITTER, client =>
         {
-            client.BaseAddress = new Uri("https://api.x.com/");
+            client.BaseAddress = new Uri("https://api.x.com/2/");
         });
 
         return services;

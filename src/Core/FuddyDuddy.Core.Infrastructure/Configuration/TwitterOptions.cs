@@ -8,8 +8,6 @@ public class TwitterOptions
     public Dictionary<Language, Credentials> LanguageDict { get; set; } = new();
     public class Credentials
     {
-        public string ClientId { get; set; } = string.Empty;
-        public string ClientSecret { get; set; } = string.Empty;
         public string ConsumerKey { get; set; } = string.Empty;
         public string ConsumerSecret { get; set; } = string.Empty;
         public string AccessToken { get; set; } = string.Empty;

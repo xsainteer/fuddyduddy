@@ -25,8 +25,7 @@ public class RedisCacheService : ICacheService
     // Digest tweet timestamp
     private const string LAST_TWEET_KEY = "lastTweetTimestamp:{0}";
     private const string TWITTER_TOKEN_KEY = "twitter:token:{0}"; // {0} is language
-    private const int STATE_EXPIRATION_MINUTES = 10;
-    private const string TWITTER_AUTH_STATE_KEY = "twitter_auth_state_{0}";
+
     public RedisCacheService(
         IConnectionMultiplexer redis,
         ILogger<RedisCacheService> logger)
@@ -314,43 +313,19 @@ public class RedisCacheService : ICacheService
         await db.StringSetAsync(key, timestamp.ToString());
     }
 
-    public async Task<CachedTwitterTokenResponseDto?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default)
+    public async Task<string?> GetTwitterTokenAsync(Language language, CancellationToken cancellationToken = default)
     {
         var db = _redis.GetDatabase();
         var key = string.Format(TWITTER_TOKEN_KEY, language.ToString().ToLower());
         var redisValue = await db.StringGetAsync(key);
-        return redisValue == RedisValue.Null ? null : JsonSerializer.Deserialize<CachedTwitterTokenResponseDto>(redisValue.ToString());
+        return redisValue == RedisValue.Null ? null : redisValue.ToString();
     }
 
-    public async Task SetTwitterTokenAsync(Language language, CachedTwitterTokenResponseDto token, CancellationToken cancellationToken = default)
+    public async Task SetTwitterTokenAsync(Language language, string token, TimeSpan expiration, CancellationToken cancellationToken = default)
     {
         var db = _redis.GetDatabase();
         var key = string.Format(TWITTER_TOKEN_KEY, language.ToString().ToLower());
-        var tokenJson = JsonSerializer.Serialize(token);
-        await db.StringSetAsync(key, tokenJson, TimeSpan.FromDays(7));
-    }
-
-    public async Task<CachedTwitterAuthStateDto?> GetTwitterAuthStateAsync(string state, CancellationToken cancellationToken = default)
-    {
-        var db = _redis.GetDatabase();
-        var key = string.Format(TWITTER_AUTH_STATE_KEY, state);
-        var redisValue = await db.StringGetAsync(key);
-        return redisValue == RedisValue.Null ? null : JsonSerializer.Deserialize<CachedTwitterAuthStateDto>(redisValue.ToString());
-    }
-
-    public async Task SetTwitterAuthStateAsync(string state, CachedTwitterAuthStateDto authState, CancellationToken cancellationToken = default)
-    {
-        var db = _redis.GetDatabase();
-        var key = string.Format(TWITTER_AUTH_STATE_KEY, state);
-        var authStateJson = JsonSerializer.Serialize(authState);
-        await db.StringSetAsync(key, authStateJson, TimeSpan.FromMinutes(STATE_EXPIRATION_MINUTES));
-    }
-
-    public async Task RemoveTwitterAuthStateAsync(string state, CancellationToken cancellationToken = default)
-    {
-        var db = _redis.GetDatabase();
-        var key = string.Format(TWITTER_AUTH_STATE_KEY, state);
-        await db.KeyDeleteAsync(key);
+        await db.StringSetAsync(key, token, expiration);
     }
 
     private async Task<HashSet<string>> GetFilteredSummaryIdsAsync(

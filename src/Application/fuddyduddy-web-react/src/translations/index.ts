@@ -8,6 +8,7 @@ interface Translation {
     digests: string
     feed: string
     language: string
+    followUs: string
   }
   filters: {
     title: string
@@ -84,7 +85,8 @@ const translations: Record<Language, Translation> = {
       about: 'About',
       digests: 'Digests',
       feed: 'Feed',
-      language: 'Language'
+      language: 'Language',
+      followUs: 'Follow us on X'
     },
     filters: {
       title: 'Filters',
@@ -159,7 +161,8 @@ const translations: Record<Language, Translation> = {
       about: 'О проекте',
       digests: 'Дайджесты',
       feed: 'Лента',
-      language: 'Язык'
+      language: 'Язык',
+      followUs: 'Читайте нас в X'
     },
     filters: {
       title: 'Фильтры',

@@ -26,6 +26,9 @@ internal class DigestRepository : IDigestRepository
             .Take(count)
             .Include(d => d.References)
             .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.Category)
+            .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
             .ThenInclude(ns => ns.NewsArticle)
             .ThenInclude(na => na.NewsSource)
             .ToListAsync(cancellationToken);
@@ -38,6 +41,9 @@ internal class DigestRepository : IDigestRepository
             .OrderByDescending(d => d.GeneratedAt)
             .Skip(skip)
             .Take(count)
+            .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.Category)
             .Include(d => d.References)
             .ThenInclude(r => r.NewsSummary)
             .ThenInclude(ns => ns.NewsArticle)
@@ -58,6 +64,9 @@ internal class DigestRepository : IDigestRepository
     public async Task<Digest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Digests
+            .Include(d => d.References)
+            .ThenInclude(r => r.NewsSummary)
+            .ThenInclude(ns => ns.Category)
             .Include(d => d.References)
             .ThenInclude(r => r.NewsSummary)
             .ThenInclude(ns => ns.NewsArticle)

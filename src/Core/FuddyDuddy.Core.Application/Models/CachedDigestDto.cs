@@ -32,16 +32,20 @@ public class CachedReferenceDto
     public string Url { get; set; } = string.Empty;
     public string Reason { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
 
     public static CachedReferenceDto FromReference(DigestReference reference)
     {
         return new CachedReferenceDto
         {
             Id = reference.Id,
-            Title = reference.NewsSummary.Title,
-            Url = reference.NewsSummary.NewsArticle.Url,
-            Source = reference.NewsSummary.NewsArticle.NewsSource.Name,
-            Reason = reference.Reason
+            Title = reference.NewsSummary?.Title ?? string.Empty,
+            Url = reference.NewsSummary?.NewsArticle?.Url ?? string.Empty,
+            Source = reference.NewsSummary?.NewsArticle?.NewsSource?.Name ?? string.Empty,
+            Reason = reference.Reason,
+            Category = reference.NewsSummary?.Language == Language.EN
+                        ? reference.NewsSummary?.Category?.Name ?? string.Empty
+                        : reference.NewsSummary?.Category?.Local ?? string.Empty
         };
     }
 }

@@ -114,7 +114,7 @@ export default function DigestPage() {
             <div className="space-y-3">
               {digest.references.map((ref, i) => (
                 <div key={i} className="p-4 rounded-lg border dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col gap-2">
                     <a
                       href={ref.url}
                       target="_blank"
@@ -123,15 +123,20 @@ export default function DigestPage() {
                     >
                       {ref.title}
                     </a>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {ref.source}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full">
+                        {ref.category}
+                      </span>
+                      <span className="px-2 py-0.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full">
+                        {ref.source}
+                      </span>
+                    </div>
+                    {ref.reason && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {ref.reason}
+                      </p>
+                    )}
                   </div>
-                  {ref.reason && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {ref.reason}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>

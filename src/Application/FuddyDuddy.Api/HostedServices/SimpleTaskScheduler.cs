@@ -116,26 +116,33 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
                 return;
             }
 
-            using var scope = _serviceProvider.CreateScope();
-            var digestCookService = scope.ServiceProvider.GetRequiredService<IDigestCookService>();
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var digestCookService = scope.ServiceProvider.GetRequiredService<IDigestCookService>();
 
-            _logger.LogInformation("Starting digest pipeline execution");
+                _logger.LogInformation("Starting digest pipeline execution");
 
-            // Generate Russian digest
-            await digestCookService.GenerateDigestAsync(Language.RU, cancellationToken);
-            _logger.LogInformation("Russian digest generation completed");
+                // Generate Russian digest
+                await digestCookService.GenerateDigestAsync(Language.RU, cancellationToken);
+                _logger.LogInformation("Russian digest generation completed");
 
-            // Generate English digest
-            await digestCookService.GenerateDigestAsync(Language.EN, cancellationToken);
-            _logger.LogInformation("English digest generation completed");
+                // Generate English digest
+                await digestCookService.GenerateDigestAsync(Language.EN, cancellationToken);
+                _logger.LogInformation("English digest generation completed");
+            }
 
-            // Generate English tweet
-            await digestCookService.GenerateTweetAsync(Language.EN, cancellationToken);
-            _logger.LogInformation("English tweet generation completed");
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var digestCookService = scope.ServiceProvider.GetRequiredService<IDigestCookService>();
 
-            // Generate Russian tweet
-            await digestCookService.GenerateTweetAsync(Language.RU, cancellationToken);
-            _logger.LogInformation("Russian tweet generation completed");
+                // Generate English tweet
+                await digestCookService.GenerateTweetAsync(Language.EN, cancellationToken);
+                _logger.LogInformation("English tweet generation completed");
+
+                // Generate Russian tweet
+                await digestCookService.GenerateTweetAsync(Language.RU, cancellationToken);
+                _logger.LogInformation("Russian tweet generation completed");
+            }
 
             _logger.LogInformation("Digest pipeline execution completed successfully");
         }

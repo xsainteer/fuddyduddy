@@ -197,29 +197,30 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
     public async Task<bool> GenerateTweetAsync(Language language, CancellationToken cancellationToken = default)
     {
         var currentTime = DateTimeOffset.UtcNow;
+        var hours = _processingOptions.Value.TweetPostHoursList;
+        var currentHour = DateTimeOffset.UtcNow.Hour;
+
+        if (hours.Length == 2 && (currentHour < hours[0] || currentHour > hours[1]))
+        {
+            _logger.LogInformation("It's not time to tweet yet. Allowed hours: {Hours}", string.Join("-", hours));
+            return false;
+        }
+
+        // Get the timestamp of the last tweet
+        var lastTweetTimestamp = await _cacheService.GetLastTweetTimestampAsync(language, cancellationToken)
+            ?? DateTimeOffset.UtcNow.AddMinutes(-_processingOptions.Value.TweetPostMinutesBack).ToUnixTimeSeconds();
+
+        var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
+
+        // Check if 2 hours have passed since the last tweet
+        if (currentTime - lastTweetTime < TimeSpan.FromHours(1))
+        {
+            _logger.LogInformation("Not enough time passed since last tweet at {LastTweetTime}", lastTweetTime);
+            return false;
+        }
+
         try
         {
-            var hours = _processingOptions.Value.TweetPostHoursList;
-            var currentHour = DateTimeOffset.UtcNow.Hour;
-
-            if (hours.Length == 2 && (currentHour < hours[0] || currentHour > hours[1]))
-            {
-                _logger.LogInformation("It's not time to tweet yet. Allowed hours: {Hours}", string.Join("-", hours));
-                return false;
-            }
-
-            // Get the timestamp of the last tweet
-            var lastTweetTimestamp = await _cacheService.GetLastTweetTimestampAsync(language, cancellationToken)
-                ?? DateTimeOffset.UtcNow.AddMinutes(-_processingOptions.Value.TweetPostMinutesBack).ToUnixTimeSeconds();
-
-            var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
-
-            // Check if 2 hours have passed since the last tweet
-            if (currentTime - lastTweetTime < TimeSpan.FromHours(1))
-            {
-                _logger.LogInformation("Not enough time passed since last tweet at {LastTweetTime}", lastTweetTime);
-                return false;
-            }
 
             // Get digests since last tweet
             var digests = await _digestRepository.GetLatestAsync(language, lastTweetTime, cancellationToken);

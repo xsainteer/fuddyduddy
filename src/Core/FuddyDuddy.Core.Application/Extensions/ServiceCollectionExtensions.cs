@@ -15,7 +15,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISummaryValidationService, SummaryValidationService>();
         services.AddScoped<ISummaryTranslationService, SummaryTranslationService>();
         services.AddScoped<IDigestCookService, DigestCookService>();
-        
+        services.AddScoped<ISimilarityService, SimilarityService>();
+
         // Maintenance
         services.AddScoped<IMaintenanceService, MaintenanceService>();
 

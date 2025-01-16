@@ -4,20 +4,32 @@ public class Similar
 {
     public Guid Id { get; private set; }
     public string Title { get; private set; } = string.Empty; // common title for similar summaries
-    public string TitleLocal { get; private set; } = string.Empty; // common title for similar summaries in local language
+    public Language Language { get; private set; }
 
     //list of summaries
-    public IReadOnlyCollection<SimilarReference> Summaries => _summaries.AsReadOnly();
-    private readonly List<SimilarReference> _summaries = new();
+    public IReadOnlyCollection<SimilarReference> References => _references.AsReadOnly();
+    private readonly List<SimilarReference> _references = new();
 
     private Similar() { } // For EF Core
 
-    public Similar(string title, string titleLocal, List<SimilarReference> references)
+    public Similar(string title, Language language, List<SimilarReference> references)
     {
         Id = Guid.NewGuid();
         Title = title.Length > 255 ? title[..255] : title;
-        TitleLocal = titleLocal.Length > 255 ? titleLocal[..255] : titleLocal;
-        _summaries.AddRange(references);
+        Language = language;
+        _references.AddRange(references);
+
+        // Set the back reference
+        foreach (var reference in references)
+        {
+            reference.SetSimilar(this);
+        }
+    }
+
+    public void AddReference(SimilarReference reference)
+    {
+        _references.Add(reference);
+        reference.SetSimilar(this);
     }
 }
 
@@ -25,17 +37,22 @@ public class SimilarReference
 {
     public Guid Id { get; private set; }
     public Guid SimilarId { get; private set; }
-    public virtual Similar Similar { get; private set; }
     public Guid NewsSummaryId { get; private set; }
     public virtual NewsSummary NewsSummary { get; private set; }
-
+    public DateTime CreatedAt { get; private set; }
+    public string Reason { get; private set; } = string.Empty;
     private SimilarReference() { } // For EF Core
 
-    public SimilarReference(Guid similarId, Guid newsSummaryId, NewsSummary newsSummary)
+    public SimilarReference(Guid newsSummaryId, string reason)
     {
         Id = Guid.NewGuid();
-        SimilarId = similarId;
         NewsSummaryId = newsSummaryId;
-        NewsSummary = newsSummary;
+        CreatedAt = DateTime.UtcNow;
+        Reason = reason.Length > 255 ? reason[..255] : reason;
+    }
+
+    internal void SetSimilar(Similar similar)
+    {
+        SimilarId = similar.Id;
     }
 }

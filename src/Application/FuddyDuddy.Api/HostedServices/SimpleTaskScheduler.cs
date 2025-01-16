@@ -68,6 +68,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             var newsProcessingService = scope.ServiceProvider.GetRequiredService<INewsProcessingService>();
             var validationService = scope.ServiceProvider.GetRequiredService<ISummaryValidationService>();
             var translationService = scope.ServiceProvider.GetRequiredService<ISummaryTranslationService>();
+            var similarityService = scope.ServiceProvider.GetRequiredService<ISimilarityService>();
 
             _logger.LogInformation("Starting summary pipeline execution");
 
@@ -78,14 +79,21 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
                 _logger.LogInformation("News processing completed");
             }
 
-            // Step 2: Validate summaries
+            // Step 2: Check for similar summaries
+            if (_schedulerSettings.Value.SimilarityTask)
+            {
+                await similarityService.CheckForSimilarSummariesAsync(cancellationToken);
+                _logger.LogInformation("Similar summaries check completed");
+            }
+
+            // Step 3: Validate summaries
             if (_schedulerSettings.Value.ValidationTask)
             {
                 await validationService.ValidateNewSummariesAsync(cancellationToken);
                 _logger.LogInformation("Summary validation completed");
             }
 
-            // Step 3: Translate to English
+            // Step 4: Translate to English
             if (_schedulerSettings.Value.TranslationTask)
             {
                 await translationService.TranslatePendingAsync(Language.EN, cancellationToken);

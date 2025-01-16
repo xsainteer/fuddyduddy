@@ -4,6 +4,7 @@ public class TaskSchedulerSettings
 {
     public bool Enabled { get; set; } = false;
     public bool SummaryTask { get; set; } = false;
+    public bool SimilarityTask { get; set; } = false;
     public bool ValidationTask { get; set; } = false;
     public bool TranslationTask { get; set; } = false;
     public bool DigestTask { get; set; } = false;

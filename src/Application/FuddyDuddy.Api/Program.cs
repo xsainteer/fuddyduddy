@@ -22,7 +22,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => c.OperationFilter<AddRequiredHeaderParameter>());
 
-builder.Services.AddScoped<AuthMiddleware>();
+builder.Services.AddTransient<AuthMiddleware>();
 
 // Add our application services
 builder.Services.AddApplicationServices(builder.Configuration);

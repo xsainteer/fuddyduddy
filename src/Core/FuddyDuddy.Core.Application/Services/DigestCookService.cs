@@ -219,24 +219,27 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
             return false;
         }
 
+
+        // Get digests since last tweet
+        var digests = await _digestRepository.GetLatestAsync(language, lastTweetTime, cancellationToken);
+        var relevantDigests = digests
+            .Where(d => d.State == DigestState.Published)
+            .Where(d => d.References.Any(r => r.NewsSummary.Language == language))
+            .OrderByDescending(d => d.GeneratedAt)
+            .ToList();
+
+        _logger.LogInformation("Found {Count} relevant digests", relevantDigests.Count);
+
+        if (relevantDigests.Count == 0)
+        {
+            _logger.LogInformation("No new digests to tweet about since {LastTweetTime}", lastTweetTime);
+            return false;
+        }
+
         try
         {
-
-            // Get digests since last tweet
-            var digests = await _digestRepository.GetLatestAsync(language, lastTweetTime, cancellationToken);
-            var relevantDigests = digests
-                .Where(d => d.State == DigestState.Published)
-                .Where(d => d.References.Any(r => r.NewsSummary.Language == language))
-                .OrderByDescending(d => d.GeneratedAt)
-                .ToList();
-
-            _logger.LogInformation("Found {Count} relevant digests", relevantDigests.Count);
-
-            if (relevantDigests.Count == 0)
-            {
-                _logger.LogInformation("No new digests to tweet about since {LastTweetTime}", lastTweetTime);
-                return false;
-            }
+            // set current time as last digest timestamp
+            currentTime = relevantDigests.Max(d => d.GeneratedAt);
 
             // Format digests content for AI
             var digestsText = new StringBuilder();

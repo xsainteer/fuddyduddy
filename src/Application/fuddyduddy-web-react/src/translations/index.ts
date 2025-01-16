@@ -114,7 +114,7 @@ const translations: Record<Language, Translation> = {
       },
       legal: {
         title: 'Legal Information',
-        copyright: 'All rights to news materials belong to their rightful owners. We do not copy or distribute original content.',
+        copyright: 'All rights to news materials belong to their rightful owners. We do not copy or distribute original content. Our AI provides independent impressions and analysis while respecting all copyrights.',
         disclaimer: 'FuddyDuddy News is not a news aggregator. We offer AI-generated impressions of news materials without claiming authorship of the original content.',
         aiDisclaimer: 'Our reviews are AI\'s subjective perception of news. They are not copies, translations, or official representations of the original articles.',
         responsibility: 'FuddyDuddy News is not responsible for the content of original articles. Always refer to primary sources for official information.',
@@ -190,7 +190,7 @@ const translations: Record<Language, Translation> = {
       },
       legal: {
         title: 'Правовая информация',
-        copyright: 'Все права на новостные материалы принадлежат их законным владельцам. Мы не копируем и не распространяем оригинальный контент.',
+        copyright: 'Все права на новостные материалы принадлежат их законным владельцам. Мы не копируем и не распространяем оригинальный контент. Мы явно не воспроизводим и не перепечатываем оригинальный контент. Наш ИИ предоставляет независимые впечатления и анализ, уважая все авторские права.',
         disclaimer: 'FuddyDuddy News не является новостным агрегатором. Мы предлагаем AI-generated впечатления о новостных материалах, не претендуя на авторство оригинального контента.',
         aiDisclaimer: 'Наши обзоры — это субъективное восприятие новостей искусственным интеллектом. Они не являются копией, переводом или официальным представлением оригинальных статей.',
         responsibility: 'FuddyDuddy News не несет ответственности за содержание оригинальных статей. Для получения официальной информации всегда обращайтесь к первоисточникам.',

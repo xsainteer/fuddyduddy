@@ -49,13 +49,16 @@ public static class ServiceCollectionExtensions
             options.UseMySql(
                 mysqlOptions.ConnectionString,
                 ServerVersion.AutoDetect(mysqlOptions.ConnectionString),
-                b => b.MigrationsAssembly(typeof(FuddyDuddyDbContext).Assembly.FullName)));
+                b => b.MigrationsAssembly(typeof(FuddyDuddyDbContext).Assembly.FullName)
+                ),
+                contextLifetime: ServiceLifetime.Transient,
+                optionsLifetime: ServiceLifetime.Singleton);
 
-        services.AddScoped<INewsSourceRepository, NewsSourceRepository>();
-        services.AddScoped<INewsArticleRepository, NewsArticleRepository>();
-        services.AddScoped<INewsSummaryRepository, NewsSummaryRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IDigestRepository, DigestRepository>();
+        services.AddTransient<INewsSourceRepository, NewsSourceRepository>();
+        services.AddTransient<INewsArticleRepository, NewsArticleRepository>();
+        services.AddTransient<INewsSummaryRepository, NewsSummaryRepository>();
+        services.AddTransient<ICategoryRepository, CategoryRepository>();
+        services.AddTransient<IDigestRepository, DigestRepository>();
 
         // Add Redis
         services.AddSingleton<IConnectionMultiplexer>(sp => 
@@ -65,7 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddRabbitMq();
 
         // Register cache service
-        services.AddScoped<ICacheService, RedisCacheService>();
+        services.AddTransient<ICacheService, RedisCacheService>();
 
         // Register AI service
         services.AddSingleton<IAiService, AiService>();

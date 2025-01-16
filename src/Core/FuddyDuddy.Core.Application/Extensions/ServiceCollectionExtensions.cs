@@ -10,14 +10,14 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Register services
-        services.AddScoped<INewsSourceDialectFactory, NewsSourceDialectFactory>();
-        services.AddScoped<INewsProcessingService, NewsProcessingService>();
-        services.AddScoped<ISummaryValidationService, SummaryValidationService>();
-        services.AddScoped<ISummaryTranslationService, SummaryTranslationService>();
-        services.AddScoped<IDigestCookService, DigestCookService>();
+        services.AddTransient<INewsSourceDialectFactory, NewsSourceDialectFactory>();
+        services.AddTransient<INewsProcessingService, NewsProcessingService>();
+        services.AddTransient<ISummaryValidationService, SummaryValidationService>();
+        services.AddTransient<ISummaryTranslationService, SummaryTranslationService>();
+        services.AddTransient<IDigestCookService, DigestCookService>();
         
         // Maintenance
-        services.AddScoped<IMaintenanceService, MaintenanceService>();
+        services.AddTransient<IMaintenanceService, MaintenanceService>();
 
         // Business logic options
         services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.SectionName));

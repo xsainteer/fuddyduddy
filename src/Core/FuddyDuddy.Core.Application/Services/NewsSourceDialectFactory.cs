@@ -23,6 +23,7 @@ internal class NewsSourceDialectFactory : INewsSourceDialectFactory
             "AkiPress" => new AkiPressDialect(),
             "24kg" => new TwentyFourKgDialect(),
             "Akchabar" => new AkchabarDialect(),
+            "Kloop" => new KloopDialect(),
             _ => throw new ArgumentException($"Unknown dialect type: {dialectType}")
         };
     }

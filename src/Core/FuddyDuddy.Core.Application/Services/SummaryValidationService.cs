@@ -71,8 +71,9 @@ internal class SummaryValidationService : ISummaryValidationService
 
                 if (summary.State == NewsSummaryState.Validated)
                 {
+                    var updatedSummary = await _summaryRepository.IncludeAllReferencesAsync(summary, cancellationToken);
                     // Add to cache only if validation passed
-                    await _cacheService.AddSummaryAsync(summary, cancellationToken);
+                    await _cacheService.AddSummaryAsync(updatedSummary, cancellationToken);
                 }
             }
             catch (Exception ex)

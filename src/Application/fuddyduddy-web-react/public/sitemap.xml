@@ -5,10 +5,10 @@
   <!-- Digest pages -->
   <url>
     <loc>https://fuddy-duddy.org/ru/digests</loc>
-    <lastmod>2025-01-12</lastmod>
+    <lastmod>2025-01-17</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/digests"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/digests"/>
     <news:news>
       <news:publication>
         <news:name>FuddyDuddy News</news:name>
@@ -20,10 +20,10 @@
   </url>
   <url>
     <loc>https://fuddy-duddy.org/en/digests</loc>
-    <lastmod>2025-01-12</lastmod>
+    <lastmod>2025-01-17</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/digests"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/digests"/>
     <news:news>
       <news:publication>
         <news:name>FuddyDuddy News</news:name>
@@ -37,10 +37,10 @@
   <!-- About pages -->
   <url>
     <loc>https://fuddy-duddy.org/ru/about</loc>
-    <lastmod>2025-01-12</lastmod>
+    <lastmod>2025-01-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/about"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/about"/>
     <news:news>
       <news:publication>
         <news:name>FuddyDuddy News</news:name>
@@ -52,10 +52,10 @@
   </url>
   <url>
     <loc>https://fuddy-duddy.org/en/about</loc>
-    <lastmod>2025-01-12</lastmod>
+    <lastmod>2025-01-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://fuddy-duddy.org/ru/about"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fuddy-duddy.org/en/about"/>
     <news:news>
       <news:publication>
         <news:name>FuddyDuddy News</news:name>

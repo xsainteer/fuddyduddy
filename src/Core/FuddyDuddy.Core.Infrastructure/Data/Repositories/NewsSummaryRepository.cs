@@ -70,4 +70,27 @@ internal class NewsSummaryRepository : INewsSummaryRepository
             .Where(s => s.NewsArticleId == newsArticleId)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<NewsSummary> IncludeAllReferencesAsync(NewsSummary summary, CancellationToken cancellationToken = default)
+    {
+        // Load Category
+        await _context.Entry(summary)
+            .Reference(s => s.Category)
+            .LoadAsync(cancellationToken);
+
+        // Load NewsArticle
+        await _context.Entry(summary)
+            .Reference(s => s.NewsArticle)
+            .LoadAsync(cancellationToken);
+
+        // Load NewsSource after NewsArticle is loaded
+        if (summary.NewsArticle != null)
+        {
+            await _context.Entry(summary.NewsArticle)
+                .Reference(na => na.NewsSource)
+                .LoadAsync(cancellationToken);
+        }
+
+        return summary;
+    }
 } 

@@ -73,15 +73,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
                 _logger.LogInformation("News processing completed");
             }
 
-            // Step 2: Check for similar summaries
-            if (_schedulerSettings.Value.SimilarityTask)
-            {
-                var similarityService = _serviceProvider.GetRequiredService<ISimilarityService>();
-                await similarityService.CheckForSimilarSummariesAsync(cancellationToken);
-                _logger.LogInformation("Similar summaries check completed");
-            }
-
-            // Step 3: Validate summaries
+            // Step 2: Validate summaries
             if (_schedulerSettings.Value.ValidationTask)
             {
                 var validationService = _serviceProvider.GetRequiredService<ISummaryValidationService>();
@@ -89,7 +81,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
                 _logger.LogInformation("Summary validation completed");
             }
 
-            // Step 4: Translate to English
+            // Step 3: Translate to English
             if (_schedulerSettings.Value.TranslationTask)
             {
                 var translationService = _serviceProvider.GetRequiredService<ISummaryTranslationService>();

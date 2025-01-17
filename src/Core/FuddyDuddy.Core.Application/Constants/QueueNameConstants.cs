@@ -6,4 +6,5 @@ public static class QueueNameConstants
     public const string Validation = "validation";
     public const string Translation = "translation";
     public const string Digest = "digest";
+    public const string Similar = "similar";
 } 

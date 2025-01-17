@@ -10,7 +10,7 @@ namespace FuddyDuddy.Core.Application.Services;
 public interface ISimilarityService
 {
     Task CheckForSimilarSummariesAsync(CancellationToken cancellationToken);
-    Task FindSimilarSummariesAsync(NewsSummary newsSummary, CancellationToken cancellationToken);
+    Task FindSimilarSummariesAsync(Guid newsSummaryId, CancellationToken cancellationToken);
 }
 
 public class SimilarityService : ISimilarityService
@@ -44,7 +44,7 @@ public class SimilarityService : ISimilarityService
         {
             try
             {
-                await FindSimilarSummariesAsync(summary, cancellationToken);
+                await FindSimilarSummariesAsync(summary.Id, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -53,13 +53,20 @@ public class SimilarityService : ISimilarityService
         }
     }
 
-    public async Task FindSimilarSummariesAsync(NewsSummary newsSummary, CancellationToken cancellationToken)
+    public async Task FindSimilarSummariesAsync(Guid newsSummaryId, CancellationToken cancellationToken)
     {
         // Check if summary is already in a similarity group
-        var existingSimilarGroups = await _similarRepository.GetBySummaryIdAsync(newsSummary.Id, cancellationToken);
+        var existingSimilarGroups = await _similarRepository.GetBySummaryIdAsync(newsSummaryId, cancellationToken);
         if (existingSimilarGroups.Any())
         {
-            _logger.LogInformation("Summary {SummaryId} is already in {Count} similarity groups", newsSummary.Id, existingSimilarGroups.Count());
+            _logger.LogInformation("Summary {SummaryId} is already in {Count} similarity groups", newsSummaryId, existingSimilarGroups.Count());
+            return;
+        }
+
+        var newsSummary = await _summaryRepository.GetByIdAsync(newsSummaryId, cancellationToken);
+        if (newsSummary == null)
+        {
+            _logger.LogError("News summary {SummaryId} not found", newsSummaryId);
             return;
         }
 

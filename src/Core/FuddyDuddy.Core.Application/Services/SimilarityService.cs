@@ -78,10 +78,12 @@ public class SimilarityService : ISimilarityService
         var recentSummaries = await _summaryRepository.GetByStateAsync(
             states: [NewsSummaryState.Created, NewsSummaryState.Validated, NewsSummaryState.Digested],
             first: _similaritySettings.Value.MaxSimilarSummaries,
+            categoryId: newsSummary.CategoryId,
+            language: newsSummary.Language,
             cancellationToken: cancellationToken);
 
         var sameLangSummaries = recentSummaries
-            .Where(s => s.Language == newsSummary.Language && s.CategoryId == newsSummary.CategoryId && s.Id != newsSummary.Id)
+            .Where(s => s.Id != newsSummary.Id)
             .ToList();
 
         if (!sameLangSummaries.Any())

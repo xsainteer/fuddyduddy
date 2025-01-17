@@ -19,12 +19,20 @@ internal class NewsSummaryRepository : INewsSummaryRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<NewsSummary>> GetByStateAsync(IList<NewsSummaryState> states, DateTimeOffset? date = null, int? first = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<NewsSummary>> GetByStateAsync(
+        IList<NewsSummaryState> states,
+        DateTimeOffset? date = null,
+        int? first = null,
+        int? categoryId = null,
+        Language? language = null,
+        CancellationToken cancellationToken = default)
     {
         var query = _context
             .NewsSummaries
             .Where(s => states.Contains(s.State))
             .Where(s => date == null || s.GeneratedAt >= date)
+            .Where(s => categoryId == null || s.CategoryId == categoryId)
+            .Where(s => language == null || s.Language == language)
             .Include(s => s.Category)
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)

@@ -54,7 +54,7 @@ internal class DigestRepository : IDigestRepository
     public async Task<IEnumerable<Digest>> GetLatestAsync(Language language, DateTimeOffset lastTweetTime, CancellationToken cancellationToken = default)
     {
         return await _context.Digests
-            .Where(d => d.Language == language && d.GeneratedAt > lastTweetTime)
+            .Where(d => d.Language == language && d.GeneratedAt > lastTweetTime.AddMinutes(10))
             .Include(d => d.References)
             .ThenInclude(r => r.NewsSummary)
             .OrderByDescending(d => d.GeneratedAt)

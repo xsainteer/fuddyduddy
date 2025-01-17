@@ -34,3 +34,8 @@ api-key: fuddy-duddy-secret
 ### generate digest
 POST http://localhost:5102/api/digests/generate?language=RU
 Content-Type: application/json
+
+
+### sitemap
+GET https://fuddy-duddy.org/sitemap.xml
+Content-Type: text/xml

@@ -21,18 +21,21 @@ internal class SummaryValidationService : ISummaryValidationService
     private readonly ILogger<SummaryValidationService> _logger;
     private readonly IAiService _aiService;
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IBroker _broker;
     public SummaryValidationService(
         INewsSummaryRepository summaryRepository,
         ICategoryRepository categoryRepository,
         ICacheService cacheService,
         ILogger<SummaryValidationService> logger,
-        IAiService aiService)
+        IAiService aiService,
+        IBroker broker)
     {
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
         _logger = logger;
         _aiService = aiService;
         _categoryRepository = categoryRepository;
+        _broker = broker;
     }
 
     public async Task ValidateNewSummariesAsync(CancellationToken cancellationToken = default)
@@ -74,6 +77,8 @@ internal class SummaryValidationService : ISummaryValidationService
                     var updatedSummary = await _summaryRepository.IncludeAllReferencesAsync(summary, cancellationToken);
                     // Add to cache only if validation passed
                     await _cacheService.AddSummaryAsync(updatedSummary, cancellationToken);
+
+                    await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(updatedSummary.Id), cancellationToken);
                 }
             }
             catch (Exception ex)

@@ -4,6 +4,8 @@ using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
+using FuddyDuddy.Core.Application.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -20,19 +22,21 @@ public class SimilarityService : ISimilarityService
     private readonly IAiService _aiService;
     private readonly ILogger<SimilarityService> _logger;
     private readonly ICacheService _cacheService;
-
+    private readonly IOptions<SimilaritySettings> _similaritySettings;
     public SimilarityService(
         INewsSummaryRepository summaryRepository,
         ISimilarRepository similarRepository,
         IAiService aiService,
         ILogger<SimilarityService> logger,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        IOptions<SimilaritySettings> similaritySettings)
     {
         _summaryRepository = summaryRepository;
         _similarRepository = similarRepository;
         _aiService = aiService;
         _logger = logger;
         _cacheService = cacheService;
+        _similaritySettings = similaritySettings;
     }
 
     public async Task CheckForSimilarSummariesAsync(CancellationToken cancellationToken)
@@ -70,12 +74,11 @@ public class SimilarityService : ISimilarityService
             return;
         }
 
-        // Get summaries from the last hour with the same language
-        var oneHourAgo = DateTimeOffset.UtcNow.AddHours(-1);
+        // Get last 20 summaries from the last hour with the same language
         var recentSummaries = await _summaryRepository.GetByStateAsync(
-            [NewsSummaryState.Created, NewsSummaryState.Validated, NewsSummaryState.Digested],
-            oneHourAgo,
-            cancellationToken);
+            states: [NewsSummaryState.Created, NewsSummaryState.Validated, NewsSummaryState.Digested],
+            first: _similaritySettings.Value.MaxSimilarSummaries,
+            cancellationToken: cancellationToken);
 
         var sameLangSummaries = recentSummaries
             .Where(s => s.Language == newsSummary.Language && s.CategoryId == newsSummary.CategoryId && s.Id != newsSummary.Id)
@@ -106,10 +109,11 @@ Two summaries are considered similar if they:
 1. Cover the same event or closely related events
 2. Share significant contextual overlap
 3. Are part of the same ongoing story
+All three criteria must be met for a summary to be considered similar.
 
-Return a JSON object with the following properties:
+Return a JSON object with the following fields:
 - similar_summary_id: the ID of the summary that is 100% similar to the first summary
-- reason: a short explanation of why the summary is similar to the first summary
+- reason: a short explanation of why the summary is similar to the first summary (255 characters max)
 
 If no summaries are similar enough, return an empty object.
 It's better to return none than a SOMEWHAT similar summary.
@@ -118,7 +122,7 @@ So be very strict in your similarity criteria.";
         var similarityResponse = await _aiService.GenerateStructuredResponseAsync<SimilarityResponse>(
             systemPrompt,
             System.Text.Json.JsonSerializer.Serialize(summaryData),
-            new SimilarityResponse(),
+            new SimilarityResponse { SimilarSummaryId = Guid.NewGuid().ToString(), Reason = "Both summaries report on the same event. The close thematic and contextual overlap strongly suggests semantic similarity." },
             cancellationToken);
 
         if (similarityResponse?.SimilarSummaryId == null)
@@ -127,8 +131,14 @@ So be very strict in your similarity criteria.";
             return;
         }
 
+        if (!Guid.TryParse(similarityResponse.SimilarSummaryId, out var similarSummaryId))
+        {
+            _logger.LogError("AI returned invalid similar summary ID {SimilarSummaryId} for {SummaryId}", similarityResponse.SimilarSummaryId, newsSummary.Id);
+            return;
+        }
+
         // Create similarity group
-        var similarSummary = sameLangSummaries.FirstOrDefault(s => s.Id == similarityResponse.SimilarSummaryId);
+        var similarSummary = sameLangSummaries.FirstOrDefault(s => s.Id == similarSummaryId);
         if (similarSummary == null)
         {
             _logger.LogError("AI returned similar summary ID {SimilarSummaryId} but it was not found in the database requested for {SummaryId}", similarityResponse.SimilarSummaryId, newsSummary.Id);
@@ -146,7 +156,12 @@ So be very strict in your similarity criteria.";
         }
         else
         {
-            await _similarRepository.AddAsync(new Similar(newsSummary.Title, newsSummary.Language, new() { new(newsSummary.Id, similarityResponse.Reason) }), cancellationToken);
+            var references = new List<SimilarReference>
+            {
+                new(newsSummary.Id, string.Empty),
+                new(similarSummary.Id, similarityResponse.Reason)
+            };
+            await _similarRepository.AddAsync(new Similar(newsSummary.Title, newsSummary.Language, references), cancellationToken);
             _logger.LogInformation(
                 "Created similarity group for {SummaryId} with name {Title} and similar summary {SimilarSummaryId} ({SimilarSummaryTitle}) with reason {Reason}",
                 newsSummary.Id,

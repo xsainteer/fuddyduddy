@@ -28,7 +28,7 @@ internal class MaintenanceService : IMaintenanceService
         DateTimeOffset since, 
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var summaries = await _summaryRepository.GetByStateAsync([NewsSummaryState.Validated, NewsSummaryState.Digested], since, cancellationToken);
+        var summaries = await _summaryRepository.GetByStateAsync([NewsSummaryState.Validated, NewsSummaryState.Digested], date: since, cancellationToken: cancellationToken);
 
         var categories = (await _categoryRepository.GetAllAsync(cancellationToken)).ToDictionary(c=>c.Local, c=>c);
         var categoryPrompt = string.Join("\n", categories.Select(c => $"{c.Key} ({c.Value.KeywordsLocal})"));

@@ -6,8 +6,8 @@ namespace FuddyDuddy.Core.Application.Models.AI;
 public class SimilarityResponse : IAiModelResponse
 {
     [JsonPropertyName("similar_summary_id")]
-    public Guid SimilarSummaryId { get; set; }
+    public string? SimilarSummaryId { get; set; }
 
     [JsonPropertyName("reason")]
-    public string Reason { get; set; } = string.Empty;
+    public string? Reason { get; set; }
 }

@@ -12,6 +12,7 @@ internal class AiService : IAiService
 {
     private readonly ILogger<AiService> _logger;
     private readonly Dictionary<ModelType, IAiClient> _geminiClients;
+    private readonly Dictionary<ModelType, IAiClient> _gemini2Clients;
     private readonly Dictionary<ModelType, IAiClient> _ollamaClients;
     public AiService(IServiceProvider serviceProvider, ILogger<AiService> logger, IOptions<AiModels> aiModelsOptions)
     {
@@ -21,6 +22,12 @@ internal class AiService : IAiService
         {
             { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Light) },
             { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Pro) }
+        };
+
+        _gemini2Clients = new Dictionary<ModelType, IAiClient>
+        {
+            { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Light) },
+            { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Pro) }
         };
 
         _ollamaClients = new Dictionary<ModelType, IAiClient>
@@ -51,7 +58,7 @@ internal class AiService : IAiService
             nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],
-            nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Pro],
+            nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Light],
             _ => throw new ArgumentException($"Invalid model type for {typeof(T).Name}")
         };
     }

@@ -27,6 +27,7 @@ internal class GeminiClient : IAiClient
         T sample,
         CancellationToken cancellationToken = default) where T : IAiModelResponse
     {
+        string content = string.Empty;
         try
         {
             using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.GEMINI);
@@ -81,7 +82,7 @@ internal class GeminiClient : IAiClient
 
             var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseContent);
 
-            var content = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+            content = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
             if (string.IsNullOrEmpty(content))
             {
                 _logger.LogError("Empty response from Gemini API");
@@ -93,7 +94,7 @@ internal class GeminiClient : IAiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating response from Gemini API");
+            _logger.LogError(ex, "Error generating response from Gemini API, Content: {Content}", content);
             return default;
         }
     }

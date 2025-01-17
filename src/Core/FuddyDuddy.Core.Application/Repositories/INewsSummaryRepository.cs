@@ -5,9 +5,13 @@ namespace FuddyDuddy.Core.Application.Repositories;
 public interface INewsSummaryRepository
 {
     Task AddAsync(NewsSummary summary, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Get summaries by state, others are optional: date range, first, categoryId, language
+    /// </summary>
     Task<IEnumerable<NewsSummary>> GetByStateAsync(
         IList<NewsSummaryState> states,
-        DateTimeOffset? date = null,
+        DateTimeOffset? dateStart = null,
+        DateTimeOffset? dateTo = null,
         int? first = null,
         int? categoryId = null,
         Language? language = null,

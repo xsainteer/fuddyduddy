@@ -77,6 +77,7 @@ public class SimilarityService : ISimilarityService
         // Get last 20 summaries from the last hour with the same language
         var recentSummaries = await _summaryRepository.GetByStateAsync(
             states: [NewsSummaryState.Created, NewsSummaryState.Validated, NewsSummaryState.Digested],
+            dateTo: newsSummary.GeneratedAt,
             first: _similaritySettings.Value.MaxSimilarSummaries,
             categoryId: newsSummary.CategoryId,
             language: newsSummary.Language,

@@ -35,7 +35,7 @@ internal class SummaryTranslationService : ISummaryTranslationService
     {
         var summaries = (await _summaryRepository.GetByStateAsync(
                 [NewsSummaryState.Validated, NewsSummaryState.Digested], 
-                date: DateTimeOffset.UtcNow.AddHours(-1), 
+                dateStart: DateTimeOffset.UtcNow.AddHours(-1), 
                 cancellationToken: cancellationToken))
             .OrderBy(s => s.GeneratedAt)
             .ToArray();

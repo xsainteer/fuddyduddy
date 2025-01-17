@@ -21,7 +21,8 @@ internal class NewsSummaryRepository : INewsSummaryRepository
 
     public async Task<IEnumerable<NewsSummary>> GetByStateAsync(
         IList<NewsSummaryState> states,
-        DateTimeOffset? date = null,
+        DateTimeOffset? dateStart = null,
+        DateTimeOffset? dateTo = null,
         int? first = null,
         int? categoryId = null,
         Language? language = null,
@@ -30,7 +31,8 @@ internal class NewsSummaryRepository : INewsSummaryRepository
         var query = _context
             .NewsSummaries
             .Where(s => states.Contains(s.State))
-            .Where(s => date == null || s.GeneratedAt >= date)
+            .Where(s => dateStart == null || s.GeneratedAt >= dateStart)
+            .Where(s => dateTo == null || s.GeneratedAt <= dateTo)
             .Where(s => categoryId == null || s.CategoryId == categoryId)
             .Where(s => language == null || s.Language == language)
             .Include(s => s.Category)

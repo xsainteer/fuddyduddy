@@ -2,6 +2,7 @@ using FuddyDuddy.Core.Application.Services;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Api.Configuration;
+using Timer = System.Timers.Timer;
 
 namespace FuddyDuddy.Api.HostedServices;
 
@@ -10,8 +11,8 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
     private readonly ILogger<SimpleTaskScheduler> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptions<TaskSchedulerSettings> _schedulerSettings;
-    private Timer? _summaryPipelineTimer;
-    private Timer? _digestPipelineTimer;
+    private Timer _summaryPipelineTimer;
+    private Timer _digestPipelineTimer;
     private readonly SemaphoreSlim _pipelineLock = new(1, 1);
     private readonly SemaphoreSlim _digestLock = new(1, 1);
     public SimpleTaskScheduler(
@@ -39,20 +40,21 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         var digestInterval = _schedulerSettings.Value.DigestPipelineInterval;
 
         // Start summary pipeline timer
-        _summaryPipelineTimer = new Timer(
-            async _ => await ExecuteSummaryPipelineAsync(cancellationToken),
-            null,
-            TimeSpan.Zero, // Start immediately
-            summaryInterval
-        );
+        _summaryPipelineTimer = new Timer(_schedulerSettings.Value.SummaryPipelineInterval)
+        {
+            AutoReset = false // to manually control the batch processing
+        };
+        _summaryPipelineTimer.Elapsed += async (sender, e) => await ExecuteSummaryPipelineAsync(cancellationToken);
+        _summaryPipelineTimer.Start();
+
 
         // Start digest pipeline timer
-        _digestPipelineTimer = new Timer(
-            async _ => await ExecuteDigestPipelineAsync(cancellationToken),
-            null,
-            TimeSpan.Zero, // Start immediately
-            digestInterval
-        );
+        _digestPipelineTimer = new Timer(_schedulerSettings.Value.DigestPipelineInterval)
+        {
+            AutoReset = false // to manually control the batch processing
+        };
+        _digestPipelineTimer.Elapsed += async (sender, e) => await ExecuteDigestPipelineAsync(cancellationToken);
+        _digestPipelineTimer.Start();
 
         return Task.CompletedTask;
     }
@@ -98,6 +100,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         finally
         {
             _pipelineLock.Release();
+            _summaryPipelineTimer.Start();
         }
     }
 
@@ -128,6 +131,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
         finally
         {
             _digestLock.Release();
+            _digestPipelineTimer.Start();
         }
     }
 
@@ -153,15 +157,15 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
     {
         _logger.LogInformation("Task Scheduler Service is stopping.");
 
-        _summaryPipelineTimer?.Change(Timeout.Infinite, 0);
-        _digestPipelineTimer?.Change(Timeout.Infinite, 0);
+        _summaryPipelineTimer.Stop();
+        _digestPipelineTimer.Stop();
 
         return Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        _summaryPipelineTimer?.Dispose();
-        _digestPipelineTimer?.Dispose();
+        _summaryPipelineTimer.Dispose();
+        _digestPipelineTimer.Dispose();
     }
 }

@@ -31,6 +31,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // Add task scheduler service
 builder.Services.AddHostedService<SimpleTaskScheduler>();
 
+// Add similar request listener
+builder.Services.AddHostedService<SimilarRequestListener>();
+
 // Register task scheduler settings
 builder.Services.Configure<TaskSchedulerSettings>(builder.Configuration.GetSection("TaskScheduler"));
 

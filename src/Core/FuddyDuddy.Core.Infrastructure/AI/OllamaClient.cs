@@ -15,14 +15,14 @@ internal class OllamaClient : IAiClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OllamaClient> _logger;
     private readonly AiModels.ModelOptions _ollamaOptions;
-    private readonly string _model;
+    private readonly AiModels.ModelOptions.Characteristic _modelOptions;
 
     public OllamaClient(AiModels.ModelOptions ollamaOptions, AiModels.Type type, IHttpClientFactory httpClientFactory, ILogger<OllamaClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _ollamaOptions = ollamaOptions;
-        _model = ollamaOptions.Models.First(m => m.Type == type).Name;
+        _modelOptions = ollamaOptions.Models.First(m => m.Type == type);
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
@@ -33,7 +33,7 @@ internal class OllamaClient : IAiClient
     {
         var request = new
         {
-            model = _model,
+            model = _modelOptions.Name,
             messages = new[]
             {
                 new
@@ -52,7 +52,7 @@ internal class OllamaClient : IAiClient
             options = new
             {
                 temperature = _ollamaOptions.Temperature,
-                num_ctx = _ollamaOptions.MaxTokens
+                num_ctx = _modelOptions.MaxTokens
             }
         };
 
@@ -64,11 +64,11 @@ internal class OllamaClient : IAiClient
         var summary = result?.Message?.Content;
         if (summary == null)
         {
-            _logger.LogError("No summary generated, response: {Response}", response.Content);
+            _logger.LogError("No response generated, response: {Response}", response.Content);
             return default;
         }
 
-        _logger.LogInformation("Summary generated: {Summary}", summary);
+        _logger.LogInformation("Response generated: {Response}", summary);
         return JsonSerializer.Deserialize<T>(summary);
     }
 

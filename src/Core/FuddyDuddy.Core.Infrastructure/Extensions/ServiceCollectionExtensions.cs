@@ -59,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<INewsSummaryRepository, NewsSummaryRepository>();
         services.AddTransient<ICategoryRepository, CategoryRepository>();
         services.AddTransient<IDigestRepository, DigestRepository>();
+        services.AddTransient<ISimilarRepository, SimilarRepository>();
 
         // Add Redis
         services.AddSingleton<IConnectionMultiplexer>(sp => 

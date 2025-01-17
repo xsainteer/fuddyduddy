@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using FuddyDuddy.Core.Application.Interfaces;
@@ -15,6 +16,10 @@ public class RabbitMqBroker : IBroker
     private bool _disposed;
     private const int MaxRetryAttempts = 10000; // Maximum number of retry attempts
     private const int LogFrequency = 100; // Log every 100th attempt
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
+    { 
+        PropertyNameCaseInsensitive = true
+    };
 
     public RabbitMqBroker(IConnectionFactory connectionFactory, ProducerPool producerPool, ILogger<RabbitMqBroker> logger)
     {
@@ -42,7 +47,8 @@ public class RabbitMqBroker : IBroker
                     }
 
                     var body = ea.Body.ToArray();
-                    var message = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(body));
+                    _logger.LogInformation("Received message from queue {QueueName}: {Message}", queueName, Encoding.UTF8.GetString(body));
+                    var message = JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(body), _jsonSerializerOptions);
 
                     if (message != null)
                     {
@@ -87,6 +93,7 @@ public class RabbitMqBroker : IBroker
                 {
                     consumerChannel.Close();
                     consumerChannel.Dispose();
+                    _logger.LogInformation("Consumer cancelled for queue {QueueName}", queueName);
                 }
                 catch (Exception ex)
                 {

@@ -15,13 +15,14 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISummaryValidationService, SummaryValidationService>();
         services.AddTransient<ISummaryTranslationService, SummaryTranslationService>();
         services.AddTransient<IDigestCookService, DigestCookService>();
+        services.AddTransient<ISimilarityService, SimilarityService>();
         
         // Maintenance
         services.AddTransient<IMaintenanceService, MaintenanceService>();
 
         // Business logic options
         services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.SectionName));
-
+        services.Configure<SimilaritySettings>(configuration.GetSection(SimilaritySettings.SectionName));
         return services;
     }
 } 

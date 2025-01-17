@@ -11,6 +11,8 @@ public class FuddyDuddyDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Digest> Digests => Set<Digest>();
     public DbSet<DigestReference> DigestReferences => Set<DigestReference>();
+    public DbSet<Similar> Similars => Set<Similar>();
+    public DbSet<SimilarReference> SimilarReferences => Set<SimilarReference>();
 
     public FuddyDuddyDbContext(DbContextOptions<FuddyDuddyDbContext> options) 
         : base(options)

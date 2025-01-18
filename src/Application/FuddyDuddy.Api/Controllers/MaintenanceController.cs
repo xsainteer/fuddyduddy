@@ -90,36 +90,51 @@ public class MaintenanceController : ControllerBase
     }
 
     [HttpPost("rebuild-cache")]
-    public async Task<IActionResult> RebuildCache(CancellationToken cancellationToken = default)
+    public async Task RebuildCache(CancellationToken cancellationToken = default)
     {
-        try
+        Response.ContentType = "text/event-stream";
+
+        // Clear existing cache
+        await _cacheService.ClearCacheAsync(cancellationToken);
+
+        await foreach (var progress in RebuildingSummariesCache(cancellationToken))
         {
-            // Clear existing cache
-            await _cacheService.ClearCacheAsync(cancellationToken);
-
-            // Get all validated summaries
-            var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(2000, cancellationToken);
-
-            // Add each summary back to cache
-            foreach (var summary in summaries)
-            {
-                await _cacheService.AddSummaryAsync(summary.Id, cancellationToken);
-            }
-
-            // Add digests back to cache
-            var digests = await _digestRepository.GetLatestAsync(100, cancellationToken);
-            foreach (var digest in digests)
-            {
-                await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(digest), cancellationToken);
-            }
-
-            return Ok(new { message = $"Cache rebuilt with {summaries.Count()} summaries" });
+            await Response.WriteAsync($"data: {progress}\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (Exception ex)
+
+        // Add digests back to cache
+        await foreach (var progress in RebuildingDigestsCache(cancellationToken))
         {
-            _logger.LogError(ex, "Error rebuilding cache");
-            return StatusCode(500, new { message = "An error occurred while rebuilding cache" });
+            await Response.WriteAsync($"data: {progress}\n", cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
         }
+
+        await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+    }
+
+    private async IAsyncEnumerable<string> RebuildingDigestsCache([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var digests = (await _digestRepository.GetLatestAsync(100, cancellationToken)).ToArray();
+        var k = 0;
+        foreach (var digest in digests)
+        {
+            await _cacheService.AddDigestAsync(CachedDigestDto.FromDigest(digest), cancellationToken);
+            yield return $"{k++ * 100 / digests.Length}% digests completed";
+        }
+        yield return "DONE. 100% of digests added to cache.";
+    }
+
+    private async IAsyncEnumerable<string> RebuildingSummariesCache([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var summaries = (await _summaryRepository.GetValidatedOrDigestedAsync(2000, cancellationToken)).ToArray();
+        var k = 0;
+        foreach (var summary in summaries)
+        {
+            await _cacheService.AddSummaryAsync(summary.Id, cancellationToken);
+            yield return $"{k++ * 100 / summaries.Length}% summaries completed";
+        }
+        yield return "DONE. 100% of summaries added to cache.";
     }
 
     [HttpPost("translate-summary/{id}")]

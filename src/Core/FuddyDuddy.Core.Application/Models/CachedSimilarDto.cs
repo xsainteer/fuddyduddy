@@ -23,6 +23,7 @@ public class CachedSimilarDto
 public class CachedSimilarReferenceBaseDto
 {
     public Guid Id { get; set; }
+    public Guid NewsSummaryId { get; set; }
     public string Source { get; set; } = string.Empty;
     public DateTimeOffset GeneratedAt { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -32,6 +33,7 @@ public class CachedSimilarReferenceBaseDto
         return new CachedSimilarReferenceBaseDto
         {
             Id = reference.Id,
+            NewsSummaryId = reference.NewsSummaryId,
             Source = reference.NewsSummary.NewsArticle.NewsSource.Name,
             GeneratedAt = reference.NewsSummary.GeneratedAt,
             Title = reference.NewsSummary.Title

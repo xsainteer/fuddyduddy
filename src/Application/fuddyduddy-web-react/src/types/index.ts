@@ -15,6 +15,7 @@ export interface Summary {
 
 export interface SimilarSummary {
   id: string
+  newsSummaryId: string
   source: string
   generatedAt: string
   title: string

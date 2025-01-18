@@ -63,7 +63,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
               .map(similar => (
                 <div key={similar.id} className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                   <Link 
-                    to={`/${language.toLowerCase()}/summary/${similar.id}`}
+                    to={`/${language.toLowerCase()}/summary/${similar.newsSummaryId}`}
                     className="hover:text-blue-500 dark:hover:text-blue-400 hover:underline"
                   >
                     {truncateTitle(similar.title)}

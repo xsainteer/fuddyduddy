@@ -53,12 +53,12 @@ internal class AiService : IAiService
         var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
         return typeof(T).Name switch
         {
-            nameof(TweetCreationResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Pro],
+            nameof(TweetCreationResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Pro],
             nameof(DigestResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Light],
             nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],
-            nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Light],
+            nameof(SimilarityResponse) => _gemini2Clients[ModelType.Light],
             _ => throw new ArgumentException($"Invalid model type for {typeof(T).Name}")
         };
     }

@@ -11,7 +11,6 @@ namespace FuddyDuddy.Core.Application.Services;
 
 public interface ISimilarityService
 {
-    Task CheckForSimilarSummariesAsync(CancellationToken cancellationToken);
     Task FindSimilarSummariesAsync(Guid newsSummaryId, CancellationToken cancellationToken);
 }
 
@@ -37,24 +36,6 @@ public class SimilarityService : ISimilarityService
         _logger = logger;
         _cacheService = cacheService;
         _similaritySettings = similaritySettings;
-    }
-
-    public async Task CheckForSimilarSummariesAsync(CancellationToken cancellationToken)
-    {
-        var summaries = (await _summaryRepository.GetByStateAsync([NewsSummaryState.Created], cancellationToken: cancellationToken))
-            .OrderByDescending(s => s.GeneratedAt);
-
-        foreach (var summary in summaries)
-        {
-            try
-            {
-                await FindSimilarSummariesAsync(summary.Id, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error finding similar summaries for {SummaryId}", summary.Id);
-            }
-        }
     }
 
     public async Task FindSimilarSummariesAsync(Guid newsSummaryId, CancellationToken cancellationToken)
@@ -150,7 +131,7 @@ Summary: {newsSummary.Article}";
         }
 
         var group = await _similarRepository.GetBySummaryIdAsync(similarSummary.Id, cancellationToken);
-        if (group != null && group.Any())
+        if (group != null)
         {
             foreach (var item in group)
             {

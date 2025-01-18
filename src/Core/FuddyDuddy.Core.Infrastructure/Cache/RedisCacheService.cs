@@ -19,6 +19,7 @@ public class RedisCacheService : ICacheService
     private const string SUMMARIES_BY_LANGUAGE_KEY = "latest:summaries:{0}";  // Timeline by language
     private const string SUMMARIES_BY_CATEGORY_KEY = "summaries:by:category:{0}";  // Category index
     private const string SUMMARIES_BY_SOURCE_KEY = "summaries:by:source:{0}";  // Source index
+    private const string SUMMARY_LOCK_KEY = "summaries:lock:{0}";
     private const int MAX_SUMMARIES = 1000;  // Per language
 
     // New constants for digest caching
@@ -41,84 +42,11 @@ public class RedisCacheService : ICacheService
         _summaryRepository = summaryRepository;
         _similarRepository = similarRepository;
     }
-
     public async Task AddSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var summary = await _summaryRepository.GetByIdAsync(summaryId, cancellationToken);
-            if (summary == null)
-            {
-                _logger.LogError("Failed to add summary {Id} to cache. Summary not found in repository.", summaryId);
-                return;
-            }
-            var score = summary.GeneratedAt.ToUnixTimeSeconds();
-
-            var cachedSummary = CachedSummaryDto.FromNewsSummary(summary);
-            var similar = await _similarRepository.GetBySummaryIdAsync(summary.Id, cancellationToken);
-            if (similar != null)
-            {
-                foreach (var s in similar)
-                {
-                    cachedSummary.AddBaseSimilarities(s);
-                }
-            }
-            
-            // Store the summary itself
-            var summaryJson = JsonSerializer.Serialize(cachedSummary);
-            var db = _redis.GetDatabase();
-            await db.StringSetAsync(
-                string.Format(SUMMARY_KEY, summary.Id),
-                summaryJson,
-                TimeSpan.FromDays(7));  // TTL for individual summaries
-
-            // Add to the language-specific timeline
-            var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, summary.Language.ToString().ToLower());
-            
-            // Check for existing entry with the same score (same GeneratedAt)
-            var existingEntries = await db.SortedSetRangeByScoreAsync(timelineKey, score, score);
-            if (existingEntries != null)
-            {
-                foreach (var entry in existingEntries)
-                {
-                    try
-                    {
-                        var existingSummary = JsonSerializer.Deserialize<CachedSummaryDto>(entry);
-                        if (existingSummary?.Id == summary.Id)
-                        {
-                            await db.SortedSetRemoveAsync(timelineKey, entry);
-                            break;
-                        }
-                    }
-                    catch (JsonException)
-                    {
-                        // Skip invalid JSON entries
-                        continue;
-                    }
-                }
-            }
-
-            // Add the new or updated entry
-            await db.SortedSetAddAsync(timelineKey, summaryJson, score);
-
-            // Add to category index
-            await db.SetAddAsync(
-                string.Format(SUMMARIES_BY_CATEGORY_KEY, summary.CategoryId),
-                summary.Id.ToString());
-
-            // Add to source index
-            await db.SetAddAsync(
-                string.Format(SUMMARIES_BY_SOURCE_KEY, summary.NewsArticle.NewsSourceId),
-                summary.Id.ToString());
-
-            // Trim the language-specific timeline
-            await db.SortedSetRemoveRangeByRankAsync(timelineKey, 0, -MAX_SUMMARIES - 1);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding summary to cache");
-            throw;
-        }
+        await ExecuteWithLock(
+            string.Format(SUMMARY_LOCK_KEY, summaryId),
+            async () => await AddOrUpdateSummaryAsync(summaryId, cancellationToken));
     }
 
     public async Task<IEnumerable<T>> GetLatestSummariesAsync<T>(
@@ -374,6 +302,99 @@ public class RedisCacheService : ICacheService
         var db = _redis.GetDatabase();
         var key = string.Format(TWITTER_TOKEN_KEY, language.ToString().ToLower());
         await db.StringSetAsync(key, token, expiration);
+    }
+
+    public async Task ExecuteWithLock(string key, Func<Task> action, TimeSpan? expiration = null)
+    {
+        var db = _redis.GetDatabase();
+        await db.LockTakeAsync(key, "lock", expiration ?? TimeSpan.FromSeconds(10));
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            await db.LockReleaseAsync(key, "lock");
+        }
+    }
+
+    private async Task AddOrUpdateSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var summary = await _summaryRepository.GetByIdAsync(summaryId, cancellationToken);
+            if (summary == null)
+            {
+                _logger.LogError("Failed to add summary {Id} to cache. Summary not found in repository.", summaryId);
+                return;
+            }
+            var score = summary.GeneratedAt.ToUnixTimeSeconds();
+
+            var cachedSummary = CachedSummaryDto.FromNewsSummary(summary);
+            var similar = await _similarRepository.GetBySummaryIdAsync(summary.Id, cancellationToken);
+            if (similar != null)
+            {
+                foreach (var s in similar)
+                {
+                    cachedSummary.AddBaseSimilarities(s);
+                }
+            }
+            
+            // Store the summary itself
+            var summaryJson = JsonSerializer.Serialize(cachedSummary);
+            var db = _redis.GetDatabase();
+            await db.StringSetAsync(
+                string.Format(SUMMARY_KEY, summary.Id),
+                summaryJson,
+                TimeSpan.FromDays(7));  // TTL for individual summaries
+
+            // Add to the language-specific timeline
+            var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, summary.Language.ToString().ToLower());
+            
+            // Check for existing entry with the same score (same GeneratedAt)
+            var existingEntries = await db.SortedSetRangeByScoreAsync(timelineKey, score, score);
+            if (existingEntries != null)
+            {
+                foreach (var entry in existingEntries)
+                {
+                    try
+                    {
+                        var existingSummary = JsonSerializer.Deserialize<CachedSummaryDto>(entry);
+                        if (existingSummary?.Id == summary.Id)
+                        {
+                            await db.SortedSetRemoveAsync(timelineKey, entry);
+                            break;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // Skip invalid JSON entries
+                        continue;
+                    }
+                }
+            }
+
+            // Add the new or updated entry
+            await db.SortedSetAddAsync(timelineKey, summaryJson, score);
+
+            // Add to category index
+            await db.SetAddAsync(
+                string.Format(SUMMARIES_BY_CATEGORY_KEY, summary.CategoryId),
+                summary.Id.ToString());
+
+            // Add to source index
+            await db.SetAddAsync(
+                string.Format(SUMMARIES_BY_SOURCE_KEY, summary.NewsArticle.NewsSourceId),
+                summary.Id.ToString());
+
+            // Trim the language-specific timeline
+            await db.SortedSetRemoveRangeByRankAsync(timelineKey, 0, -MAX_SUMMARIES - 1);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding summary to cache");
+            throw;
+        }
     }
 
     private async Task<HashSet<string>> GetFilteredSummaryIdsAsync(

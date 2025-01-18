@@ -93,21 +93,8 @@ public class SimilarityService : ISimilarityService
             return;
         }
 
-        // Prepare data for AI analysis
-        var summaryData = new List<SummaryComparisonData>
-        {
-            new() { Id = newsSummary.Id, Title = newsSummary.Title, Summary = newsSummary.Article[..Math.Min(200, newsSummary.Article.Length)] }
-        };
-
-        summaryData.AddRange(sameLangSummaries.Select(s => new SummaryComparisonData
-        {
-            Id = s.Id,
-            Title = s.Title,
-            Summary = s.Article[..Math.Min(200, s.Article.Length)]
-        }));
-
         // Find similar summaries using AI
-        var systemPrompt = @"You are a semantic similarity analyzer. Your task is to find a summary that is semantically STRONGLY similar to the first summary in the list.
+        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically STRONGLY similar or same as the source summary {newsSummary.Id}.
 Two summaries are considered similar if they:
 1. Cover the same event or closely related events
 2. Share significant contextual overlap
@@ -115,16 +102,30 @@ Two summaries are considered similar if they:
 All three criteria must be met for a summary to be considered similar.
 
 Return a JSON object with the following fields:
-- similar_summary_id: the ID of the summary that is 100% similar to the first summary
-- reason: a short explanation of why the summary is similar to the first summary (255 characters max)
+- similar_summary_id: the ID of the summary that is 100% similar to the source summary
+- reason: a short explanation of why the summary is similar to the source summary (255 characters max)
 
-If no summaries are similar enough, return an empty object.
+If no summaries are similar to the source summary enough, return an empty object.
 It's better to return none than a SOMEWHAT similar summary.
-So be very strict in your similarity criteria.";
+So be very strict in your similarity criteria.
+Source summary: 
+Id: {newsSummary.Id}
+Title: {newsSummary.Title}
+Summary: {newsSummary.Article}";
+
+
+        var summariesData = sameLangSummaries.Select(s => new SummaryComparisonData
+        {
+            Id = s.Id,
+            Title = s.Title,
+            Summary = s.Article[..Math.Min(255, s.Article.Length)]
+        }).ToList();
+
+        var userInput = @$"List of summaries: {System.Text.Json.JsonSerializer.Serialize(summariesData)}";
 
         var similarityResponse = await _aiService.GenerateStructuredResponseAsync<SimilarityResponse>(
             systemPrompt,
-            System.Text.Json.JsonSerializer.Serialize(summaryData),
+            userInput,
             new SimilarityResponse { SimilarSummaryId = Guid.NewGuid().ToString(), Reason = "Both summaries report on the same event. The close thematic and contextual overlap strongly suggests semantic similarity." },
             cancellationToken);
 

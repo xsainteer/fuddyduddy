@@ -37,18 +37,19 @@ internal class GeminiClient : IAiClient
 
             var request = new
             {
-                contents = new[]
+                system_instruction = new
                 {
-                    new
+                    parts = new
                     {
-                        parts = new[]
-                        {
-                            new { text = @$"{systemPrompt}
-
-{sampleText}
-
-{userInput}" }
-                        }
+                        text = @$"{systemPrompt}.
+                        Sample JSON output: {sampleText}"
+                    }
+                },
+                contents = new
+                {
+                    parts = new
+                    {
+                        text = @$"User input: {userInput}"
                     }
                 },
                 generationConfig = new

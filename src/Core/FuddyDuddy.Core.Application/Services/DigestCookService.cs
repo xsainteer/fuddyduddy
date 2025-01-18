@@ -213,7 +213,7 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
         var lastTweetTime = DateTimeOffset.FromUnixTimeSeconds(lastTweetTimestamp);
 
         // Check if 2 hours have passed since the last tweet
-        if (currentTime - lastTweetTime < TimeSpan.FromHours(1))
+        if (currentTime - lastTweetTime < TimeSpan.FromMinutes(_processingOptions.Value.TweetPostMinutesBack - 5))
         {
             _logger.LogInformation("Not enough time passed since last tweet at {LastTweetTime}", lastTweetTime);
             return false;

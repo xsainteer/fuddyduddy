@@ -10,24 +10,27 @@ namespace FuddyDuddy.Core.Infrastructure.AI;
 
 internal class AiService : IAiService
 {
+    private const string GEMINI_PREFIX = "gemini";
+    private const string GEMINI2_PREFIX = "gemini2";
     private readonly ILogger<AiService> _logger;
     private readonly Dictionary<ModelType, IAiClient> _geminiClients;
     private readonly Dictionary<ModelType, IAiClient> _gemini2Clients;
     private readonly Dictionary<ModelType, IAiClient> _ollamaClients;
+
     public AiService(IServiceProvider serviceProvider, ILogger<AiService> logger, IOptions<AiModels> aiModelsOptions)
     {
         _logger = logger;
 
         _geminiClients = new Dictionary<ModelType, IAiClient>
         {
-            { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Light) },
-            { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Pro) }
+            { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Light, GEMINI_PREFIX) },
+            { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Pro, GEMINI_PREFIX) }
         };
 
         _gemini2Clients = new Dictionary<ModelType, IAiClient>
         {
-            { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Light) },
-            { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Pro) }
+            { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Light, GEMINI2_PREFIX) },
+            { ModelType.Pro, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini2, ModelType.Pro, GEMINI2_PREFIX) }
         };
 
         _ollamaClients = new Dictionary<ModelType, IAiClient>

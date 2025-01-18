@@ -19,6 +19,7 @@ using FuddyDuddy.Core.Infrastructure.Messaging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Infrastructure.Social;
+using FuddyDuddy.Core.Infrastructure.RateLimit;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -70,6 +71,9 @@ public static class ServiceCollectionExtensions
 
         // Register cache service
         services.AddTransient<ICacheService, RedisCacheService>();
+
+        // Register rate limiter
+        services.AddTransient<IRateLimiter, RateLimiter>();
 
         // Register AI service
         services.AddSingleton<IAiService, AiService>();

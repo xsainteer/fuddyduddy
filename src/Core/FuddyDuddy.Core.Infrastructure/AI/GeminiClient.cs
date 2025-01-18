@@ -4,6 +4,7 @@ using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Application.Constants;
+using FuddyDuddy.Core.Infrastructure.RateLimit;
 
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
@@ -12,13 +13,23 @@ internal class GeminiClient : IAiClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<GeminiClient> _logger;
     private readonly AiModels.ModelOptions _geminiOptions;
-    private readonly string _model;
-    public GeminiClient(AiModels.ModelOptions geminiOptions, AiModels.Type type, ILogger<GeminiClient> logger, IHttpClientFactory httpClientFactory)
+    private readonly AiModels.ModelOptions.Characteristic _modelOptions;
+    private readonly IRateLimiter _rateLimiter;
+    private readonly string _leakyBucketKey;
+    public GeminiClient(
+        AiModels.ModelOptions geminiOptions,
+        AiModels.Type type,
+        ILogger<GeminiClient> logger,
+        IHttpClientFactory httpClientFactory,
+        IRateLimiter rateLimiter,
+        string leakyBucketPrefix)
     {
         _geminiOptions = geminiOptions;
         _logger = logger;
         _httpClientFactory = httpClientFactory;
-        _model = geminiOptions.Models.First(m => m.Type == type).Name;
+        _modelOptions = geminiOptions.Models.First(m => m.Type == type);
+        _rateLimiter = rateLimiter;
+        _leakyBucketKey = $"{leakyBucketPrefix}_{type:g}";
     }
 
     public async Task<T?> GenerateStructuredResponseAsync<T>(
@@ -30,6 +41,20 @@ internal class GeminiClient : IAiClient
         string content = string.Empty;
         try
         {
+            if (_modelOptions.RatePerMinute > 0)
+            {
+                var waitTime = await _rateLimiter.GetMinuteTokenAsync(_leakyBucketKey, _modelOptions.RatePerMinute, 120);
+                if (waitTime == -1)
+                {
+                    _logger.LogError("Rate limit exceeded, it requires to wait for 2 minutes, so rejecting request");
+                    return default;
+                }
+                if (waitTime > 0)
+                {
+                    _logger.LogWarning("Rate limit exceeded, waiting for {WaitTime} seconds", waitTime);
+                    await Task.Delay((int)waitTime * 1000, cancellationToken);
+                }
+            }
             using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.GEMINI);
             var sampleJson = JsonSerializer.Serialize(sample, IAiService.SampleJsonOptions);
             _logger.LogInformation("Sample digest: {Sample}", sampleJson);
@@ -68,7 +93,7 @@ internal class GeminiClient : IAiClient
             _logger.LogInformation("Sending request: {Request}", requestJson);
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, 
-                $"v1beta/models/{_model}:generateContent?key={_geminiOptions.ApiKey}");
+                $"v1beta/models/{_modelOptions.Name}:generateContent?key={_geminiOptions.ApiKey}");
             httpRequest.Content = new StringContent(requestJson, System.Text.Encoding.UTF8, "application/json");
 
             _logger.LogInformation("Sending request uri: {Request}", httpRequest.RequestUri);

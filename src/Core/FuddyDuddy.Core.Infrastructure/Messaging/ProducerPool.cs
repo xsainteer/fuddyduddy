@@ -5,7 +5,7 @@ using RabbitMQ.Client;
 
 namespace FuddyDuddy.Core.Infrastructure.Messaging;
 
-public class ProducerPool
+internal class ProducerPool
 {
     private readonly ObjectPool<IModel> _pool;
     private readonly ILogger<ProducerPool> _logger;

@@ -8,7 +8,7 @@ using RabbitMQ.Client.Events;
 
 namespace FuddyDuddy.Core.Infrastructure.Messaging;
 
-public class RabbitMqBroker : IBroker
+internal class RabbitMqBroker : IBroker
 {
     private readonly IConnection _connection;
     private readonly ProducerPool _producerPool;

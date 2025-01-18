@@ -5,6 +5,7 @@ namespace FuddyDuddy.Core.Application.Interfaces;
 
 public interface ICacheService
 {
+    Task<string?> ExecuteLuaAsync(string script, string[] keys, string[] values);
     Task ExecuteWithLock(string key, Func<Task> action, TimeSpan? expiration = null);
     Task AddSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default);
     

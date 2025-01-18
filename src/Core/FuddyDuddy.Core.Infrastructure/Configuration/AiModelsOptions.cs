@@ -12,12 +12,12 @@ public class AiModels
         public string Url { get; set; }
         public List<Characteristic> Models { get; set; }
         public double Temperature { get; set; } // Ollama specific
-
         public class Characteristic
         {
             public Type Type { get; set; }
             public string Name { get; set; }
             public int MaxTokens { get; set; }
+            public int RatePerMinute { get; set; } = 0; // Gemini specific
         }
     }
 

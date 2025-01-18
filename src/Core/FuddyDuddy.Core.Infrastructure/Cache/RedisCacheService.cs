@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace FuddyDuddy.Core.Infrastructure.Cache;
 
-public class RedisCacheService : ICacheService
+internal class RedisCacheService : ICacheService
 {
     private readonly INewsSummaryRepository _summaryRepository;
     private readonly ISimilarRepository _similarRepository;
@@ -42,6 +42,16 @@ public class RedisCacheService : ICacheService
         _summaryRepository = summaryRepository;
         _similarRepository = similarRepository;
     }
+
+    public async Task<string?> ExecuteLuaAsync(string script, string[] keys, string[] values)
+    {
+        var redisKeys = keys.Select(k => new RedisKey(k)).ToArray();
+        var redisValues = values.Select(v => new RedisValue(v)).ToArray();
+        var db = _redis.GetDatabase();
+        var result = await db.ScriptEvaluateAsync(script, redisKeys, redisValues);
+        return result.IsNull ? null : result.ToString();
+    }
+
     public async Task AddSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default)
     {
         await ExecuteWithLock(

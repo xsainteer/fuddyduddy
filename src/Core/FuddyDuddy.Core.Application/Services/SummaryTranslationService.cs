@@ -3,6 +3,7 @@ using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using FuddyDuddy.Core.Application.Models.AI;
+using FuddyDuddy.Core.Application.Models.Broker;
 
 namespace FuddyDuddy.Core.Application.Services;
 
@@ -18,17 +19,20 @@ internal class SummaryTranslationService : ISummaryTranslationService
     private readonly ICacheService _cacheService;
     private readonly ILogger<SummaryTranslationService> _logger;
     private readonly IAiService _aiService;
+    private readonly IBroker _broker;
 
     public SummaryTranslationService(
         INewsSummaryRepository summaryRepository,
         ICacheService cacheService,
         ILogger<SummaryTranslationService> logger,
-        IAiService aiService)
+        IAiService aiService,
+        IBroker broker)
     {
         _summaryRepository = summaryRepository;
         _cacheService = cacheService;
         _logger = logger;
         _aiService = aiService;
+        _broker = broker;
     }
 
     public async Task TranslatePendingAsync(Language targetLanguage, CancellationToken cancellationToken = default)
@@ -88,6 +92,8 @@ internal class SummaryTranslationService : ISummaryTranslationService
             await _summaryRepository.AddAsync(translatedSummary, cancellationToken);
 
             await _cacheService.AddSummaryAsync(translatedSummary.Id, cancellationToken);
+            
+            await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(translatedSummary.Id), cancellationToken);
 
             _logger.LogInformation("Created translation {TranslatedId} for summary {Id} in {Language}", 
                 translatedSummary.Id, summaryId, targetLanguage);

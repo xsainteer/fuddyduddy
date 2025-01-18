@@ -76,19 +76,26 @@ public class SimilarityService : ISimilarityService
 
         // Find similar summaries using AI
         var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically STRONGLY similar or same as the source summary {newsSummary.Id}.
-Two summaries are considered similar if they:
-1. Cover the same event or closely related events
-2. Share significant contextual overlap
-3. Are part of the same ongoing story
-All three criteria must be met for a summary to be considered similar.
+
+IMPORTANT EXCLUSION CRITERIA:
+- If either the source summary or any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
+- If either summary is a collection of short news items, return an empty object
+- If either summary covers multiple topics without a strong central theme, return an empty object
+
+SIMILARITY CRITERIA (ALL must be met):
+1. Both summaries must focus on a SINGLE specific event or closely related events
+2. Both summaries must share significant contextual details about this event
+3. Both summaries must be part of the same ongoing story or narrative
+4. Both summaries must have similar scope and depth of coverage
 
 Return a JSON object with the following fields:
 - similar_summary_id: the ID of the summary that is 100% similar to the source summary
 - reason: a short explanation of why the summary is similar to the source summary (255 characters max)
 
-If no summaries are similar to the source summary enough, return an empty object.
+If no summaries meet ALL criteria, return an empty object.
 It's better to return none than a SOMEWHAT similar summary.
-So be very strict in your similarity criteria.
+Be very strict in applying these criteria.
+
 Source summary: 
 Id: {newsSummary.Id}
 Title: {newsSummary.Title}

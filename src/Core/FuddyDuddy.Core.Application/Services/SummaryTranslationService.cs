@@ -87,14 +87,7 @@ internal class SummaryTranslationService : ISummaryTranslationService
 
             await _summaryRepository.AddAsync(translatedSummary, cancellationToken);
 
-            var newSummaryFromDb = await _summaryRepository.GetByIdAsync(translatedSummary.Id, cancellationToken);
-            if (newSummaryFromDb == null)
-            {
-                _logger.LogError("Failed to get translated summary {Id} from database", translatedSummary.Id);
-                return null;
-            }
-
-            await _cacheService.AddSummaryAsync(newSummaryFromDb, cancellationToken);
+            await _cacheService.AddSummaryAsync(translatedSummary.Id, cancellationToken);
 
             _logger.LogInformation("Created translation {TranslatedId} for summary {Id} in {Language}", 
                 translatedSummary.Id, summaryId, targetLanguage);

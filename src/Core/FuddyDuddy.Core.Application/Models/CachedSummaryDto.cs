@@ -1,4 +1,5 @@
 using FuddyDuddy.Core.Domain.Entities;
+using System.Linq;
 
 namespace FuddyDuddy.Core.Application.Models;
 
@@ -14,6 +15,21 @@ public class CachedSummaryDto
     public string NewsArticleTitle { get; set; } = string.Empty;
     public string NewsArticleUrl { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
+    public List<CachedSimilarReferenceBaseDto> Similarities { get; set; } = [];
+    /// <summary>
+    /// Add similarities to the summary
+    /// NOTE: References should be included
+    /// </summary>
+    /// <param name="similar"></param>
+    public void AddBaseSimilarities(Similar similar)
+    {
+        Similarities ??= [];
+        Similarities.AddRange(similar
+            .References
+            .Where(r => r.NewsSummaryId != Id)
+            .Select(CachedSimilarReferenceBaseDto.FromSimilarReference)
+            .ToArray());
+    }
 
     public static CachedSummaryDto FromNewsSummary(NewsSummary summary)
     {

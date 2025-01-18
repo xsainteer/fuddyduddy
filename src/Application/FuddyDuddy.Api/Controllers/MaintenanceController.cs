@@ -103,7 +103,7 @@ public class MaintenanceController : ControllerBase
             // Add each summary back to cache
             foreach (var summary in summaries)
             {
-                await _cacheService.AddSummaryAsync(summary, cancellationToken);
+                await _cacheService.AddSummaryAsync(summary.Id, cancellationToken);
             }
 
             // Add digests back to cache

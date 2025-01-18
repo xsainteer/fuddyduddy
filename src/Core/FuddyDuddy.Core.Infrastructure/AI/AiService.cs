@@ -58,7 +58,7 @@ internal class AiService : IAiService
             nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],
-            nameof(SimilarityResponse) => _gemini2Clients[ModelType.Light],
+            nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Light],
             _ => throw new ArgumentException($"Invalid model type for {typeof(T).Name}")
         };
     }

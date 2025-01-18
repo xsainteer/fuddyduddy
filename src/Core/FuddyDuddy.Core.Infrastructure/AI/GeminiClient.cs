@@ -91,7 +91,11 @@ internal class GeminiClient : IAiClient
             }
 
             _logger.LogInformation("Parsed content: {Content}", content);
-            return JsonSerializer.Deserialize<T>(content);
+            return JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions
+            {
+                AllowTrailingCommas = true,
+                PropertyNameCaseInsensitive = true
+            });
         }
         catch (Exception ex)
         {

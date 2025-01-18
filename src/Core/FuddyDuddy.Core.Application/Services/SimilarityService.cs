@@ -156,6 +156,7 @@ Summary: {newsSummary.Article}";
             {
                 await _similarRepository.AddReferenceAsync(item, new SimilarReference(newsSummary.Id, similarityResponse.Reason), cancellationToken);
                 _logger.LogInformation("Added reference {Title} to similarity group {Group}. Reason: {Reason}", newsSummary.Title, item.Title, similarityResponse.Reason);
+                await AddSimilarReferencesToCacheAsync(item.References.ToList(), cancellationToken);
             }
         }
         else
@@ -173,6 +174,15 @@ Summary: {newsSummary.Article}";
                 similarSummary.Id,
                 similarSummary.Title,
                 similarityResponse.Reason);
+            await AddSimilarReferencesToCacheAsync(references, cancellationToken);
+        }
+    }
+
+    private async Task AddSimilarReferencesToCacheAsync(List<SimilarReference> references, CancellationToken cancellationToken)
+    {
+        foreach (var reference in references)
+        {
+            await _cacheService.AddSummaryAsync(reference.NewsSummaryId, cancellationToken);
         }
     }
 }

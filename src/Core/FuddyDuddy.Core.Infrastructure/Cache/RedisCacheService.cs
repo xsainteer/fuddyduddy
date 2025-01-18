@@ -4,11 +4,15 @@ using FuddyDuddy.Core.Application.Models;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Text.Json;
+using FuddyDuddy.Core.Application.Repositories;
+using System.Linq;
 
 namespace FuddyDuddy.Core.Infrastructure.Cache;
 
 public class RedisCacheService : ICacheService
 {
+    private readonly INewsSummaryRepository _summaryRepository;
+    private readonly ISimilarRepository _similarRepository;
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisCacheService> _logger;
     private const string SUMMARY_KEY = "summary:{0}";  // Individual summary
@@ -28,22 +32,41 @@ public class RedisCacheService : ICacheService
 
     public RedisCacheService(
         IConnectionMultiplexer redis,
-        ILogger<RedisCacheService> logger)
+        ILogger<RedisCacheService> logger,
+        INewsSummaryRepository summaryRepository,
+        ISimilarRepository similarRepository)
     {
         _redis = redis;
         _logger = logger;
+        _summaryRepository = summaryRepository;
+        _similarRepository = similarRepository;
     }
 
-    public async Task AddSummaryAsync(NewsSummary summary, CancellationToken cancellationToken = default)
+    public async Task AddSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default)
     {
         try
         {
-            var db = _redis.GetDatabase();
+            var summary = await _summaryRepository.GetByIdAsync(summaryId, cancellationToken);
+            if (summary == null)
+            {
+                _logger.LogError("Failed to add summary {Id} to cache. Summary not found in repository.", summaryId);
+                return;
+            }
             var score = summary.GeneratedAt.ToUnixTimeSeconds();
+
             var cachedSummary = CachedSummaryDto.FromNewsSummary(summary);
-            var summaryJson = JsonSerializer.Serialize(cachedSummary);
+            var similar = await _similarRepository.GetBySummaryIdAsync(summary.Id, cancellationToken);
+            if (similar != null)
+            {
+                foreach (var s in similar)
+                {
+                    cachedSummary.AddBaseSimilarities(s);
+                }
+            }
             
             // Store the summary itself
+            var summaryJson = JsonSerializer.Serialize(cachedSummary);
+            var db = _redis.GetDatabase();
             await db.StringSetAsync(
                 string.Format(SUMMARY_KEY, summary.Id),
                 summaryJson,
@@ -51,6 +74,31 @@ public class RedisCacheService : ICacheService
 
             // Add to the language-specific timeline
             var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, summary.Language.ToString().ToLower());
+            
+            // Check for existing entry with the same score (same GeneratedAt)
+            var existingEntries = await db.SortedSetRangeByScoreAsync(timelineKey, score, score);
+            if (existingEntries != null)
+            {
+                foreach (var entry in existingEntries)
+                {
+                    try
+                    {
+                        var existingSummary = JsonSerializer.Deserialize<CachedSummaryDto>(entry);
+                        if (existingSummary?.Id == summary.Id)
+                        {
+                            await db.SortedSetRemoveAsync(timelineKey, entry);
+                            break;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // Skip invalid JSON entries
+                        continue;
+                    }
+                }
+            }
+
+            // Add the new or updated entry
             await db.SortedSetAddAsync(timelineKey, summaryJson, score);
 
             // Add to category index

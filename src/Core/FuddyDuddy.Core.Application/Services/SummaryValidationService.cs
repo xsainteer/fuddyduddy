@@ -74,11 +74,10 @@ internal class SummaryValidationService : ISummaryValidationService
 
                 if (summary.State == NewsSummaryState.Validated)
                 {
-                    var updatedSummary = await _summaryRepository.IncludeAllReferencesAsync(summary, cancellationToken);
                     // Add to cache only if validation passed
-                    await _cacheService.AddSummaryAsync(updatedSummary, cancellationToken);
+                    await _cacheService.AddSummaryAsync(summary.Id, cancellationToken);
 
-                    await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(updatedSummary.Id), cancellationToken);
+                    await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(summary.Id), cancellationToken);
                 }
             }
             catch (Exception ex)

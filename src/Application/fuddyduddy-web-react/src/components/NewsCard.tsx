@@ -4,6 +4,11 @@ import ShareButton from './ShareButton'
 import type { Summary } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
 
+const truncateTitle = (title: string, maxLength: number = 100): string => {
+  if (title.length <= maxLength) return title;
+  return title.slice(0, maxLength).trim() + '...'
+}
+
 interface NewsCardProps {
   summary: Summary
   isHighlighted?: boolean
@@ -45,6 +50,33 @@ export default function NewsCard({ summary }: NewsCardProps) {
           {summary.article}
         </p>
       </div>
+
+      {/* Similarities */}
+      {summary.similarities && summary.similarities.length > 0 && (
+        <div className="mb-3 text-xs">
+          <h3 className="text-gray-400 dark:text-gray-500 mb-2 font-medium">
+            {t.common.similarSummaries}
+          </h3>
+          <div className="space-y-1.5">
+            {summary.similarities
+              .sort((a, b) => new Date(a.generatedAt).getTime() - new Date(b.generatedAt).getTime())
+              .map(similar => (
+                <div key={similar.id} className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                  <Link 
+                    to={`/${language.toLowerCase()}/summary/${similar.id}`}
+                    className="hover:text-blue-500 dark:hover:text-blue-400 hover:underline"
+                  >
+                    {truncateTitle(similar.title)}
+                  </Link>
+                  <span>·</span>
+                  <span className="text-blue-600 dark:text-blue-400">{similar.source}</span>
+                  <span>·</span>
+                  <span>{formatDateTime(similar.generatedAt, language)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Category */}
       <div className="flex flex-wrap gap-1.5">

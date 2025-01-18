@@ -10,6 +10,14 @@ export interface Summary {
   newsArticleUrl: string
   source: string
   language: string
+  similarities?: SimilarSummary[]
+}
+
+export interface SimilarSummary {
+  id: string
+  source: string
+  generatedAt: string
+  title: string
 }
 
 export interface Category {

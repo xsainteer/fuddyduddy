@@ -70,6 +70,7 @@ interface Translation {
     new: string
     latestNews: string
     viewAllNews: string
+    similarSummaries: string
   }
   errors: {
     failedToLoadDigests: string
@@ -147,7 +148,8 @@ const translations: Record<Language, Translation> = {
       new: 'New',
       latestNews: 'Latest News',
       viewAllNews: 'View feed',
-      links: 'links'
+      links: 'links',
+      similarSummaries: 'Similar summaries'
     },
     errors: {
       failedToLoadDigests: 'Failed to load digests',
@@ -223,7 +225,8 @@ const translations: Record<Language, Translation> = {
       new: 'Новое',
       latestNews: 'Последние новости',
       viewAllNews: 'Перейти к ленте',
-      links: 'ссылок'
+      links: 'ссылок',
+      similarSummaries: 'Похожие обзоры'
     },
     errors: {
       failedToLoadDigests: 'Не удалось загрузить дайджесты',

@@ -17,6 +17,10 @@ interface Translation {
     language: string
     clearAll: string
   }
+  dates: {
+    today: string
+    yesterday: string
+  }
   digests: {
     title: string
     description: string
@@ -96,6 +100,10 @@ const translations: Record<Language, Translation> = {
       language: 'Language',
       clearAll: 'Clear all'
     },
+    dates: {
+      today: 'today',
+      yesterday: 'yesterday'
+    },
     digests: {
       title: 'Latest Digests',
       description: 'A digest is a short summary of the most important news in Kyrgyzstan over the past hour. Our AI reads multiple news sources, identifies key events, and combines them into one easy-to-read overview with links to original articles.',
@@ -172,6 +180,10 @@ const translations: Record<Language, Translation> = {
       sources: 'Источники',
       language: 'Язык',
       clearAll: 'Очистить все'
+    },
+    dates: {
+      today: 'сегодня',
+      yesterday: 'вчера'
     },
     digests: {
       title: 'Последние дайджесты',

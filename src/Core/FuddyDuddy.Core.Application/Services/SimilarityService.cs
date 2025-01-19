@@ -75,32 +75,23 @@ public class SimilarityService : ISimilarityService
         }
 
         // Find similar summaries using AI
-        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically STRONGLY similar or same as the source summary {newsSummary.Id}. Language of summaries is {newsSummary.Language.GetDescription()}.
+        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically similar or same as the source summary {newsSummary.Id}. Language of summaries is {newsSummary.Language.GetDescription()}.
 
 IMPORTANT EXCLUSION CRITERIA:
-- If either the source summary or any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
-- If either summary is a collection of short news items, return an empty object
-- If either summary covers multiple topics without a strong central theme, return an empty object
+- If either summary is a collection of unrelated news items (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
 
+SIMILARITY CRITERIA (at least ONE must be strongly met):
+1. Both summaries describe the same main event or announcement
+2. Both summaries are direct updates or developments of the same story
+3. Both summaries cover different aspects of the same specific incident
 
-SIMILARITY ANALYSIS PROCESS:
-1. First, check if any candidate summaries are already connected to other summaries (connected_to_other_summaries field)
-   - If a candidate is connected to summaries with very different topics, exclude it
-   - If a candidate is connected to similar topics, this strengthens its similarity score
-
-2. Then evaluate the content using these MANDATORY criteria:
-   - Both summaries must focus on exactly the same SINGLE specific event/topic/person
-   - Both must share significant factual details and context
-   - Both must be part of the same ongoing story or narrative
-   - Both must present the same perspective or angle of the story
+Consider connected_to_other_summaries field as supporting evidence - if summaries share connections, they're more likely to be related.
 
 Return a JSON object with the following fields:
-- similar_summary_id: the ID of the summary that is 100% similar to the source summary
+- similar_summary_id: the ID of the summary that is similar to the source summary
 - reason: a short explanation of why the summary is similar (255 characters max)
 
-If no summaries meet ALL criteria, return an empty object.
-It's better to return none than a SOMEWHAT similar summary.
-Be extremely strict - only return a match if you are 100% confident.
+If no summaries meet the criteria, return an empty object.
 
 Source summary: 
 id: {newsSummary.Id}

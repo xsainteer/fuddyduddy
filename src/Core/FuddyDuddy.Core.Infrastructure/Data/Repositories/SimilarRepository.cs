@@ -73,4 +73,31 @@ internal class SimilarRepository : ISimilarRepository
         var similars = (await GetRecentAsync(numberOfLatestSimilars, cancellationToken)).ToDictionary(s => s.Id, s => s);
         return similars.SelectMany(s => s.Value.References).ToDictionary(s => s.NewsSummaryId, s => similars[s.SimilarId].References.Select(r => r.NewsSummary));
     }
+
+    public async Task<IEnumerable<Guid>> DeleteSimilarAsync(Guid similarId, CancellationToken cancellationToken = default)
+    {
+        var similar = await _context
+            .Similars
+            .Include(s => s.References)
+            .FirstOrDefaultAsync(s => s.Id == similarId, cancellationToken);
+
+        if (similar != null)
+        {
+            var newsSummaryIds = similar.References.Select(r => r.NewsSummaryId).ToList();
+            _context.Similars.Remove(similar);
+            await _context.SaveChangesAsync(cancellationToken);
+            return newsSummaryIds;
+        }
+        return [];
+    }
+
+    public async Task DeleteSimilarReferenceAsync(Guid newsSummaryId, CancellationToken cancellationToken = default)
+    {
+        var similarReferences = await _context.SimilarReferences.Where(s => s.NewsSummaryId == newsSummaryId).ToListAsync(cancellationToken);
+        if (similarReferences.Any())
+        {
+            _context.SimilarReferences.RemoveRange(similarReferences);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
 } 

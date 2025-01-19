@@ -21,6 +21,7 @@ public class MaintenanceController : ControllerBase
     private readonly ISummaryTranslationService _translationService;
     private readonly IMaintenanceService _maintenanceService;
     private readonly IDigestRepository _digestRepository;
+    private readonly ISimilarRepository _similarRepository;
     public MaintenanceController(
         INewsProcessingService newsProcessingService,
         ISummaryValidationService validationService,
@@ -29,7 +30,8 @@ public class MaintenanceController : ControllerBase
         ILogger<MaintenanceController> logger,
         ISummaryTranslationService translationService,
         IMaintenanceService maintenanceService,
-        IDigestRepository digestRepository)
+        IDigestRepository digestRepository,
+        ISimilarRepository similarRepository)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
@@ -39,6 +41,7 @@ public class MaintenanceController : ControllerBase
         _translationService = translationService;
         _maintenanceService = maintenanceService;
         _digestRepository = digestRepository;
+        _similarRepository = similarRepository;
     }
 
     [HttpPost("process-news")]
@@ -111,6 +114,35 @@ public class MaintenanceController : ControllerBase
         }
 
         await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+    }
+
+    [HttpPost("delete-similar/{id}")]
+    public async Task<IActionResult> DeleteSimilar(string id, CancellationToken cancellationToken = default)
+    {
+        var similarId = Guid.Parse(id);
+        var newsSummaryIds = await _similarRepository.DeleteSimilarAsync(similarId, cancellationToken);
+        foreach (var newsSummaryId in newsSummaryIds)
+        {
+            await _cacheService.AddSummaryAsync(newsSummaryId, cancellationToken);
+        }
+        return Ok(new { message = $"Similar {similarId} deleted. News summaries ({string.Join(", ", newsSummaryIds)}) updated in cache." });
+    }
+
+    [HttpPost("delete-similar-reference/{id}")]
+    public async Task<IActionResult> DeleteSimilarReference(string id, CancellationToken cancellationToken = default)
+    {
+        var summaryId = Guid.Parse(id);
+        await _similarRepository.DeleteSimilarReferenceAsync(summaryId, cancellationToken);
+        await _cacheService.AddSummaryAsync(summaryId, cancellationToken);
+        return Ok(new { message = $"Similar reference for newssummary {summaryId} deleted, and cache updated." });
+    }
+
+    [HttpPost("update-cache/summaries/{id}")]
+    public async Task<IActionResult> UpdateCache(string id, CancellationToken cancellationToken = default)
+    {
+        var summaryId = Guid.Parse(id);
+        await _cacheService.AddSummaryAsync(summaryId, cancellationToken);
+        return Ok(new { message = $"Summary {summaryId} updated in cache." });
     }
 
     private async IAsyncEnumerable<string> RebuildingDigestsCache([EnumeratorCancellation] CancellationToken cancellationToken)

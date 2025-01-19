@@ -10,4 +10,10 @@ public interface ISimilarRepository
     Task<IEnumerable<Similar>> GetBySummaryIdAsync(Guid summaryId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Similar>> GetRecentAsync(int count, CancellationToken cancellationToken = default);
     Task<IDictionary<Guid, IEnumerable<NewsSummary>>> GetGroupedSummariesWithConnectedOnesAsync(int numberOfLatestSimilars, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a similar and returns ids of news summaries that are no longer connected to any similar
+    /// </summary>
+    Task<IEnumerable<Guid>> DeleteSimilarAsync(Guid similarId, CancellationToken cancellationToken = default);
+    Task DeleteSimilarReferenceAsync(Guid newsSummaryId, CancellationToken cancellationToken = default);
 } 

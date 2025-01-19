@@ -9,4 +9,5 @@ public interface ISimilarRepository
     Task<Similar?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<Similar>> GetBySummaryIdAsync(Guid summaryId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Similar>> GetRecentAsync(int count, CancellationToken cancellationToken = default);
+    Task<IDictionary<Guid, IEnumerable<NewsSummary>>> GetGroupedSummariesWithConnectedOnesAsync(int numberOfLatestSimilars, CancellationToken cancellationToken = default);
 } 

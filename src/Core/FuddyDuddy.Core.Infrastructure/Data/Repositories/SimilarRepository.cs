@@ -67,4 +67,10 @@ internal class SimilarRepository : ISimilarRepository
             .Take(count)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IDictionary<Guid, IEnumerable<NewsSummary>>> GetGroupedSummariesWithConnectedOnesAsync(int numberOfLatestSimilars, CancellationToken cancellationToken = default)
+    {
+        var similars = (await GetRecentAsync(numberOfLatestSimilars, cancellationToken)).ToDictionary(s => s.Id, s => s);
+        return similars.SelectMany(s => s.Value.References).ToDictionary(s => s.NewsSummaryId, s => similars[s.SimilarId].References.Select(r => r.NewsSummary));
+    }
 } 

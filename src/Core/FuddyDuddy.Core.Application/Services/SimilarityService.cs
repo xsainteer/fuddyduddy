@@ -75,37 +75,50 @@ public class SimilarityService : ISimilarityService
         }
 
         // Find similar summaries using AI
-        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically STRONGLY similar or same as the source summary {newsSummary.Id}.
+        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically STRONGLY similar or same as the source summary {newsSummary.Id}. Language of summaries is {newsSummary.Language.GetDescription()}.
 
 IMPORTANT EXCLUSION CRITERIA:
 - If either the source summary or any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
 - If either summary is a collection of short news items, return an empty object
 - If either summary covers multiple topics without a strong central theme, return an empty object
 
-SIMILARITY CRITERIA (ALL must be met):
-1. Both source and candidate summaries must focus on a SINGLE specific event/topic/person
-2. Both source and candidate summaries must share significant contextual details about this event/topic/person
-3. Both source and candidate summaries must be part of the same ongoing story or narrative
+
+SIMILARITY ANALYSIS PROCESS:
+1. First, check if any candidate summaries are already connected to other summaries (connected_to_other_summaries field)
+   - If a candidate is connected to summaries with very different topics, exclude it
+   - If a candidate is connected to similar topics, this strengthens its similarity score
+
+2. Then evaluate the content using these MANDATORY criteria:
+   - Both summaries must focus on exactly the same SINGLE specific event/topic/person
+   - Both must share significant factual details and context
+   - Both must be part of the same ongoing story or narrative
+   - Both must present the same perspective or angle of the story
 
 Return a JSON object with the following fields:
 - similar_summary_id: the ID of the summary that is 100% similar to the source summary
-- reason: a short explanation of why the summary is similar to the source summary (255 characters max)
+- reason: a short explanation of why the summary is similar (255 characters max)
 
 If no summaries meet ALL criteria, return an empty object.
 It's better to return none than a SOMEWHAT similar summary.
-Be very strict in applying these criteria.
+Be extremely strict - only return a match if you are 100% confident.
 
 Source summary: 
-Id: {newsSummary.Id}
-Title: {newsSummary.Title}
-Summary: {newsSummary.Article}";
+id: {newsSummary.Id}
+title: {newsSummary.Title}
+summary: {newsSummary.Article}
+";
 
+
+        var groupedSummaries = await _similarRepository.GetGroupedSummariesWithConnectedOnesAsync(
+            numberOfLatestSimilars: _similaritySettings.Value.MaxSimilarSummaries,
+            cancellationToken: cancellationToken);
 
         var summariesData = sameLangSummaries.Select(s => new SummaryComparisonData
         {
             Id = s.Id,
             Title = s.Title,
-            Summary = s.Article[..Math.Min(512, s.Article.Length)]
+            Summary = s.Article[..Math.Min(512, s.Article.Length)],
+            ConnectedToOtherSummaries = groupedSummaries.TryGetValue(s.Id, out var references) ? string.Join("; ", references.Select(r => r.Title)) : string.Empty
         }).ToList();
 
         var userInput = @$"List of summaries: {System.Text.Json.JsonSerializer.Serialize(summariesData)}";
@@ -182,4 +195,6 @@ public class SummaryComparisonData
     public string Title { get; set; } = string.Empty;
     [JsonPropertyName("summary")]
     public string Summary { get; set; } = string.Empty;
+    [JsonPropertyName("connected_to_other_summaries")]
+    public string ConnectedToOtherSummaries { get; set; } = string.Empty;
 }

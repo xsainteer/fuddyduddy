@@ -57,7 +57,7 @@ internal class AiService : IAiService
         return typeof(T).Name switch
         {
             nameof(TweetCreationResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Pro],
-            nameof(DigestResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Light],
+            nameof(DigestResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Pro],
             nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],

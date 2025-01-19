@@ -83,10 +83,9 @@ IMPORTANT EXCLUSION CRITERIA:
 - If either summary covers multiple topics without a strong central theme, return an empty object
 
 SIMILARITY CRITERIA (ALL must be met):
-1. Both summaries must focus on a SINGLE specific event or closely related events
-2. Both summaries must share significant contextual details about this event
-3. Both summaries must be part of the same ongoing story or narrative
-4. Both summaries must have similar scope and depth of coverage
+1. Both source and candidate summaries must focus on a SINGLE specific event/topic/person
+2. Both source and candidate summaries must share significant contextual details about this event/topic/person
+3. Both source and candidate summaries must be part of the same ongoing story or narrative
 
 Return a JSON object with the following fields:
 - similar_summary_id: the ID of the summary that is 100% similar to the source summary
@@ -106,7 +105,7 @@ Summary: {newsSummary.Article}";
         {
             Id = s.Id,
             Title = s.Title,
-            Summary = s.Article[..Math.Min(255, s.Article.Length)]
+            Summary = s.Article[..Math.Min(512, s.Article.Length)]
         }).ToList();
 
         var userInput = @$"List of summaries: {System.Text.Json.JsonSerializer.Serialize(summariesData)}";

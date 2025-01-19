@@ -132,9 +132,12 @@ public class MaintenanceController : ControllerBase
     public async Task<IActionResult> DeleteSimilarReference(string id, CancellationToken cancellationToken = default)
     {
         var summaryId = Guid.Parse(id);
-        await _similarRepository.DeleteSimilarReferenceAsync(summaryId, cancellationToken);
-        await _cacheService.AddSummaryAsync(summaryId, cancellationToken);
-        return Ok(new { message = $"Similar reference for newssummary {summaryId} deleted, and cache updated." });
+        var newsSummaryIds = await _similarRepository.DeleteSimilarReferenceAsync(summaryId, cancellationToken);
+        foreach (var newsSummaryId in newsSummaryIds)
+        {
+            await _cacheService.AddSummaryAsync(newsSummaryId, cancellationToken);
+        }
+        return Ok(new { message = $"Similar reference for newssummary {summaryId} deleted. News summaries ({string.Join(", ", newsSummaryIds)}) updated in cache." });
     }
 
     [HttpPost("update-cache/summaries/{id}")]

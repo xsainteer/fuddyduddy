@@ -15,5 +15,9 @@ public interface ISimilarRepository
     /// Deletes a similar and returns ids of news summaries that are no longer connected to any similar
     /// </summary>
     Task<IEnumerable<Guid>> DeleteSimilarAsync(Guid similarId, CancellationToken cancellationToken = default);
-    Task DeleteSimilarReferenceAsync(Guid newsSummaryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a similar reference and returns ids of news summaries that are no longer connected to removed similar reference
+    /// </summary>
+    Task<IEnumerable<Guid>> DeleteSimilarReferenceAsync(Guid newsSummaryId, CancellationToken cancellationToken = default);
 } 

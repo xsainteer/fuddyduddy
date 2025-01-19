@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Application.Configuration;
 using Microsoft.Extensions.Options;
-
+using System.Text.Json;
 namespace FuddyDuddy.Core.Application.Services;
 
 public interface ISimilarityService
@@ -70,15 +70,16 @@ public class SimilarityService : ISimilarityService
 
         if (!sameLangSummaries.Any())
         {
-            _logger.LogInformation("No recent summaries with same language and category found for comparison with {SummaryId}", newsSummary.Id);
+            _logger.LogWarning("No recent summaries with same language and category found for comparison with {SummaryId}", newsSummary.Id);
             return;
         }
 
         // Find similar summaries using AI
-        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically similar or same as the source summary {newsSummary.Id}. Language of summaries is {newsSummary.Language.GetDescription()}.
+        var systemPrompt = @$"You are a semantic similarity analyzer. Your task is to find a summary from the user input that is semantically similar/same to the source summary.
+Language of summaries is {newsSummary.Language.GetDescription()}.
 
 IMPORTANT EXCLUSION CRITERIA:
-- If either summary is a collection of unrelated news items (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
+- If either source or candidate summary is a collection of unrelated news items (like 'daily news roundup' or 'Ежедневные новости'), skip it.
 
 SIMILARITY CRITERIA (at least ONE must be strongly met):
 1. Both summaries describe the same main event or announcement
@@ -92,11 +93,6 @@ Return a JSON object with the following fields:
 - reason: a short explanation of why the summary is similar (255 characters max)
 
 If no summaries meet the criteria, return an empty object.
-
-Source summary: 
-id: {newsSummary.Id}
-title: {newsSummary.Title}
-summary: {newsSummary.Article}
 ";
 
 
@@ -112,7 +108,15 @@ summary: {newsSummary.Article}
             ConnectedToOtherSummaries = groupedSummaries.TryGetValue(s.Id, out var references) ? string.Join("; ", references.Select(r => r.Title)) : string.Empty
         }).ToList();
 
-        var userInput = @$"List of summaries: {System.Text.Json.JsonSerializer.Serialize(summariesData)}";
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        var userInput = @$"Source summary: {JsonSerializer.Serialize(new SummaryComparisonData { Id = newsSummary.Id, Title = newsSummary.Title, Summary = newsSummary.Article }, jsonOptions)}
+
+List of candidate summaries: {JsonSerializer.Serialize(summariesData, jsonOptions)}";
 
         var similarityResponse = await _aiService.GenerateStructuredResponseAsync<SimilarityResponse>(
             systemPrompt,

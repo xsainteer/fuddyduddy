@@ -31,6 +31,11 @@ public class Similar
         _references.Add(reference);
         reference.SetSimilar(this);
     }
+
+    public void RemoveReference(SimilarReference reference)
+    {
+        _references.Remove(reference);
+    }
 }
 
 public class SimilarReference

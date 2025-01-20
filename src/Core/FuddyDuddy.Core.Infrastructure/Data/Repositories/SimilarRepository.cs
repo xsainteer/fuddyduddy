@@ -95,7 +95,11 @@ internal class SimilarRepository : ISimilarRepository
     {
         var similars = await GetBySummaryIdAsync(newsSummaryId, cancellationToken);
 
-        var connectedSummaries = similars.SelectMany(s => s.References).Select(r => r.NewsSummaryId).Distinct();
+        var connectedSummaries = similars
+            .SelectMany(s => s.References)
+            .Select(r => r.NewsSummaryId)
+            .Distinct()
+            .ToArray();
 
         foreach (var similar in similars)
         {

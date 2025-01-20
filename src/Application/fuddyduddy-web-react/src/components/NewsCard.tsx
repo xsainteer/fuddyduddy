@@ -27,7 +27,7 @@ export default function NewsCard({ summary }: NewsCardProps) {
 
   // Get similarities to display
   const sortedSimilarities = summary.similarities?.sort(
-    (a, b) => new Date(a.generatedAt).getTime() - new Date(b.generatedAt).getTime()
+    (a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
   ) || []
   const displayedSimilarities = showAllSimilarities ? sortedSimilarities : sortedSimilarities.slice(0, 3)
   const hasMoreSimilarities = sortedSimilarities.length > 3

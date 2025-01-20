@@ -79,16 +79,19 @@ public class SimilarityService : ISimilarityService
 Language of summaries is {newsSummary.Language.GetDescription()}.
 
 IMPORTANT EXCLUSION CRITERIA:
-- If either the source summary or any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object
-- If either summary is a collection of short news items, return an empty object
-- If either summary covers multiple topics without a strong central theme, return an empty object
+- If the source summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object.
+- If the source summary is a collection of short news items, return an empty object.
+- If the source summary covers multiple topics without a strong central theme, return an empty object.
+- If any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), skip the candidate.
+- If any candidate summary is a collection of short news items, skip the candidate.
+- If any candidate summary covers multiple topics without a strong central theme, skip the candidate.
 
 SIMILARITY ANALYSIS PROCESS:
 1. First, check if any candidate summaries are already connected to other summaries (ConnectedToOtherSummaries field)
    - If a candidate is connected to summaries with very different topics, exclude it
    - If a candidate is connected to similar topics, this strengthens its similarity score
 
-2. Then evaluate the content using these MANDATORY criteria:
+2. Then evaluate the content of both summaries (source and candidate) using these MANDATORY criteria:
    - Both summaries must focus on exactly the same SINGLE specific event/topic/person
    - Both must share significant factual details and context
    - Both must be part of the same ongoing story or narrative

@@ -87,8 +87,21 @@ internal class DigestCookService : IDigestCookService
                 return;
             }
 
-            // Format summaries as plain text
+            var previousDigests = await _digestRepository.GetLatestAsync(2, language, cancellationToken: cancellationToken);
+            var previousDigestsText = new StringBuilder();
+            previousDigestsText.AppendLine("Previous digests:");
+            previousDigestsText.AppendLine();
+            foreach (var prevDigest in previousDigests)
+            {
+                previousDigestsText.AppendLine($"Title: {prevDigest.Title}");
+                previousDigestsText.AppendLine($"Time: {prevDigest.GeneratedAt.ConvertToTimeZone(_processingOptions.Value.Timezone):HH:mm}");
+                previousDigestsText.AppendLine($"Content: {prevDigest.Content}");
+                previousDigestsText.AppendLine();
+            }
+
             var summariesText = new StringBuilder();
+            summariesText.AppendLine("Relevant summaries for new digest:");
+            summariesText.AppendLine();
             foreach (var summary in relevantSummaries)
             {
                 summariesText.AppendLine($"Time: {summary.GeneratedAt.ConvertToTimeZone(_processingOptions.Value.Timezone):HH:mm}");
@@ -97,6 +110,8 @@ internal class DigestCookService : IDigestCookService
                 summariesText.AppendLine($"URL: {summary.NewsArticle.Url} (DO NOT VISIT - reference only)");
                 summariesText.AppendLine();
             }
+
+            var userInput = @$"{previousDigestsText.ToString()}{Environment.NewLine}{summariesText.ToString()}";
 
             var sample = new DigestResponse
             {
@@ -109,10 +124,12 @@ internal class DigestCookService : IDigestCookService
             };
 
             var systemPrompt = $@"You are a skilled news analyst from {_processingOptions.Value.Country} who creates concise and informative digests.
-Your task is to analyze news summaries and create a digest that highlights the most remarkable events.
+Your task is to analyze news relevant summaries and create a new digest that highlights the most remarkable events.
 The digest should be in {language.GetDescription()}.
+Use previous digests as a reference to avoid repeating the same events.
 
-IMPORTANT: DO NOT visit any URLs provided - they are for reference purposes only.
+IMPORTANT: 
+- DO NOT visit any URLs provided - they are for reference purposes only.
 
 For each remarkable event, provide:
 1. A clear explanation of why it's significant
@@ -130,7 +147,7 @@ The currency in {_processingOptions.Value.Country} is {_processingOptions.Value.
             // Generate digest using AI
             var digestData = await _aiService.GenerateStructuredResponseAsync<DigestResponse>(
                 systemPrompt,
-                summariesText.ToString(),
+                userInput,
                 sample,
                 cancellationToken);
 

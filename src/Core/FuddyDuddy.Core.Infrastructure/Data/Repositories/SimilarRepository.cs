@@ -93,19 +93,21 @@ internal class SimilarRepository : ISimilarRepository
 
     public async Task<IEnumerable<Guid>> DeleteSimilarReferenceAsync(Guid newsSummaryId, CancellationToken cancellationToken = default)
     {
-        List<Guid> connectedSummaries = [];
-        var similarReferences = await _context.SimilarReferences.Where(s => s.NewsSummaryId == newsSummaryId).ToListAsync(cancellationToken);
-        if (similarReferences.Any())
-        {
-            foreach (var reference in similarReferences)
-            {
-                var summaries = (await GetBySummaryIdAsync(reference.NewsSummaryId, cancellationToken)).Where(s => s.Id != newsSummaryId);
-                connectedSummaries.AddRange(summaries.Select(s => s.Id));
-            }
+        var similarReferences = await _context.SimilarReferences
+            .Where(s => s.NewsSummaryId == newsSummaryId)
+            .ToListAsync(cancellationToken);
+
+        if (similarReferences?.Count > 0)
+        {   
+            var summariesIds = (await GetBySummaryIdAsync(newsSummaryId, cancellationToken))
+                .SelectMany(s => s.References)
+                .Select(r => r.NewsSummaryId)
+                .Distinct();
 
             _context.SimilarReferences.RemoveRange(similarReferences);
             await _context.SaveChangesAsync(cancellationToken);
-            return connectedSummaries;
+
+            return summariesIds;
         }
         return [];
     }

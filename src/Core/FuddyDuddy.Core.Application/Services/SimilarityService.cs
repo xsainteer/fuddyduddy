@@ -79,32 +79,30 @@ public class SimilarityService : ISimilarityService
 Language of summaries is {newsSummary.Language.GetDescription()}.
 
 IMPORTANT EXCLUSION CRITERIA:
-- If the source summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), return an empty object.
-- If the source summary is a collection of short news items, return an empty object.
+- If the source summary is a collection of short news items (title may contain 'Daily news' or 'Ежедневные новости'), return an empty object.
 - If the source summary covers multiple topics without a strong central theme, return an empty object.
-- If any candidate summary contains multiple unrelated events (like 'daily news roundup' or 'Ежедневные новости'), skip the candidate.
-- If any candidate summary is a collection of short news items, skip the candidate.
+- If any candidate summary is a collection of short news items (title may contain 'Daily news' or 'Ежедневные новости'), skip the candidate.
 - If any candidate summary covers multiple topics without a strong central theme, skip the candidate.
 
 SIMILARITY ANALYSIS PROCESS:
 1. First, check if any candidate summaries are already connected to other summaries (ConnectedToOtherSummaries field)
-   - If a candidate is connected to summaries with very different topics, exclude it
+   - If a candidate is connected to summaries with very different topics, skip the candidate
    - If a candidate is connected to similar topics, this strengthens its similarity score
 
 2. Then evaluate the content of both summaries (source and candidate) using these MANDATORY criteria:
    - Both summaries must focus on exactly the same SINGLE specific event/topic/person
-   - Both must share significant factual details and context
-   - Both must be part of the same ongoing story or narrative
-   - Both must have the same temporal context (describe the same time period of the event)
-   - Both must present the same perspective or angle of the story
-
-Return a JSON object with the following fields:
-- similar_summary_id: the ID of the summary that is 100% similar to the source summary
-- reason: a short explanation of why the summary is similar (255 characters max)
+   - Both summaries must share significant factual details and context
+   - Both summaries must be part of the same ongoing story or narrative
+   - Both summaries must have the same temporal context (describing the same time period of the event)
+   - Both summaries must present the same perspective or angle of the story
 
 If no summaries meet ALL criteria, return an empty object.
 It's better to return none than a SOMEWHAT similar summary.
 Be extremely strict - only return a match if you are 100% confident.
+
+Return a JSON object with the following fields:
+- similar_summary_id: the ID of the summary that is 100% similar to the source summary
+- reason: a short explanation of why the summary is similar (255 characters max)
 ";
 
 

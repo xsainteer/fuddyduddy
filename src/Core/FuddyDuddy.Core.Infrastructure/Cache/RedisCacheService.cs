@@ -126,6 +126,30 @@ internal class RedisCacheService : ICacheService
         }
     }
 
+    public async Task<IEnumerable<T>> GetSummariesByIdsAsync<T>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+            var redisKeys = ids.Select(id => (RedisKey)string.Format(SUMMARY_KEY, id)).ToArray();
+            var summaries = await db.StringGetAsync(redisKeys);
+
+            if (summaries == null)
+                return Enumerable.Empty<T>();
+            
+            return summaries
+                .Where(s => s != RedisValue.Null)
+                .Select(s => JsonSerializer.Deserialize<T>(s!))
+                .Where(summary => summary != null)
+                .Cast<T>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting summaries by IDs");
+            return Enumerable.Empty<T>();
+        }
+    }
+
     public async Task CacheSummaryDtoAsync<T>(string id, T summary, CancellationToken cancellationToken = default)
     {
         try

@@ -24,6 +24,7 @@ public class AiModels
     public enum Type
     {
         Light,
-        Pro
+        Pro,
+        Embedding
     }
 }

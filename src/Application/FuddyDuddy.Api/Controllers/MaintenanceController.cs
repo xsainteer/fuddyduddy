@@ -3,9 +3,11 @@ using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using System.Runtime.CompilerServices;
 using FuddyDuddy.Core.Application.Models;
+using FuddyDuddy.Core.Application.Models.Broker;
+using FuddyDuddy.Core.Application.Constants;
+using FuddyDuddy.Core.Application;
 
 namespace FuddyDuddy.Api.Controllers;
 
@@ -22,6 +24,8 @@ public class MaintenanceController : ControllerBase
     private readonly IMaintenanceService _maintenanceService;
     private readonly IDigestRepository _digestRepository;
     private readonly ISimilarRepository _similarRepository;
+    private readonly IVectorSearchService _vectorSearchService;
+    private readonly IBroker _broker;
     public MaintenanceController(
         INewsProcessingService newsProcessingService,
         ISummaryValidationService validationService,
@@ -31,7 +35,9 @@ public class MaintenanceController : ControllerBase
         ISummaryTranslationService translationService,
         IMaintenanceService maintenanceService,
         IDigestRepository digestRepository,
-        ISimilarRepository similarRepository)
+        ISimilarRepository similarRepository,
+        IVectorSearchService vectorSearchService,
+        IBroker broker)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
@@ -42,6 +48,8 @@ public class MaintenanceController : ControllerBase
         _maintenanceService = maintenanceService;
         _digestRepository = digestRepository;
         _similarRepository = similarRepository;
+        _vectorSearchService = vectorSearchService;
+        _broker = broker;
     }
 
     [HttpPost("process-news")]
@@ -114,6 +122,25 @@ public class MaintenanceController : ControllerBase
         }
 
         await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+    }
+
+
+    [HttpPost("rebuild-vector-index")]
+    public async Task<IActionResult> RebuildVectorIndex(CancellationToken cancellationToken = default)
+    {
+        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken: cancellationToken);
+        // Delete summaries from vector index
+        foreach (var summary in summaries)
+        {
+            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Delete), cancellationToken);
+        }
+        // Add summaries to vector index
+        foreach (var summary in summaries)
+        {
+            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
+        }
+
+        return Ok(new { message = "Vector index rebuilt" });
     }
 
     [HttpPost("delete-similar/{id}")]

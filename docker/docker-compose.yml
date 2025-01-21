@@ -58,3 +58,16 @@ services:
     volumes:
       - ./data/minio:/data
     command: server /data --console-address ":9001"
+
+  # Vector database
+  chroma:
+    image: chromadb/chroma:0.6.3
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    environment:
+      - ALLOW_RESET=true
+      - ANONYMIZED_TELEMETRY=false
+      - IS_PERSISTENT=TRUE
+    restart: unless-stopped

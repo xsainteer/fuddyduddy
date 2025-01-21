@@ -35,7 +35,48 @@ api-key: fuddy-duddy-secret
 POST http://localhost:5102/api/digests/generate?language=RU
 Content-Type: application/json
 
+### generate digest
+GET http://localhost:5102/api/summaries?language=RU&pageSize=10&page=0
+Content-Type: application/json
+Host: localhost1
+
 
 ### sitemap
 GET https://fuddy-duddy.org/sitemap.xml
 Content-Type: text/xml
+
+
+### remove similar reference
+POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/efd2efa8-51d3-4443-b2ed-e03f223811fb
+Content-Type: application/json
+api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+
+### update summary in cache
+POST https://fuddy-duddy.org/api/maintenance/update-cache/summaries/b9dae521-fc5d-4fa6-a1dd-5c052de4b29b
+Content-Type: application/json
+api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+
+### delete similar
+POST https://fuddy-duddy.org/api/maintenance/delete-similar/02e32cd4-08c7-433b-9d59-3af57196104e
+Content-Type: application/json
+api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+
+
+### test
+GET https://fuddy-duddy.org/api/summaries?page=0
+Content-Type: application/json
+
+
+### chromadb search query news_summaries collection
+POST http://localhost:5102/api/search/summaries
+Content-Type: application/json
+
+{
+    "query": "есть что-то про Талас?",
+    "limit": 1
+}
+
+### rebuild vector index
+POST http://localhost:5102/api/maintenance/rebuild-vector-index
+Content-Type: application/json
+api-key: fuddy-duddy-secret

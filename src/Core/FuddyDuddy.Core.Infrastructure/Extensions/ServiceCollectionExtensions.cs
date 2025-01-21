@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Infrastructure.Social;
 using FuddyDuddy.Core.Infrastructure.RateLimit;
+using FuddyDuddy.Core.Infrastructure.Vector;
 
 namespace FuddyDuddy.Core.Infrastructure.Extensions;
 
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.Configure<RedisOptions>(section.GetSection("Redis")); 
         services.Configure<RabbitMqOptions>(section.GetSection("RabbitMQ"));
         services.Configure<TwitterOptions>(section.GetSection("Twitter"));
+        services.Configure<ChromaDbOptions>(section.GetSection("ChromaDB"));
         services.Configure<AiModels>(configuration.GetSection("AiModels"));
 
         var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
@@ -75,8 +77,10 @@ public static class ServiceCollectionExtensions
         // Register rate limiter
         services.AddTransient<IRateLimiter, RateLimiter>();
 
-        // Register AI service
+        // Register AI services
         services.AddSingleton<IAiService, AiService>();
+        services.AddTransient<IEmbeddingService, OllamaEmbeddingService>();
+        services.AddTransient<IVectorSearchService, ChromaVectorSearchService>();
 
         // Register crawler middleware
         services.AddSingleton<ICrawlerMiddleware, CrawlerMiddleware>();

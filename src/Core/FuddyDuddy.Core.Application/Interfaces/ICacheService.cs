@@ -18,6 +18,7 @@ public interface ICacheService
         CancellationToken cancellationToken = default);
     
     Task<T?> GetSummaryByIdAsync<T>(string id, CancellationToken cancellationToken = default);
+    Task<IEnumerable<T>> GetSummariesByIdsAsync<T>(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
     Task CacheSummaryDtoAsync<T>(string id, T summary, CancellationToken cancellationToken = default);
     Task ClearCacheAsync(CancellationToken cancellationToken = default);
 

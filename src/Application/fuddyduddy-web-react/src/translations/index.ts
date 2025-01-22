@@ -98,6 +98,11 @@ interface Translation {
         tryDifferent: string
       }
     }
+    sort: {
+      label: string
+      time: string
+      score: string
+    }
   }
 }
 
@@ -199,6 +204,11 @@ const translations: Record<Language, Translation> = {
           includeContext: 'Include relevant context or time periods',
           tryDifferent: 'Try different phrasings if you don\'t get the expected results'
         }
+      },
+      sort: {
+        label: 'Sort by:',
+        time: 'Time',
+        score: 'Search score'
       }
     }
   },
@@ -299,6 +309,11 @@ const translations: Record<Language, Translation> = {
           includeContext: 'Включайте соответствующий контекст или временные периоды',
           tryDifferent: 'Попробуйте разные формулировки, если не получаете ожидаемых результатов'
         }
+      },
+      sort: {
+        label: 'Сортировать по:',
+        time: 'Времени',
+        score: 'Релевантности'
       }
     }
   }

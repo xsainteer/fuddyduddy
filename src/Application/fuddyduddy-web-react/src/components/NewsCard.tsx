@@ -13,9 +13,10 @@ const truncateTitle = (title: string, maxLength: number = 100): string => {
 interface NewsCardProps {
   summary: Summary
   isHighlighted?: boolean
+  score?: number
 }
 
-export default function NewsCard({ summary }: NewsCardProps) {
+export default function NewsCard({ summary, score }: NewsCardProps) {
   const { t, language } = useLocalization()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showAllSimilarities, setShowAllSimilarities] = useState(false)
@@ -116,8 +117,8 @@ export default function NewsCard({ summary }: NewsCardProps) {
         </div>
       )}
 
-      {/* Category */}
-      <div className="flex flex-wrap gap-1.5 mt-3">
+      {/* Category and Score */}
+      <div className="flex flex-wrap items-center gap-1.5 mt-3">
         <span 
           className="px-2 py-0.5 text-sm bg-blue-100 dark:bg-blue-900 
                    text-blue-600 dark:text-blue-300 rounded-full
@@ -125,6 +126,11 @@ export default function NewsCard({ summary }: NewsCardProps) {
         >
           {language === 'RU' ? summary.categoryLocal : summary.category}
         </span>
+        {score !== undefined && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {(score * 100).toFixed(0)}% {t.search.sort.score.toLowerCase()}
+          </span>
+        )}
       </div>
 
       {/* Engagement buttons */}

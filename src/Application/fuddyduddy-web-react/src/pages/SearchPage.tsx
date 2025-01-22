@@ -22,6 +22,18 @@ export default function SearchPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [limit, setLimit] = useState(10)
 
+  const sortResults = (items: SearchResult[]) => {
+    return [...items].sort((a, b) => {
+      const multiplier = sortDirection === 'asc' ? 1 : -1
+      
+      if (sortField === 'time') {
+        return multiplier * (new Date(a.summary.generatedAt).getTime() - new Date(b.summary.generatedAt).getTime())
+      }
+      
+      return multiplier * (b.score - a.score)
+    })
+  }
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!query.trim()) return
@@ -35,7 +47,8 @@ export default function SearchPage() {
         language: language,
         limit
       })
-      setResults(searchResults)
+      // Sort the results according to current sort settings before setting them
+      setResults(sortResults(searchResults))
     } catch (err) {
       setError(t.errors.searchFailed)
       setResults([])
@@ -55,15 +68,7 @@ export default function SearchPage() {
     }
   }
 
-  const sortedResults = [...results].sort((a, b) => {
-    const multiplier = sortDirection === 'asc' ? 1 : -1
-    
-    if (sortField === 'time') {
-      return multiplier * (new Date(a.summary.generatedAt).getTime() - new Date(b.summary.generatedAt).getTime())
-    }
-    
-    return multiplier * (a.score - b.score)
-  })
+  const sortedResults = sortResults(results)
 
   return (
     <div className="container mx-auto px-4 py-8">

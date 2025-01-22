@@ -3,9 +3,10 @@ using System.Text;
 using System.Text.Json;
 using FuddyDuddy.Core.Application.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-
+using FuddyDuddy.Core.Infrastructure.Configuration;
 namespace FuddyDuddy.Core.Infrastructure.Messaging;
 
 internal class RabbitMqBroker : IBroker
@@ -13,6 +14,7 @@ internal class RabbitMqBroker : IBroker
     private readonly IConnection _connection;
     private readonly ProducerPool _producerPool;
     private readonly ILogger<RabbitMqBroker> _logger;
+    private readonly IOptions<RabbitMqOptions> _options;
     private bool _disposed;
     private const int MaxRetryAttempts = 10000; // Maximum number of retry attempts
     private const int LogFrequency = 100; // Log every 100th attempt
@@ -21,11 +23,16 @@ internal class RabbitMqBroker : IBroker
         PropertyNameCaseInsensitive = true
     };
 
-    public RabbitMqBroker(IConnectionFactory connectionFactory, ProducerPool producerPool, ILogger<RabbitMqBroker> logger)
+    public RabbitMqBroker(
+        IConnectionFactory connectionFactory, 
+        ProducerPool producerPool, 
+        ILogger<RabbitMqBroker> logger,
+        IOptions<RabbitMqOptions> options)
     {
         _logger = logger;
         _connection = connectionFactory.CreateConnection();
         _producerPool = producerPool;
+        _options = options;
     }
 
     public async Task ConsumeAsync<T>(string queueName, Func<T, Task> handler, CancellationToken cancellationToken = default) where T : class
@@ -35,6 +42,7 @@ internal class RabbitMqBroker : IBroker
         {
             var queueArgs = new Dictionary<string, object>{ {"x-queue-type", "quorum"} };
             consumerChannel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: queueArgs);
+            consumerChannel.BasicQos(0, _options.Value.PrefetchSize, false);
 
             var consumer = new AsyncEventingBasicConsumer(consumerChannel);
             consumer.Received += async (_, ea) =>

@@ -47,7 +47,7 @@ Content-Type: text/xml
 
 
 ### remove similar reference
-POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/efd2efa8-51d3-4443-b2ed-e03f223811fb
+POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/06bafbf1-7782-4f7f-8ef3-352e9674d236
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 
@@ -81,3 +81,18 @@ Content-Type: application/json
 POST http://localhost:5102/api/maintenance/rebuild-vector-index?skipDelete=true
 Content-Type: application/json
 api-key: fuddy-duddy-secret
+
+### PROD: rebuild vector index
+POST https://fuddy-duddy.org/api/maintenance/rebuild-vector-index?skipDelete=true
+Content-Type: application/json
+api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+
+### PROD: chromadb search query news_summaries collection
+POST https://fuddy-duddy.org/api/search/summaries
+Content-Type: application/json
+
+{
+    "query": "где находится Садыр Жапаров президент Кыргызстана",
+    "limit": 2,
+    "language": 0
+}

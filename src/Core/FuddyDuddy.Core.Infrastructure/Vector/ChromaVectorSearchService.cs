@@ -72,7 +72,7 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
             };
 
             // Add to ChromaDB
-            await collectionClient.Add(
+            await collectionClient.Upsert(
                 ids: new List<string> { summary.Id.ToString() },
                 embeddings: new List<ReadOnlyMemory<float>> { embedding.AsMemory() },
                 metadatas: new List<Dictionary<string, object>> { metadata },

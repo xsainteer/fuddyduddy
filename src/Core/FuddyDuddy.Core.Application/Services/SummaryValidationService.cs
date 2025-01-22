@@ -78,6 +78,7 @@ internal class SummaryValidationService : ISummaryValidationService
                     await _cacheService.AddSummaryAsync(summary.Id, cancellationToken);
 
                     await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(summary.Id), cancellationToken);
+                    await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
                 }
             }
             catch (Exception ex)

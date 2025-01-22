@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         // Business logic options
         services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.SectionName));
         services.Configure<SimilaritySettings>(configuration.GetSection(SimilaritySettings.SectionName));
+        services.Configure<SearchSettings>(configuration.GetSection(SearchSettings.SectionName));
         return services;
     }
 } 

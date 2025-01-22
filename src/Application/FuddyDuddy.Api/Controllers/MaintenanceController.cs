@@ -126,13 +126,16 @@ public class MaintenanceController : ControllerBase
 
 
     [HttpPost("rebuild-vector-index")]
-    public async Task<IActionResult> RebuildVectorIndex(CancellationToken cancellationToken = default)
+    public async Task<IActionResult> RebuildVectorIndex([FromQuery] bool skipDelete = false, CancellationToken cancellationToken = default)
     {
         var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken: cancellationToken);
         // Delete summaries from vector index
-        foreach (var summary in summaries)
+        if (!skipDelete)
         {
-            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Delete), cancellationToken);
+            foreach (var summary in summaries)
+            {
+                await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Delete), cancellationToken);
+            }
         }
         // Add summaries to vector index
         foreach (var summary in summaries)

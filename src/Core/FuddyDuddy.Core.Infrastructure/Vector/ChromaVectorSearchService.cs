@@ -53,9 +53,10 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
             using var httpClient = _httpClientFactory.CreateClient();
             var collectionClient = await GetCollectionClient(httpClient, summary.Language);
 
+            var categoryName = summary.Language == Language.RU ? summary.Category.Local : summary.Category.Name;
             // Generate embedding for the summary
             var embedding = await _embeddingService.GenerateEmbeddingAsync(
-                $"{summary.NewsArticle.NewsSource.Name}, {summary.Category.Name}\n{summary.GeneratedAt:f}\n{summary.Title}\n\n{summary.Article}", 
+                $"{summary.NewsArticle.NewsSource.Name}, {categoryName}\n{summary.GeneratedAt.ToLocalTime():f}\n{summary.Title}\n\n{summary.Article}", 
                 cancellationToken);
 
             if (embedding == null)

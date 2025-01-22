@@ -72,11 +72,12 @@ POST http://localhost:5102/api/search/summaries
 Content-Type: application/json
 
 {
-    "query": "есть что-то про Талас?",
-    "limit": 1
+    "query": "зеленая энергия",
+    "limit": 2,
+    "language": 0
 }
 
 ### rebuild vector index
-POST http://localhost:5102/api/maintenance/rebuild-vector-index
+POST http://localhost:5102/api/maintenance/rebuild-vector-index?skipDelete=true
 Content-Type: application/json
 api-key: fuddy-duddy-secret

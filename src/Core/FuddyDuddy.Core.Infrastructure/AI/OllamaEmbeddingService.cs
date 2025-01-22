@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Infrastructure.Configuration;
@@ -12,7 +11,7 @@ internal sealed class OllamaEmbeddingService : IEmbeddingService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OllamaEmbeddingService> _logger;
-    private readonly string _modelName;
+    private readonly AiModels.ModelOptions.Characteristic _modelOptions;
 
     public OllamaEmbeddingService(
         IHttpClientFactory httpClientFactory,
@@ -23,8 +22,8 @@ internal sealed class OllamaEmbeddingService : IEmbeddingService
         _logger = logger;
         
         // Get the embedding model name from configuration
-        _modelName = aiModelsOptions.Value.Ollama.Models
-            .First(m => m.Type == AiModels.Type.Embedding).Name;
+        _modelOptions = aiModelsOptions.Value.Ollama.Models
+            .First(m => m.Type == AiModels.Type.Embedding);
     }
 
     public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
@@ -33,24 +32,29 @@ internal sealed class OllamaEmbeddingService : IEmbeddingService
         
         var request = new OllamaEmbeddingRequest
         {
-            Model = _modelName,
-            Prompt = text
+            Model = _modelOptions.Name,
+            Prompt = text,
+            Options = new OllamaEmbeddingOptions
+            {
+                NumCtx = _modelOptions.MaxTokens,
+                Temperature = _modelOptions.Temperature
+            }
         };
 
         try
         {
-            var response = await client.PostAsJsonAsync("api/embeddings", request, cancellationToken);
+            var response = await client.PostAsJsonAsync("api/embed", request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadFromJsonAsync<OllamaEmbeddingResponse>(cancellationToken: cancellationToken);
-            if (result?.Embedding == null)
+            if (result?.Embeddings == null || result.Embeddings.Length == 0 || result.Embeddings[0] == null || result.Embeddings[0].Length == 0)
             {
-                throw new Exception("Embedding response was null");
+                throw new Exception("Embedding response was null or empty");
             }
 
-            _logger.LogInformation("Embedding {Embedding} generated for text: {Text}", string.Join(",", result.Embedding), text);
+            _logger.LogInformation("Embedding {Embedding} generated for text: {Text}", string.Join(",", result.Embeddings[0]), text);
 
-            return result.Embedding;
+            return result.Embeddings[0];
         }
         catch (Exception ex)
         {
@@ -70,13 +74,27 @@ internal sealed class OllamaEmbeddingService : IEmbeddingService
         [JsonPropertyName("model")]
         public string Model { get; set; } = string.Empty;
 
-        [JsonPropertyName("prompt")]
+        [JsonPropertyName("input")]
         public string Prompt { get; set; } = string.Empty;
+
+        [JsonPropertyName("options")]
+        public OllamaEmbeddingOptions Options { get; set; } = new();
+    }
+
+    private class OllamaEmbeddingOptions
+    {
+        [JsonPropertyName("num_ctx")]
+        public int NumCtx { get; set; }
+
+        [JsonPropertyName("temperature")]
+        public double Temperature { get; set; }
     }
 
     private class OllamaEmbeddingResponse
     {
-        [JsonPropertyName("embedding")]
-        public float[] Embedding { get; set; } = Array.Empty<float>();
+
+        [JsonPropertyName("embeddings")]
+        public float[][] Embeddings { get; set; } = Array.Empty<float[]>();
+
     }
 } 

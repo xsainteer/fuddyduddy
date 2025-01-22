@@ -93,7 +93,7 @@ public class SearchController : ControllerBase
             }
         }
 
-        return Ok(results.OrderBy(r => r.Score));
+        return Ok(results);
     }
 
     public class SearchRequest

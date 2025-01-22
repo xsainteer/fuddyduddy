@@ -380,7 +380,7 @@ internal class RedisCacheService : ICacheService
             await db.StringSetAsync(
                 string.Format(SUMMARY_KEY, summary.Id),
                 summaryJson,
-                TimeSpan.FromDays(7));  // TTL for individual summaries
+                TimeSpan.FromDays(31));  // TTL for individual summaries
 
             // Add to the language-specific timeline
             var timelineKey = string.Format(SUMMARIES_BY_LANGUAGE_KEY, summary.Language.ToString().ToLower());

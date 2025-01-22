@@ -9,6 +9,7 @@ interface Translation {
     feed: string
     language: string
     followUs: string
+    search: string
   }
   filters: {
     title: string
@@ -80,6 +81,23 @@ interface Translation {
   errors: {
     failedToLoadDigests: string
     failedToLoadSummaries: string
+    searchFailed: string
+  }
+  search: {
+    placeholder: string
+    button: string
+    noResults: string
+    experimental: {
+      title: string
+      description: string
+      tips: {
+        title: string
+        useNaturalLanguage: string
+        beSpecific: string
+        includeContext: string
+        tryDifferent: string
+      }
+    }
   }
 }
 
@@ -92,7 +110,8 @@ const translations: Record<Language, Translation> = {
       digests: 'Digests',
       feed: 'Feed',
       language: 'Language',
-      followUs: 'Follow us on X'
+      followUs: 'Follow us on X',
+      search: 'Search'
     },
     filters: {
       title: 'Filters',
@@ -163,7 +182,24 @@ const translations: Record<Language, Translation> = {
     },
     errors: {
       failedToLoadDigests: 'Failed to load digests',
-      failedToLoadSummaries: 'Failed to load feed'
+      failedToLoadSummaries: 'Failed to load feed',
+      searchFailed: 'Failed to perform search. Please try again.'
+    },
+    search: {
+      placeholder: 'Search news summaries...',
+      button: 'Search',
+      noResults: 'No results found',
+      experimental: {
+        title: '🧪 Experimental Feature',
+        description: 'This search feature uses vector database technology for semantic search capabilities. Results may not always be precise and are experimental in nature.',
+        tips: {
+          title: 'Tips for better results:',
+          useNaturalLanguage: 'Use natural language questions',
+          beSpecific: 'Be specific about what you\'re looking for',
+          includeContext: 'Include relevant context or time periods',
+          tryDifferent: 'Try different phrasings if you don\'t get the expected results'
+        }
+      }
     }
   },
   RU: {
@@ -174,7 +210,8 @@ const translations: Record<Language, Translation> = {
       digests: 'Дайджесты',
       feed: 'Лента',
       language: 'Язык',
-      followUs: 'Читайте нас в X'
+      followUs: 'Читайте нас в X',
+      search: 'Поиск'
     },
     filters: {
       title: 'Фильтры',
@@ -232,12 +269,12 @@ const translations: Record<Language, Translation> = {
       error: 'Что-то пошло не так',
       retry: 'Попробовать снова',
       originalSource: 'Оригинальный источник',
-      newSummariesAvailable: 'Доступны новые сводки',
+      newSummariesAvailable: 'Доступны новые обзоры',
       loadMore: 'Загрузить еще',
       backToFeed: 'Вернуть к ленте',
       back: 'Назад',
       new: 'Новое',
-      latestNews: 'Последние новости',
+      latestNews: 'Последние обзоры',
       viewAllNews: 'Перейти к ленте',
       links: 'ссылок',
       similarSummaries: 'Похожие обзоры',
@@ -245,7 +282,24 @@ const translations: Record<Language, Translation> = {
     },
     errors: {
       failedToLoadDigests: 'Не удалось загрузить дайджесты',
-      failedToLoadSummaries: 'Не удалось загрузить новости'
+      failedToLoadSummaries: 'Не удалось загрузить обзоры',
+      searchFailed: 'Не удалось выполнить поиск. Пожалуйста, попробуйте еще раз.'
+    },
+    search: {
+      placeholder: 'Поиск обзоров...',
+      button: 'Поиск',
+      noResults: 'Результаты не найдены',
+      experimental: {
+        title: '🧪 Экспериментальная функция',
+        description: 'Эта функция поиска использует технологию векторной базы данных для семантического поиска. Результаты могут быть не всегда точными и носят экспериментальный характер.',
+        tips: {
+          title: 'Советы для лучших результатов:',
+          useNaturalLanguage: 'Используйте вопросы на естественном языке',
+          beSpecific: 'Будьте конкретны в том, что ищете',
+          includeContext: 'Включайте соответствующий контекст или временные периоды',
+          tryDifferent: 'Попробуйте разные формулировки, если не получаете ожидаемых результатов'
+        }
+      }
     }
   }
 }

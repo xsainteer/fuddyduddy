@@ -6,6 +6,7 @@ import DigestsPage from './pages/DigestsPage'
 import DigestPage from './pages/DigestPage'
 import SummaryPage from './pages/SummaryPage'
 import AboutPage from './pages/AboutPage'
+import SearchPage from './pages/SearchPage'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { LayoutProvider } from './contexts/LayoutContext'
@@ -43,6 +44,7 @@ export default function App() {
                 <Route path="digests/:id" element={<DigestPage />} />
                 <Route path="summary/:id" element={<SummaryPage />} />
                 <Route path="about" element={<AboutPage />} />
+                <Route path="search" element={<SearchPage />} />
               </Route>
 
               {/* Catch-all redirect to root for language detection */}

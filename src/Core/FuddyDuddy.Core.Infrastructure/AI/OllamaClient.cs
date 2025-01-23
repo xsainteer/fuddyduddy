@@ -7,21 +7,19 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Application.Constants;
-
+using System.Text.Encodings.Web;
 namespace FuddyDuddy.Core.Infrastructure.AI;
 
 internal class OllamaClient : IAiClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OllamaClient> _logger;
-    private readonly AiModels.ModelOptions _ollamaOptions;
     private readonly AiModels.ModelOptions.Characteristic _modelOptions;
 
     public OllamaClient(AiModels.ModelOptions ollamaOptions, AiModels.Type type, IHttpClientFactory httpClientFactory, ILogger<OllamaClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _ollamaOptions = ollamaOptions;
         _modelOptions = ollamaOptions.Models.First(m => m.Type == type);
     }
 
@@ -51,10 +49,13 @@ internal class OllamaClient : IAiClient
             stream = false,
             options = new
             {
-                temperature = _ollamaOptions.Temperature,
+                temperature = _modelOptions.Temperature,
                 num_ctx = _modelOptions.MaxTokens
             }
         };
+
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+        _logger.LogInformation("Request: {Request}", JsonSerializer.Serialize(request, jsonOptions));
 
         using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.OLLAMA);
         var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);

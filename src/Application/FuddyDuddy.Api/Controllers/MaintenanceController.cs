@@ -25,6 +25,7 @@ public class MaintenanceController : ControllerBase
     private readonly IDigestRepository _digestRepository;
     private readonly ISimilarRepository _similarRepository;
     private readonly IVectorSearchService _vectorSearchService;
+    private readonly IDateExtractionService _dateExtractionService;
     private readonly IBroker _broker;
     public MaintenanceController(
         INewsProcessingService newsProcessingService,
@@ -37,7 +38,8 @@ public class MaintenanceController : ControllerBase
         IDigestRepository digestRepository,
         ISimilarRepository similarRepository,
         IVectorSearchService vectorSearchService,
-        IBroker broker)
+        IBroker broker,
+        IDateExtractionService dateExtractionService)
     {
         _newsProcessingService = newsProcessingService;
         _validationService = validationService;
@@ -50,6 +52,7 @@ public class MaintenanceController : ControllerBase
         _similarRepository = similarRepository;
         _vectorSearchService = vectorSearchService;
         _broker = broker;
+        _dateExtractionService = dateExtractionService;
     }
 
     [HttpPost("process-news")]
@@ -228,5 +231,12 @@ public class MaintenanceController : ControllerBase
             _logger.LogError(ex, "Error translating summary. Id: {Id}, TargetLanguage: {Language}", id, targetLanguage);
             return StatusCode(500, new { message = "An error occurred while translating the summary" });
         }
+    }
+
+    [HttpPost("extract-date-range")]
+    public async Task<IActionResult> ExtractDateRange([FromBody] string text, CancellationToken cancellationToken = default)
+    {
+        var dateRange = await _dateExtractionService.ExtractDateRangeAsync(text, cancellationToken);
+        return Ok(dateRange);
     }
 } 

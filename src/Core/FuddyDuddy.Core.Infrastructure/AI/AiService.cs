@@ -35,6 +35,7 @@ internal class AiService : IAiService
 
         _ollamaClients = new Dictionary<ModelType, IAiClient>
         {
+            { ModelType.SuperLight, ActivatorUtilities.CreateInstance<OllamaClient>(serviceProvider, aiModelsOptions.Value.Ollama, ModelType.SuperLight) },
             { ModelType.Light, ActivatorUtilities.CreateInstance<OllamaClient>(serviceProvider, aiModelsOptions.Value.Ollama, ModelType.Light) },
             { ModelType.Pro, ActivatorUtilities.CreateInstance<OllamaClient>(serviceProvider, aiModelsOptions.Value.Ollama, ModelType.Pro) }
         };
@@ -62,6 +63,7 @@ internal class AiService : IAiService
             nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
             nameof(TranslationResponse) => _ollamaClients[ModelType.Light],
             nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Light],
+            nameof(DateRangeResponse) => _ollamaClients[ModelType.SuperLight],
             _ => throw new ArgumentException($"Invalid model type for {typeof(T).Name}")
         };
     }

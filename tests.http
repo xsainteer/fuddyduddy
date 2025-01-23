@@ -47,7 +47,7 @@ Content-Type: text/xml
 
 
 ### remove similar reference
-POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/06bafbf1-7782-4f7f-8ef3-352e9674d236
+POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/3af2263f-d503-46b8-adae-bf700e13de46
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 
@@ -92,7 +92,31 @@ POST https://fuddy-duddy.org/api/search/summaries
 Content-Type: application/json
 
 {
-    "query": "где находится Садыр Жапаров президент Кыргызстана",
+    "query": "где находился Садыр Жапаров президент Кыргызстана до 15 january 2025",
     "limit": 2,
     "language": 0
 }
+
+
+### test extract date range
+POST http://localhost:5102/api/maintenance/extract-date-range
+Content-Type: application/json
+api-key: fuddy-duddy-secret
+
+# "Куда летал президент в феврале 2024?"
+# "Куда летал президент c 1 по 25 декабря 2024?"
+# "что было вчера?"
+# "где был президент позавчера?"
+# "где был президент три дня назад?"
+# "что было с позавчера по вчера?"
+# "что делал президент сегодня?"
+# "что делал президент вчера?"
+# "что делал президент позавчера?"
+# "что делал президент сегодня и вчера?"
+# "что делал президент сегодня и позавчера?"
+# "что делал президент с позавчера по вчера и сегодня?"
+# "что делал президент с позавчера по вчера и три дня назад?"
+# "что делал президент с вчера по завтра?"
+# "что делал президент с позавчера по завтра?"
+# "что делал президент с три дня назад по завтра?"
+# "что делал президент с позавчера по завтра и три дня назад?"

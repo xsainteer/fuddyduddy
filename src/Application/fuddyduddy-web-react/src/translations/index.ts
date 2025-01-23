@@ -195,13 +195,13 @@ const translations: Record<Language, Translation> = {
       button: 'Search',
       noResults: 'No results found',
       experimental: {
-        title: '🧪 Experimental Feature',
+        title: '🧪 Experimental Search',
         description: 'This search feature uses vector database technology for semantic search capabilities. Results may not always be precise and are experimental in nature.',
         tips: {
           title: 'Tips for better results:',
           useNaturalLanguage: 'Use natural language questions',
           beSpecific: 'Be specific about what you\'re looking for',
-          includeContext: 'Include relevant context or time periods',
+          includeContext: 'Include relevant context or time periods (e.g. "today", "from 1 to 28 December 2024")',
           tryDifferent: 'Try different phrasings if you don\'t get the expected results'
         }
       },
@@ -300,13 +300,13 @@ const translations: Record<Language, Translation> = {
       button: 'Поиск',
       noResults: 'Результаты не найдены',
       experimental: {
-        title: '🧪 Экспериментальная функция',
-        description: 'Эта функция поиска использует технологию векторной базы данных для семантического поиска. Результаты могут быть не всегда точными и носят экспериментальный характер.',
+        title: '🧪 Экспериментальный поиск',
+        description: 'Функция поиска использует технологию векторной базы данных для семантического поиска. Результаты могут быть не всегда точными и носят экспериментальный характер.',
         tips: {
           title: 'Советы для лучших результатов:',
           useNaturalLanguage: 'Используйте вопросы на естественном языке',
           beSpecific: 'Будьте конкретны в том, что ищете',
-          includeContext: 'Включайте соответствующий контекст или временные периоды',
+          includeContext: 'Включайте соответствующий контекст или временные периоды (например: "сегодня", "c 1 по 28 декабря 2024")',
           tryDifferent: 'Попробуйте разные формулировки, если не получаете ожидаемых результатов'
         }
       },

@@ -6,6 +6,7 @@ using ChromaDB.Client;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Infrastructure.AI;
 using FuddyDuddy.Core.Domain.Entities;
+using FuddyDuddy.Core.Application.Extensions;
 
 namespace FuddyDuddy.Core.Infrastructure.Vector;
 
@@ -16,19 +17,22 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
     private readonly ILogger<ChromaVectorSearchService> _logger;
     private readonly IOptions<ChromaDbOptions> _chromaOptions;
     private readonly INewsSummaryRepository _newsSummaryRepository;
+    private readonly IDateExtractionService _dateExtractionService;
 
     public ChromaVectorSearchService(
         IEmbeddingService embeddingService,
         IOptions<ChromaDbOptions> chromaOptions,
         ILogger<ChromaVectorSearchService> logger,
         IHttpClientFactory httpClientFactory,
-        INewsSummaryRepository newsSummaryRepository)
+        INewsSummaryRepository newsSummaryRepository,
+        IDateExtractionService dateExtractionService)
     {
         _httpClientFactory = httpClientFactory;
         _embeddingService = embeddingService;
         _logger = logger;
         _chromaOptions = chromaOptions;
         _newsSummaryRepository = newsSummaryRepository;
+        _dateExtractionService = dateExtractionService;
     }
 
     private async Task<ChromaCollectionClient> GetCollectionClient(HttpClient httpClient, Language language)
@@ -54,9 +58,8 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
             var collectionClient = await GetCollectionClient(httpClient, summary.Language);
 
             var categoryName = summary.Language == Language.RU ? summary.Category.Local : summary.Category.Name;
-            // Generate embedding for the summary
             var embedding = await _embeddingService.GenerateEmbeddingAsync(
-                $"{summary.NewsArticle.NewsSource.Name}, {categoryName}\n{summary.GeneratedAt.ToLocalTime():f}\n{summary.Title}\n\n{summary.Article}", 
+                $"Издательство: {summary.NewsArticle.NewsSource.Name}\nКатегория: {categoryName}\nЗаголовок: {summary.Title}\n\nСодержание: {summary.Article}", 
                 cancellationToken);
 
             if (embedding == null)
@@ -65,13 +68,12 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
                 throw new Exception("Embedding is null");
             }
 
-            // Prepare metadata
+            // Add timestamp to metadata
             var metadata = new Dictionary<string, object>
             {
-                { "id", summary.Id.ToString() }
+                { "timestamp", ((DateTimeOffset)summary.GeneratedAt.ToUniversalTime()).ToUnixTimeSeconds() }
             };
 
-            // Add to ChromaDB
             await collectionClient.Upsert(
                 ids: new List<string> { summary.Id.ToString() },
                 embeddings: new List<ReadOnlyMemory<float>> { embedding.AsMemory() },
@@ -98,20 +100,42 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
             using var httpClient = _httpClientFactory.CreateClient();
             var collectionClient = await GetCollectionClient(httpClient, language);
 
+            // Extract date range from query
+            var dateRange = await _dateExtractionService.ExtractDateRangeAsync(query, cancellationToken);
+            
             // Generate embedding for the query
             var queryEmbedding = await _embeddingService.GenerateEmbeddingAsync(query, cancellationToken);
+            
+            long? from = DateTimeOffset.TryParse(dateRange.From, out var fromDate) ? fromDate.ToUnixTimeSeconds() : null;
+            long? to = DateTimeOffset.TryParse(dateRange.To, out var toDate) ? toDate.AddDays(1).ToUnixTimeSeconds() : null;
 
-            // Search in ChromaDB with filtering by metadata
+            // Build where clause for date filtering
+            ChromaWhereOperator? whereOperator = null;
+            if (from.HasValue || to.HasValue)
+            {
+                if (from.HasValue && to.HasValue)
+                {
+                    whereOperator = ChromaWhereOperator.GreaterThanOrEqual("timestamp", from.Value) &
+                                  ChromaWhereOperator.LessThanOrEqual("timestamp", to.Value);
+                }
+                else if (from.HasValue)
+                {
+                    whereOperator = ChromaWhereOperator.GreaterThanOrEqual("timestamp", from.Value);
+                }
+                else if (to.HasValue)
+                {
+                    whereOperator = ChromaWhereOperator.LessThanOrEqual("timestamp", to.Value);
+                }
+            }
+
+            // Search in ChromaDB with date filtering
             var queryResults = await collectionClient.Query(
                 queryEmbeddings: new List<ReadOnlyMemory<float>> { queryEmbedding.AsMemory() },
                 nResults: limit,
+                where: whereOperator,
                 include: ChromaQueryInclude.Metadatas | ChromaQueryInclude.Documents | ChromaQueryInclude.Distances);
 
-            // Filter results in memory since ChromaDB's where clause is not working as expected
             var summaries = new List<(Guid SummaryId, float Score)>();
-            
-            // ChromaDB returns a list of query results, each containing a list of entries
-            // Since we only have one query embedding, we only need to process the first result
             var firstQueryResult = queryResults.FirstOrDefault();
             if (firstQueryResult == null)
             {
@@ -126,9 +150,7 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
                     continue;
                 }
 
-                // Use the distance as score (cosine similarity)
-                var score = entry.Distance;
-                summaries.Add((summaryId, score));
+                summaries.Add((SummaryId: summaryId, Score: entry.Distance));
             }
 
             return summaries;

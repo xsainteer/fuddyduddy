@@ -80,6 +80,7 @@ public static class ServiceCollectionExtensions
         // Register AI services
         services.AddSingleton<IAiService, AiService>();
         services.AddTransient<IEmbeddingService, OllamaEmbeddingService>();
+        services.AddTransient<IDateExtractionService, DateExtractionService>();
         services.AddTransient<IVectorSearchService, ChromaVectorSearchService>();
 
         // Register crawler middleware

@@ -42,7 +42,7 @@ public class SearchController : ControllerBase
         {
             return BadRequest(new { message = "Query must be at least 3 characters long and less than 100 characters" });
         }
-        if (request.Limit <= 0 || request.Limit > 100)
+        if (request.Limit <= 0 || request.Limit > 512)
         {
             return BadRequest(new { message = "Limit must be greater than 0 and less than 100" });
         }

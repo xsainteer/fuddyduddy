@@ -32,6 +32,7 @@ internal class OllamaClient : IAiClient
         var request = new
         {
             model = _modelOptions.Name,
+            keep_alive = _modelOptions.KeepAlive,
             messages = new[]
             {
                 new

@@ -18,6 +18,7 @@ public class AiModels
             public string Name { get; set; }
             public int MaxTokens { get; set; }
             public double Temperature { get; set; }
+            public string KeepAlive { get; set; } = "5m";
             public int RatePerMinute { get; set; } = 0; // Gemini specific
         }
     }

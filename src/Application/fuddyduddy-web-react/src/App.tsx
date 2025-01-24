@@ -19,7 +19,7 @@ function LanguageRedirect() {
   useEffect(() => {
     // Only redirect if we're at the root
     if (location.pathname === '/') {
-      navigate(`/${language.toLowerCase()}/digests${location.search}${location.hash}`, { replace: true })
+      navigate(`/${language.toLowerCase()}/feed${location.search}${location.hash}`, { replace: true })
     }
   }, [navigate, location, language])
 
@@ -38,7 +38,7 @@ export default function App() {
 
               {/* Language-specific routes */}
               <Route path="/:lang" element={<Layout />}>
-                <Route index element={<Navigate to="digests" replace />} />
+                <Route index element={<Navigate to="feed" replace />} />
                 <Route path="feed" element={<HomePage />} />
                 <Route path="digests" element={<DigestsPage />} />
                 <Route path="digests/:id" element={<DigestPage />} />

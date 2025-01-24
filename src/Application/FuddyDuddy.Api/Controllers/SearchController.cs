@@ -38,11 +38,11 @@ public class SearchController : ControllerBase
         {
             return BadRequest(new { message = "Query is required" });
         }
-        if (request.Query.Length < 3 || request.Query.Length > 100)
+        if (request.Query.Length < _searchSettings.Value.MinQueryLength || request.Query.Length > _searchSettings.Value.MaxQueryLength)
         {
-            return BadRequest(new { message = "Query must be at least 3 characters long and less than 100 characters" });
+            return BadRequest(new { message = $"Query must be at least {_searchSettings.Value.MinQueryLength} characters long and less than {_searchSettings.Value.MaxQueryLength} characters" });
         }
-        if (request.Limit <= 0 || request.Limit > 512)
+        if (request.Limit <= 0 || request.Limit > 100)
         {
             return BadRequest(new { message = "Limit must be greater than 0 and less than 100" });
         }

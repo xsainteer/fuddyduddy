@@ -16,11 +16,12 @@ internal class AiService : IAiService
     private readonly Dictionary<ModelType, IAiClient> _geminiClients;
     private readonly Dictionary<ModelType, IAiClient> _gemini2Clients;
     private readonly Dictionary<ModelType, IAiClient> _ollamaClients;
+    private readonly IOptions<AiModels> _aiModelsOptions;
 
     public AiService(IServiceProvider serviceProvider, ILogger<AiService> logger, IOptions<AiModels> aiModelsOptions)
     {
         _logger = logger;
-
+        _aiModelsOptions = aiModelsOptions;
         _geminiClients = new Dictionary<ModelType, IAiClient>
         {
             { ModelType.Light, ActivatorUtilities.CreateInstance<GeminiClient>(serviceProvider, aiModelsOptions.Value.Gemini, ModelType.Light, GEMINI_PREFIX) },
@@ -54,17 +55,24 @@ internal class AiService : IAiService
 
     private IAiClient GetModelClient<T>() where T : IAiModelResponse
     {
-        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-        return typeof(T).Name switch
+        if (!_aiModelsOptions.Value.ResponseMappings.TryGetValue(typeof(T).Name, out var mapping))
         {
-            nameof(TweetCreationResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Pro],
-            nameof(DigestResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _geminiClients[ModelType.Pro],
-            nameof(SummaryResponse) => _ollamaClients[ModelType.Light],
-            nameof(ValidationResponse) => _ollamaClients[ModelType.Light],
-            nameof(TranslationResponse) => _ollamaClients[ModelType.Light],
-            nameof(SimilarityResponse) => isDevelopment ? _ollamaClients[ModelType.Light] : _gemini2Clients[ModelType.Light],
-            nameof(DateRangeResponse) => _ollamaClients[ModelType.SuperLight],
+            throw new ArgumentException($"No mapping found for {typeof(T).Name}");
+        }
+
+        var modelDictionary = mapping.Model switch
+        {
+            "Gemini" => _geminiClients,
+            "Gemini2" => _gemini2Clients,
+            "Ollama" => _ollamaClients,
             _ => throw new ArgumentException($"Invalid model type for {typeof(T).Name}")
         };
+
+        if (!modelDictionary.TryGetValue(mapping.ModelType, out var client))
+        {
+            throw new ArgumentException($"Invalid model type for {typeof(T).Name}");
+        }
+
+        return client;
     }
 }

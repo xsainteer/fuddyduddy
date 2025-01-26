@@ -109,6 +109,7 @@ interface Translation {
         from: string
         to: string
         placeholder: string
+        title: string
       }
       categories: {
         title: string
@@ -243,17 +244,18 @@ const translations: Record<Language, Translation> = {
         dateRange: {
           from: 'From',
           to: 'To',
-          placeholder: 'Date'
+          placeholder: 'Date',
+          title: 'Date range'
         },
         categories: {
           title: 'Categories',
-          placeholder: 'Categories',
+          placeholder: 'Select categories',
           selected: '{count} categories selected',
           modalTitle: 'Select categories'
         },
         sources: {
           title: 'Sources',
-          placeholder: 'Sources',
+          placeholder: 'Select sources',
           selected: '{count} sources selected',
           modalTitle: 'Select sources'
         },
@@ -376,17 +378,18 @@ const translations: Record<Language, Translation> = {
         dateRange: {
           from: 'С',
           to: 'По',
-          placeholder: 'Выберите дату'
+          placeholder: 'Выберите дату',
+          title: 'Диапазон дат'
         },
         categories: {
           title: 'Категории',
-          placeholder: 'Категории',
+          placeholder: 'Выберите категории',
           selected: 'Выбрано категорий: {count}',
           modalTitle: 'Выбор категорий'
         },
         sources: {
           title: 'Источники',
-          placeholder: 'Источники',
+          placeholder: 'Выберите источники',
           selected: 'Выбрано источников: {count}',
           modalTitle: 'Выбор источников'
         },

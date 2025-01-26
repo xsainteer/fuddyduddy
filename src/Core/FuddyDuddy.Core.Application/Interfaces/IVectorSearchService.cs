@@ -16,13 +16,18 @@ public interface IVectorSearchService
     /// </summary>
     /// <param name="query">Search query text</param>
     /// <param name="language">Content language</param>
-    /// <param name="categoryId">Optional category filter</param>
+    /// <param name="fromDate">From date</param>
+    /// <param name="toDate">To date</param>
     /// <param name="limit">Maximum number of results</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of similar summaries with their similarity scores</returns>
     Task<IEnumerable<(Guid SummaryId, float Score)>> SearchAsync(
         string query,
         Language language,
+        DateTime? fromDate,
+        DateTime? toDate,
+        IEnumerable<int>? categoryIds,
+        IEnumerable<Guid>? sourceIds,
         int limit = 10,
         CancellationToken cancellationToken = default);
 

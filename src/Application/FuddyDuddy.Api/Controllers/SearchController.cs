@@ -51,10 +51,19 @@ public class SearchController : ControllerBase
             return BadRequest(new { message = "Search service is disabled" });
         }
 
+        if (request.FromDate > request.ToDate)
+        {
+            return BadRequest(new { message = "From date must be less than to date" });
+        }
+
         // Get search results from vector search
         var searchResults = await _vectorSearchService.SearchAsync(
-            request.Query, 
-            request.LanguageEnum, 
+            request.Query,
+            request.LanguageEnum,
+            request.FromDate,
+            request.ToDate,
+            request.CategoryIds,
+            request.SourceIds,
             request.Limit ?? _searchSettings.Value.MaxSearchResults, 
             cancellationToken
         );
@@ -105,6 +114,10 @@ public class SearchController : ControllerBase
         public string Query { get; set; } = string.Empty;
         public int? Limit { get; set; }
         public string Language { get; set; } = "RU";
+        public IEnumerable<int>? CategoryIds { get; set; }
+        public IEnumerable<Guid>? SourceIds { get; set; }
+        public DateTime FromDate { get; set; } = DateTime.UtcNow.AddDays(-30);
+        public DateTime ToDate { get; set; } = DateTime.UtcNow;
         public Language LanguageEnum => Enum.Parse<Language>(Language);
     }
 

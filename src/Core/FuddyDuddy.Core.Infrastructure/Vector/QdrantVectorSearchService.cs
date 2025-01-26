@@ -1,15 +1,16 @@
+using System.Text.RegularExpressions;
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Domain.Entities;
 using FuddyDuddy.Core.Infrastructure.AI;
 using FuddyDuddy.Core.Infrastructure.Configuration;
 using FuddyDuddy.Core.Infrastructure.RateLimit;
+using Google.Protobuf.Reflection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
 using Range = Qdrant.Client.Grpc.Range;
-
 namespace FuddyDuddy.Core.Infrastructure.Vector;
 
 internal sealed class QdrantVectorSearchService : IVectorSearchService
@@ -19,7 +20,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
     private readonly ILogger<QdrantVectorSearchService> _logger;
     private readonly IOptions<QdrantOptions> _qdrantOptions;
     private readonly INewsSummaryRepository _newsSummaryRepository;
-    private readonly IDateExtractionService _dateExtractionService;
     private readonly IRateLimiter _rateLimiter;
     private readonly QdrantClient _qdrantClient;
 
@@ -28,7 +28,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         IOptions<QdrantOptions> qdrantOptions,
         ILogger<QdrantVectorSearchService> logger,
         INewsSummaryRepository newsSummaryRepository,
-        IDateExtractionService dateExtractionService,
         IRateLimiter rateLimiter,
         ILoggerFactory loggerFactory)
     {
@@ -36,7 +35,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         _logger = logger;
         _qdrantOptions = qdrantOptions;
         _newsSummaryRepository = newsSummaryRepository;
-        _dateExtractionService = dateExtractionService;
         _rateLimiter = rateLimiter;
         
         _qdrantClient = new QdrantClient(_qdrantOptions.Value.Host, _qdrantOptions.Value.Port, loggerFactory: loggerFactory);
@@ -124,8 +122,8 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
                 Vectors = embedding.ToArray()
             };
             point.Payload.Add("timestamp", new Value { IntegerValue = ((DateTimeOffset)summary.GeneratedAt.ToUniversalTime()).ToUnixTimeSeconds() });
-            point.Payload.Add("source", new Value { StringValue = summary.NewsArticle.NewsSource.Name });
-            point.Payload.Add("category", new Value { StringValue = summary.Category.Local });
+            point.Payload.Add("source", new Value { StringValue = summary.NewsArticle.NewsSourceId.ToString() });
+            point.Payload.Add("category", new Value { StringValue = summary.CategoryId.ToString() });
 
             await _qdrantClient.UpsertAsync(
                 collectionName,
@@ -143,6 +141,10 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
     public async Task<IEnumerable<(Guid SummaryId, float Score)>> SearchAsync(
         string query,
         Language language,
+        DateTime? fromDate,
+        DateTime? toDate,
+        IEnumerable<int>? categoryIds,
+        IEnumerable<Guid>? sourceIds,
         int limit = 10,
         CancellationToken cancellationToken = default)
     {
@@ -154,14 +156,15 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
 
             var filter = new Filter();
 
-            if (_qdrantOptions.Value.ExtractDateRange)
+            if (fromDate != DateTime.MinValue || toDate != DateTime.MinValue)
             {
-                // Extract date range from query
-                var dateRange = await _dateExtractionService.ExtractDateRangeAsync(query, cancellationToken);
+                // Add date range filter if present
 
                 // Add date range filter if present
-                if (DateTimeOffset.TryParse(dateRange.From, out var fromDate))
+                if (fromDate.HasValue)
                 {
+                    var fromDateOffset = ((DateTimeOffset)fromDate.Value.ToUniversalTime());
+                    _logger.LogInformation("From date: {FromDateOffset}", fromDateOffset);
                     filter.Must.Add(new Condition
                     {
                         Field = new FieldCondition
@@ -169,14 +172,16 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
                             Key = "timestamp",
                             Range = new Range
                             {
-                                Gte = fromDate.ToUnixTimeSeconds()
+                                Gte = fromDateOffset.ToUnixTimeSeconds()
                             }
                         }
                     });
                 }
                 
-                if (DateTimeOffset.TryParse(dateRange.To, out var toDate))
+                if (toDate.HasValue)
                 {
+                    var toDateOffset = ((DateTimeOffset)toDate.Value.ToUniversalTime());
+                    _logger.LogInformation("To date: {ToDateOffset}", toDateOffset);
                     filter.Must.Add(new Condition
                     {
                         Field = new FieldCondition
@@ -184,10 +189,30 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
                             Key = "timestamp",
                             Range = new Range
                             {
-                                Lte = toDate.AddDays(1).ToUnixTimeSeconds()
+                                Lte = (toDateOffset.AddDays(1)).ToUnixTimeSeconds()
                             }
                         }
                     });
+                }
+
+                if (categoryIds != null && categoryIds.Any())
+                {
+                    var categoryFilter = new Filter();
+                    foreach (var categoryId in categoryIds)
+                    {
+                        categoryFilter.Should.Add(new Condition { Field = new FieldCondition { Key = "category", Match = new() { Keyword = categoryId.ToString()} } });
+                    }
+                    filter.Must.Add(new Condition { Filter = categoryFilter });
+                }
+
+                if (sourceIds != null && sourceIds.Any())
+                {
+                    var sourceFilter = new Filter();
+                    foreach (var sourceId in sourceIds)
+                    {
+                        sourceFilter.Should.Add(new Condition { Field = new FieldCondition { Key = "source", Match = new() { Keyword = sourceId.ToString()} } });
+                    }
+                    filter.Must.Add(new Condition { Filter = sourceFilter });
                 }
             }
 

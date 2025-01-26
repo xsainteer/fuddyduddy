@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocalization } from '../hooks/useLocalization'
 import { searchSummaries } from '../api/searchApi'
 import NewsCard from '../components/NewsCard'
-import type { Summary } from '../types'
+import { useQuery } from '@tanstack/react-query'
+import type { Summary, Category, NewsSource } from '../types'
+import { subDays } from 'date-fns'
+import AdvancedFilters from '../components/AdvancedFilters'
 
 type SortField = 'time' | 'score'
 type SortDirection = 'asc' | 'desc'
@@ -10,6 +13,13 @@ type SortDirection = 'asc' | 'desc'
 interface SearchResult {
   summary: Summary
   score: number
+}
+
+interface SearchFilters {
+  fromDate: Date
+  toDate: Date
+  categoryIds: number[]
+  sourceIds: number[]
 }
 
 export default function SearchPage() {
@@ -21,6 +31,25 @@ export default function SearchPage() {
   const [sortField, setSortField] = useState<SortField>('score')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [limit, setLimit] = useState(10)
+  
+  // Initialize filters with last 7 days as default
+  const [filters, setFilters] = useState<SearchFilters>({
+    fromDate: subDays(new Date(), 7),
+    toDate: new Date(),
+    categoryIds: [],
+    sourceIds: []
+  })
+
+  // Fetch categories and sources
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: () => fetch('/api/filters/categories').then(res => res.json())
+  })
+
+  const { data: sources = [] } = useQuery<NewsSource[]>({
+    queryKey: ['sources'],
+    queryFn: () => fetch('/api/filters/sources').then(res => res.json())
+  })
 
   const sortResults = (items: SearchResult[]) => {
     return [...items].sort((a, b) => {
@@ -44,10 +73,13 @@ export default function SearchPage() {
     try {
       const searchResults = await searchSummaries({
         query: query.trim(),
-        language: language,
-        limit
+        language,
+        limit,
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        categoryIds: filters.categoryIds,
+        sourceIds: filters.sourceIds
       })
-      // Sort the results according to current sort settings before setting them
       setResults(sortResults(searchResults))
     } catch (err) {
       setError(t.errors.searchFailed)
@@ -59,10 +91,8 @@ export default function SearchPage() {
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
-      // Toggle direction if clicking the same field
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
-      // Set new field and default to descending
       setSortField(field)
       setSortDirection('desc')
     }
@@ -91,8 +121,9 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className="mb-8">
+      {/* Search Form with Filters */}
+      <form onSubmit={handleSearch} className="mb-8 space-y-4">
+        {/* Search Input and Button */}
         <div className="flex gap-4">
           <input
             type="text"
@@ -103,22 +134,6 @@ export default function SearchPage() {
                      text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 
                      focus:border-transparent outline-none"
           />
-          <select
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            className="p-2 rounded-lg border dark:border-gray-700 bg-white dark:bg-gray-800 
-                     text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 
-                     focus:border-transparent outline-none appearance-none
-                     bg-no-repeat bg-right pr-8"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-              backgroundSize: '1.5em 1.5em'
-            }}
-          >
-            {Array.from({ length: 10 }, (_, i) => (i + 1) * 10).map(num => (
-              <option key={num} value={num}>{num}</option>
-            ))}
-          </select>
           <button
             type="submit"
             disabled={isLoading || !query.trim()}
@@ -129,6 +144,16 @@ export default function SearchPage() {
             {isLoading ? t.common.loading : t.search.button}
           </button>
         </div>
+
+        {/* Advanced Filters */}
+        <AdvancedFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          limit={limit}
+          onLimitChange={setLimit}
+          categories={categories}
+          sources={sources}
+        />
       </form>
 
       {/* Error Message */}

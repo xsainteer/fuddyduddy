@@ -47,7 +47,7 @@ Content-Type: text/xml
 
 
 ### remove similar reference
-POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/3af2263f-d503-46b8-adae-bf700e13de46
+POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/f255470c-1960-4592-abab-37468d0ea7be
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 

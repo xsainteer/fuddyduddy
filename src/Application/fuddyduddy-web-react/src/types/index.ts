@@ -45,6 +45,11 @@ export interface Filters {
   language?: string
 }
 
+export interface SearchResult {
+  summary: Summary
+  score: number
+}
+
 export interface DigestSummary {
   id: string
   title: string

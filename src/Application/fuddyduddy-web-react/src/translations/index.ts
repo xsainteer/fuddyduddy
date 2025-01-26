@@ -103,6 +103,34 @@ interface Translation {
       time: string
       score: string
     }
+    filters: {
+      title: string
+      dateRange: {
+        from: string
+        to: string
+        placeholder: string
+      }
+      categories: {
+        title: string
+        placeholder: string
+        selected: string
+        modalTitle: string
+      }
+      sources: {
+        title: string
+        placeholder: string
+        selected: string
+        modalTitle: string
+      }
+      clear: string
+      apply: string
+      advanced: {
+        title: string
+        expand: string
+        collapse: string
+        resultsLimit: string
+      }
+    }
   }
 }
 
@@ -209,6 +237,34 @@ const translations: Record<Language, Translation> = {
         label: 'Sort by:',
         time: 'Time',
         score: 'Search score'
+      },
+      filters: {
+        title: 'Search filters',
+        dateRange: {
+          from: 'From',
+          to: 'To',
+          placeholder: 'Date'
+        },
+        categories: {
+          title: 'Categories',
+          placeholder: 'Categories',
+          selected: '{count} categories selected',
+          modalTitle: 'Select categories'
+        },
+        sources: {
+          title: 'Sources',
+          placeholder: 'Sources',
+          selected: '{count} sources selected',
+          modalTitle: 'Select sources'
+        },
+        clear: 'Clear filters',
+        apply: 'Apply',
+        advanced: {
+          title: 'Advanced filters',
+          expand: 'Show advanced filters',
+          collapse: 'Hide advanced filters',
+          resultsLimit: 'Results limit'
+        }
       }
     }
   },
@@ -314,6 +370,34 @@ const translations: Record<Language, Translation> = {
         label: 'Сортировать по:',
         time: 'Времени',
         score: 'Релевантности'
+      },
+      filters: {
+        title: 'Фильтры поиска',
+        dateRange: {
+          from: 'С',
+          to: 'По',
+          placeholder: 'Выберите дату'
+        },
+        categories: {
+          title: 'Категории',
+          placeholder: 'Категории',
+          selected: 'Выбрано категорий: {count}',
+          modalTitle: 'Выбор категорий'
+        },
+        sources: {
+          title: 'Источники',
+          placeholder: 'Источники',
+          selected: 'Выбрано источников: {count}',
+          modalTitle: 'Выбор источников'
+        },
+        clear: 'Очистить фильтры',
+        apply: 'Применить',
+        advanced: {
+          title: 'Расширенные фильтры',
+          expand: 'Показать расширенные фильтры',
+          collapse: 'Скрыть расширенные фильтры',
+          resultsLimit: 'Лимит результатов'
+        }
       }
     }
   }

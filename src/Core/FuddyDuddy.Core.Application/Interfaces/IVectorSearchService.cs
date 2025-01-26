@@ -32,4 +32,10 @@ public interface IVectorSearchService
     /// <param name="summaryId">ID of the summary to delete</param>
     /// <param name="cancellationToken">Cancellation token</param>
     Task DeleteSummaryAsync(Guid summaryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Recreates the vector collection for all languages
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task RecreateCollectionAsync(CancellationToken cancellationToken = default);
 } 

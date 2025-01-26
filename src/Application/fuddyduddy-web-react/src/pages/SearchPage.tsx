@@ -30,7 +30,7 @@ export default function SearchPage() {
         return multiplier * (new Date(a.summary.generatedAt).getTime() - new Date(b.summary.generatedAt).getTime())
       }
       
-      return multiplier * (b.score - a.score)
+      return multiplier * (a.score - b.score)
     })
   }
 

@@ -21,6 +21,7 @@
     <PackageReference Include="Polly" Version="8.5.0" />
     <PackageReference Include="OAuth.DotNetCore" Version="3.0.1" />
     <PackageReference Include="ChromaDB.Client" Version="0.9.2" />
+    <PackageReference Include="Qdrant.Client" Version="1.13.0" />
   </ItemGroup>
 
   <ItemGroup>

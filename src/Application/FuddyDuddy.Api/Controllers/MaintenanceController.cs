@@ -128,27 +128,6 @@ public class MaintenanceController : ControllerBase
     }
 
 
-    [HttpPost("rebuild-vector-index")]
-    public async Task<IActionResult> RebuildVectorIndex([FromQuery] bool skipDelete = false, CancellationToken cancellationToken = default)
-    {
-        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken: cancellationToken);
-        // Delete summaries from vector index
-        if (!skipDelete)
-        {
-            foreach (var summary in summaries)
-            {
-                await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Delete), cancellationToken);
-            }
-        }
-        // Add summaries to vector index
-        foreach (var summary in summaries)
-        {
-            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
-        }
-
-        return Ok(new { message = "Vector index rebuilt" });
-    }
-
     [HttpPost("delete-similar/{id}")]
     public async Task<IActionResult> DeleteSimilar(string id, CancellationToken cancellationToken = default)
     {
@@ -239,4 +218,26 @@ public class MaintenanceController : ControllerBase
         var dateRange = await _dateExtractionService.ExtractDateRangeAsync(text, cancellationToken);
         return Ok(dateRange);
     }
+
+#region Vector Index
+    [HttpPost("rebuild-vector-index")]
+    public async Task<IActionResult> RebuildVectorIndex([FromQuery] bool skipDelete = false, CancellationToken cancellationToken = default)
+    {
+        if (!skipDelete)
+        {
+            _logger.LogInformation("Recreating vector index");
+            await _vectorSearchService.RecreateCollectionAsync(cancellationToken);
+        }
+
+        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken: cancellationToken);
+
+        // Add summaries to vector index
+        foreach (var summary in summaries)
+        {
+            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
+        }
+
+        return Ok(new { message = "Vector index rebuilt" });
+    }
+#endregion
 } 

@@ -60,14 +60,41 @@ services:
     command: server /data --console-address ":9001"
 
   # Vector database
-  chroma:
-    image: chromadb/chroma:0.6.3
+  # chromadb:
+  #   image: chromadb/chroma:0.6.4.dev52
+  #   ports:
+  #     - "8001:8000"
+  #   volumes:
+  #     - ./data/chroma:/chroma/chroma
+  #   environment:
+  #     - ALLOW_RESET=TRUE
+  #     - ANONYMIZED_TELEMETRY=FALSE
+  #     - IS_PERSISTENT=TRUE
+  #   restart: unless-stopped
+
+  # Vector database (new)
+  qdrant:
+    image: qdrant/qdrant:v1.13.1
     ports:
-      - "8000:8000"
+      - "6333:6333"   # HTTP
+      - "6334:6334"   # gRPC
     volumes:
-      - ./data/chroma:/chroma/chroma
+      - ./data/qdrant/storage:/qdrant/storage
+      - ./data/qdrant/snapshots:/qdrant/snapshots
+      - ./config/qdrant/config.yaml:/qdrant/config/config.yaml:ro
     environment:
-      - ALLOW_RESET=true
-      - ANONYMIZED_TELEMETRY=false
-      - IS_PERSISTENT=TRUE
+      - QDRANT__LOG_LEVEL=INFO
+      - QDRANT__STORAGE__STORAGE_PATH=/qdrant/storage
+      - QDRANT__STORAGE__SNAPSHOTS_PATH=/qdrant/snapshots
+      - QDRANT__STORAGE__TEMP_PATH=null
+      - QDRANT__STORAGE__ON_DISK_PAYLOAD=true
+      - QDRANT__STORAGE__UPDATE_CONCURRENCY=10
+      - QDRANT__STORAGE__WAL__WAL_CAPACITY_MB=32
+      - QDRANT__STORAGE__WAL__WAL_SEGMENTS_AHEAD=0
+      - QDRANT__STORAGE__NODE_TYPE=Normal
+      - QDRANT__PERFORMANCE__MAX_SEARCH_THREADS=0
+      - QDRANT__PERFORMANCE__MAX_OPTIMIZATION_THREADS=0
+      - QDRANT__PERFORMANCE__CPU_BUDGET=0
+      - QDRANT__SERVICE__MAX_WORKERS=4
+      - QDRANT__CLUSTER__ENABLED=false
     restart: unless-stopped

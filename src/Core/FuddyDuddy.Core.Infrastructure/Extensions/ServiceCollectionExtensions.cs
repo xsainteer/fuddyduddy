@@ -36,13 +36,15 @@ public static class ServiceCollectionExtensions
         services.Configure<RabbitMqOptions>(section.GetSection("RabbitMQ"));
         services.Configure<TwitterOptions>(section.GetSection("Twitter"));
         services.Configure<ChromaDbOptions>(section.GetSection("ChromaDB"));
+        services.Configure<QdrantOptions>(section.GetSection("Qdrant"));
         services.Configure<AiModels>(configuration.GetSection("AiModels"));
 
         var mysqlOptions = section.GetSection("MySQL").Get<MySQLOptions>() ?? throw new Exception("MySQL options are not configured");
         var redisOptions = section.GetSection("Redis").Get<RedisOptions>() ?? throw new Exception("Redis options are not configured");
         var twitterOptions = section.GetSection("Twitter").Get<TwitterOptions>() ?? throw new Exception("Twitter options are not configured");
         var aiModelsOptions = configuration.GetSection("AiModels").Get<AiModels>() ?? throw new Exception("AiModels options are not configured");
-        
+        var chromadbOptions = section.GetSection("ChromaDB").Get<ChromaDbOptions>() ?? throw new Exception("ChromaDB options are not configured");
+        var qdrantOptions = section.GetSection("Qdrant").Get<QdrantOptions>() ?? throw new Exception("Qdrant options are not configured");
         // Crawler options
         services.Configure<CrawlerOptions>(configuration.GetSection("Crawler"));
         services.Configure<ProxyOptions>(configuration.GetSection("Proxy"));
@@ -81,7 +83,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAiService, AiService>();
         services.AddTransient<IEmbeddingService, OllamaEmbeddingService>();
         services.AddTransient<IDateExtractionService, DateExtractionService>();
-        services.AddTransient<IVectorSearchService, ChromaVectorSearchService>();
+        // services.AddTransient<IVectorSearchService, ChromaVectorSearchService>();
+        services.AddSingleton<IVectorSearchService, QdrantVectorSearchService>();
 
         // Register crawler middleware
         services.AddSingleton<ICrawlerMiddleware, CrawlerMiddleware>();
@@ -148,6 +151,11 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient(HttpClientConstants.TWITTER, client =>
         {
             client.BaseAddress = new Uri("https://api.x.com/2/");
+        });
+
+        services.AddHttpClient(HttpClientConstants.CHROMADB, client =>
+        {
+            client.BaseAddress = new Uri(chromadbOptions.Url);
         });
 
         return services;

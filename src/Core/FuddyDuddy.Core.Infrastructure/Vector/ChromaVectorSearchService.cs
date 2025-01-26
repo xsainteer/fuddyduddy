@@ -6,26 +6,29 @@ using ChromaDB.Client;
 using FuddyDuddy.Core.Application.Repositories;
 using FuddyDuddy.Core.Infrastructure.AI;
 using FuddyDuddy.Core.Domain.Entities;
-using FuddyDuddy.Core.Application.Extensions;
+using FuddyDuddy.Core.Infrastructure.RateLimit;
+using FuddyDuddy.Core.Application.Constants;
 
 namespace FuddyDuddy.Core.Infrastructure.Vector;
 
 internal sealed class ChromaVectorSearchService : IVectorSearchService
 {
+    private const string LEAKY_BUCKET_KEY = "chroma_db_rate_limit:{0}";
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IEmbeddingService _embeddingService;
     private readonly ILogger<ChromaVectorSearchService> _logger;
     private readonly IOptions<ChromaDbOptions> _chromaOptions;
     private readonly INewsSummaryRepository _newsSummaryRepository;
     private readonly IDateExtractionService _dateExtractionService;
-
+    private readonly IRateLimiter _rateLimiter;
     public ChromaVectorSearchService(
         IEmbeddingService embeddingService,
         IOptions<ChromaDbOptions> chromaOptions,
         ILogger<ChromaVectorSearchService> logger,
         IHttpClientFactory httpClientFactory,
         INewsSummaryRepository newsSummaryRepository,
-        IDateExtractionService dateExtractionService)
+        IDateExtractionService dateExtractionService,
+        IRateLimiter rateLimiter)
     {
         _httpClientFactory = httpClientFactory;
         _embeddingService = embeddingService;
@@ -33,13 +36,34 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
         _chromaOptions = chromaOptions;
         _newsSummaryRepository = newsSummaryRepository;
         _dateExtractionService = dateExtractionService;
+        _rateLimiter = rateLimiter;
     }
 
-    private async Task<ChromaCollectionClient> GetCollectionClient(HttpClient httpClient, Language language)
+    private async Task<ChromaCollectionClient> GetCollectionClient(HttpClient httpClient, Language language, CancellationToken cancellationToken)
     {
-        var configOptions = new ChromaConfigurationOptions(uri: $"{_chromaOptions.Value.Url}/api/v1/");
+
+        if (_chromaOptions.Value.RatePerMinute > 0)
+        {
+            var waitTime = await _rateLimiter.GetMinuteTokenAsync(
+                string.Format(LEAKY_BUCKET_KEY, _chromaOptions.Value.CollectionName),
+                _chromaOptions.Value.RatePerMinute,
+                120);
+            if (waitTime == -1)
+            {
+                _logger.LogError("Rate limit exceeded, it requires to wait for 2 minutes, so rejecting request");
+                throw new Exception("Rate limit exceeded");
+            }
+            if (waitTime > 0)
+            {
+                _logger.LogWarning("Rate limit exceeded, waiting for {WaitTime} seconds", waitTime);
+                await Task.Delay((int)waitTime * 1000, cancellationToken);
+            }
+        }
+        var configOptions = new ChromaConfigurationOptions(uri: $"{_chromaOptions.Value.Url}/api/v1/",
+            defaultTenant: _chromaOptions.Value.Tenant, defaultDatabase: _chromaOptions.Value.Database);
         var chromaClient = new ChromaClient(configOptions, httpClient);
-        var collection = await chromaClient.GetOrCreateCollection($"{_chromaOptions.Value.CollectionName}_{language.GetDescription()}");
+        var collection = await chromaClient.GetOrCreateCollection($"{_chromaOptions.Value.CollectionName}_{language.GetDescription()}",
+            metadata: _chromaOptions?.Value.CollectionMetadata != null ? _chromaOptions.Value.CollectionMetadata.ToDictionary(x => x.Key, x => x.Value) : null);
         return new ChromaCollectionClient(collection, configOptions, httpClient);
     }
 
@@ -54,12 +78,12 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
                 throw new Exception("Summary not found");
             }
 
-            using var httpClient = _httpClientFactory.CreateClient();
-            var collectionClient = await GetCollectionClient(httpClient, summary.Language);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CHROMADB);
+            var collectionClient = await GetCollectionClient(httpClient, summary.Language, cancellationToken);
 
             var categoryName = summary.Language == Language.RU ? summary.Category.Local : summary.Category.Name;
             var embedding = await _embeddingService.GenerateEmbeddingAsync(
-                $"Издательство: {summary.NewsArticle.NewsSource.Name}\nКатегория: {categoryName}\nЗаголовок: {summary.Title}\n\nСодержание: {summary.Article}", 
+                $"{summary.Title}\n{summary.Article}", 
                 cancellationToken);
 
             if (embedding == null)
@@ -97,8 +121,8 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
     {
         try
         {
-            using var httpClient = _httpClientFactory.CreateClient();
-            var collectionClient = await GetCollectionClient(httpClient, language);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CHROMADB);
+            var collectionClient = await GetCollectionClient(httpClient, language, cancellationToken);
 
             // Extract date range from query
             var dateRange = await _dateExtractionService.ExtractDateRangeAsync(query, cancellationToken);
@@ -173,8 +197,8 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
                 throw new Exception("Summary not found");
             }
 
-            using var httpClient = _httpClientFactory.CreateClient();
-            var collectionClient = await GetCollectionClient(httpClient, summary.Language);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CHROMADB);
+            var collectionClient = await GetCollectionClient(httpClient, summary.Language, cancellationToken);
 
             await collectionClient.Delete(ids: new List<string> { summaryId.ToString() });
             _logger.LogInformation("Deleted summary {SummaryId} from ChromaDB", summaryId);
@@ -184,5 +208,10 @@ internal sealed class ChromaVectorSearchService : IVectorSearchService
             _logger.LogError(ex, "Error deleting summary {SummaryId} from ChromaDB", summaryId);
             throw;
         }
+    }
+
+    public Task RecreateCollectionAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 } 

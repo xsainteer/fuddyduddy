@@ -128,7 +128,7 @@ export default function NewsCard({ summary, score }: NewsCardProps) {
         </span>
         {score !== undefined && (
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {(1-score).toFixed(3)} {t.search.sort.score.toLowerCase()}
+            {score.toFixed(3)} {t.search.sort.score.toLowerCase()}
           </span>
         )}
       </div>

@@ -6,4 +6,5 @@ public static class HttpClientConstants
     public const string GEMINI = "Gemini";
     public const string CRAWLER = "Crawler";
     public const string TWITTER = "Twitter";
+    public const string CHROMADB = "Chromadb";
 }

@@ -45,7 +45,6 @@ export default function AdvancedFilters({
   }
 
   const getSelectedItemsText = (type: 'categories' | 'sources') => {
-    const items = type === 'categories' ? categories : sources
     const selectedIds = type === 'categories' ? filters.categoryIds : filters.sourceIds
     const count = selectedIds.length
     if (count === 0) return type === 'categories' ? t.search.filters.categories.placeholder : t.search.filters.sources.placeholder

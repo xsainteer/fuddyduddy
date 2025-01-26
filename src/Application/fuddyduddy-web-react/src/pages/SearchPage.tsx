@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useLocalization } from '../hooks/useLocalization'
 import { searchSummaries } from '../api/searchApi'
 import NewsCard from '../components/NewsCard'

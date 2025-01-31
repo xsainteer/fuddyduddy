@@ -56,7 +56,10 @@ public class SimilarRequestListener : IHostedService
             return;
         }
 
-        var service = _serviceProvider.GetRequiredService<ISimilarityService>();
+        using var scope = _serviceProvider.CreateScope();
+        var services = scope.ServiceProvider;
+
+        var service = services.GetRequiredService<ISimilarityService>();
         await service.FindSimilarSummariesAsync(message.NewsSummaryId, _cancellationTokenSource.Token);
         _logger.LogInformation("Similar request for news summary {NewsSummaryId} processed", message.NewsSummaryId);
     }

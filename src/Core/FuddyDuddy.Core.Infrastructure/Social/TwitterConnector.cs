@@ -120,7 +120,7 @@ internal class TwitterConnector : ITwitterConnector
             request.Headers.Add("Authorization", authHeader);
             request.Headers.Add("User-Agent", "FuddyDuddy/1.0");
 
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             
             if (response.IsSuccessStatusCode)
             {

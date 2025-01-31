@@ -57,7 +57,10 @@ public class IndexRequestListener : IHostedService
             return;
         }
 
-        var service = _serviceProvider.GetRequiredService<IVectorSearchService>();
+        using var scope = _serviceProvider.CreateScope();
+        var services = scope.ServiceProvider;
+
+        var service = services.GetRequiredService<IVectorSearchService>();
         if (message.Type == IndexRequestType.Add)
         {
             await service.IndexSummaryAsync(message.NewsSummaryId, _cancellationTokenSource.Token);

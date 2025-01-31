@@ -65,7 +65,7 @@ internal class NewsProcessingService : INewsProcessingService
                 // Get sitemap with crawler middleware
                 var request = new HttpRequestMessage(HttpMethod.Get, dialect.SitemapUrl);
                 request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
-                var response = await httpClient.SendAsync(request, cancellationToken);
+                using var response = await httpClient.SendAsync(request, cancellationToken);
                 response.EnsureSuccessStatusCode();
                 var sitemapContent = await ReadResponseContentAsync(response, cancellationToken);
                 _logger.LogInformation("Sitemap content: {Content}", sitemapContent);
@@ -154,7 +154,7 @@ internal class NewsProcessingService : INewsProcessingService
             using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.CRAWLER);
             var request = new HttpRequestMessage(HttpMethod.Get, newsItem.Url);
             request = await _crawlerMiddleware.PrepareRequestAsync(request, source.Domain);
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
             var newsContent = await ReadResponseContentAsync(response, cancellationToken);
             var articleContent = dialect.ExtractArticleContent(newsContent);

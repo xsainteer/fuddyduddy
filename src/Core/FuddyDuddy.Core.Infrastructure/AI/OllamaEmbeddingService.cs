@@ -43,7 +43,7 @@ internal sealed class OllamaEmbeddingService : IEmbeddingService
 
         try
         {
-            var response = await client.PostAsJsonAsync("api/embed", request, cancellationToken);
+            using var response = await client.PostAsJsonAsync("api/embed", request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadFromJsonAsync<OllamaEmbeddingResponse>(cancellationToken: cancellationToken);

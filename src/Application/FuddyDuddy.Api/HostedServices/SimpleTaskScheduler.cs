@@ -67,10 +67,13 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
 
             _logger.LogInformation("Starting summary pipeline execution");
 
+            using var scope = _serviceProvider.CreateScope();
+            var services = scope.ServiceProvider;
+
             // Step 1: Process news
             if (_schedulerSettings.Value.SummaryTask)
             {
-                var newsProcessingService = _serviceProvider.GetRequiredService<INewsProcessingService>();
+                var newsProcessingService = services.GetRequiredService<INewsProcessingService>();
                 await newsProcessingService.ProcessNewsSourcesAsync(cancellationToken);
                 _logger.LogInformation("News processing completed");
             }
@@ -78,7 +81,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             // Step 2: Validate summaries
             if (_schedulerSettings.Value.ValidationTask)
             {
-                var validationService = _serviceProvider.GetRequiredService<ISummaryValidationService>();
+                var validationService = services.GetRequiredService<ISummaryValidationService>();
                 await validationService.ValidateNewSummariesAsync(cancellationToken);
                 _logger.LogInformation("Summary validation completed");
             }
@@ -86,7 +89,7 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
             // Step 3: Translate to English
             if (_schedulerSettings.Value.TranslationTask)
             {
-                var translationService = _serviceProvider.GetRequiredService<ISummaryTranslationService>();
+                var translationService = services.GetRequiredService<ISummaryTranslationService>();
                 await translationService.TranslatePendingAsync(Language.EN, cancellationToken);
                 _logger.LogInformation("Summary translation completed");
             }
@@ -137,7 +140,9 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
 
     private async Task GenerateDigestAsync(Language language, CancellationToken cancellationToken)
     {
-        var digestCookService = _serviceProvider.GetRequiredService<IDigestCookService>();
+        using var scope = _serviceProvider.CreateScope();
+        var services = scope.ServiceProvider;
+        var digestCookService = services.GetRequiredService<IDigestCookService>();
 
         _logger.LogInformation("Starting digest pipeline execution");
 
@@ -148,7 +153,9 @@ public class SimpleTaskScheduler : IHostedService, IDisposable
 
     private async Task GenerateTweetAsync(Language language, CancellationToken cancellationToken)
     {
-        var digestCookService = _serviceProvider.GetRequiredService<IDigestCookService>();
+        using var scope = _serviceProvider.CreateScope();
+        var services = scope.ServiceProvider;
+        var digestCookService = services.GetRequiredService<IDigestCookService>();
         await digestCookService.GenerateTweetAsync(language, cancellationToken);
         _logger.LogInformation("{Language} tweet generation completed", language);
     }

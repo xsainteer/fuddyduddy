@@ -55,7 +55,7 @@ internal class GeminiClient : IAiClient
                     await Task.Delay((int)waitTime * 1000, cancellationToken);
                 }
             }
-            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.GEMINI);
+
             var sampleJson = JsonSerializer.Serialize(sample, IAiService.SampleJsonOptions);
             _logger.LogInformation("Sample digest: {Sample}", sampleJson);
             var sampleText = $"Format your response as a JSON object with the following structure:\n{sampleJson}";
@@ -98,7 +98,9 @@ internal class GeminiClient : IAiClient
 
             _logger.LogInformation("Sending request uri: {Request}", httpRequest.RequestUri);
 
-            var response = await httpClient.SendAsync(httpRequest, cancellationToken);
+            using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.GEMINI);
+
+            using var response = await httpClient.SendAsync(httpRequest, cancellationToken);
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogInformation("Raw Gemini response: {Response}", responseContent);
             response.EnsureSuccessStatusCode();

@@ -59,7 +59,7 @@ internal class OllamaClient : IAiClient
         _logger.LogInformation("Request: {Request}", JsonSerializer.Serialize(request, jsonOptions));
 
         using var httpClient = _httpClientFactory.CreateClient(HttpClientConstants.OLLAMA);
-        var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
+        using var response = await httpClient.PostAsJsonAsync("api/chat", request, cancellationToken);
         response.EnsureSuccessStatusCode();
         
         var result = await response.Content.ReadFromJsonAsync<OllamaResponse>(cancellationToken: cancellationToken);

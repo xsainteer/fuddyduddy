@@ -1,94 +1,53 @@
-### get news summaries
-GET https://api.fuddy-duddy.org/api/summaries
-Content-Type: application/json
+### variables
+@apiKey = 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+@baseUrl = https://api.fuddy-duddy.org
+@localApiKey = fuddy-duddy-secret
+@localBaseUrl = http://localhost:5102
 
 ### get news summaries
-GET https://fuddy-duddy.org/api/summaries
+GET {{baseUrl}}/api/summaries
 Content-Type: application/json
 
+### get news summaries
+GET {{baseUrl}}/api/summaries
+Content-Type: application/json
 
 ### rebuild cache
-POST https://api.fuddy-duddy.org/api/maintenance/rebuild-cache
+POST {{baseUrl}}/api/maintenance/rebuild-cache
 Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+api-key: {{apiKey}}
 
 ### revisit categories
-GET http://localhost:5102/api/maintenance/revisit-categories?since=20250110T0536
+POST {{baseUrl}}/api/maintenance/revisit-categories/20250111T1347
 Content-Type: application/json
-api-key: fuddy-duddy-secret
-
-### revisit categories
-POST https://fuddy-duddy.org/api/maintenance/revisit-categories/20250111T1347
-Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
-
-### get a list of models using ollama
-GET https://ollama.fuddy-duddy.org/api/tags
-
-
-### rebuild cache
-POST http://localhost:5102/api/maintenance/rebuild-cache
-Content-Type: application/json
-api-key: fuddy-duddy-secret
-
-### generate digest
-POST http://localhost:5102/api/digests/generate?language=RU
-Content-Type: application/json
-
-### generate digest
-GET http://localhost:5102/api/summaries?language=RU&pageSize=10&page=0
-Content-Type: application/json
-Host: localhost1
-
+api-key: {{apiKey}}
 
 ### sitemap
-GET https://fuddy-duddy.org/sitemap.xml
+GET {{baseUrl}}/sitemap.xml
 Content-Type: text/xml
 
-
 ### remove similar reference
-POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/2a5a428d-3e6c-4f5e-93ae-13f063259513
+POST {{baseUrl}}/api/maintenance/delete-similar-reference/2a5a428d-3e6c-4f5e-93ae-13f063259513
 Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+api-key: {{apiKey}}
 
 ### update summary in cache
-POST https://fuddy-duddy.org/api/maintenance/update-cache/summaries/b9dae521-fc5d-4fa6-a1dd-5c052de4b29b
+POST {{baseUrl}}/api/maintenance/update-cache/summaries/b9dae521-fc5d-4fa6-a1dd-5c052de4b29b
 Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+api-key: {{apiKey}}
 
 ### delete similar
-POST https://fuddy-duddy.org/api/maintenance/delete-similar/02e32cd4-08c7-433b-9d59-3af57196104e
+POST {{baseUrl}}/api/maintenance/delete-similar/02e32cd4-08c7-433b-9d59-3af57196104e
 Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
-
-
-### test
-GET https://fuddy-duddy.org/api/summaries?page=0
-Content-Type: application/json
-
-
-### chromadb search query news_summaries collection
-POST http://localhost:5102/api/search/summaries
-Content-Type: application/json
-
-{
-    "query": "зеленая энергия",
-    "limit": 2,
-    "language": 0
-}
-
-### rebuild vector index
-POST http://localhost:5102/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
-Content-Type: application/json
-api-key: fuddy-duddy-secret
+api-key: {{apiKey}}
 
 ### PROD: rebuild vector index
-POST https://fuddy-duddy.org/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
+POST {{baseUrl}}/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
 Content-Type: application/json
-api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
+api-key: {{apiKey}}
 
 ### PROD: chromadb search query news_summaries collection
-POST https://fuddy-duddy.org/api/search/summaries
+POST {{baseUrl}}/api/search/summaries
 Content-Type: application/json
 
 {
@@ -98,10 +57,46 @@ Content-Type: application/json
 }
 
 
-### test extract date range
-POST http://localhost:5102/api/maintenance/extract-date-range
+###----------------Local test endpoints----------------###
+
+### revisit categories
+GET {{localBaseUrl}}/api/maintenance/revisit-categories?since=20250110T0536
 Content-Type: application/json
-api-key: fuddy-duddy-secret
+api-key: {{localApiKey}}
+
+### rebuild cache
+POST {{localBaseUrl}}/api/maintenance/rebuild-cache
+Content-Type: application/json
+api-key: {{localApiKey}}
+
+### generate digest
+POST {{localBaseUrl}}/api/digests/generate?language=RU
+Content-Type: application/json
+
+### generate digest
+GET {{localBaseUrl}}/api/summaries?language=RU&pageSize=10&page=0
+Content-Type: application/json
+Host: localhost1
+
+### rebuild vector index
+POST {{localBaseUrl}}/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
+Content-Type: application/json
+api-key: {{localApiKey}}
+
+### qdrant search query news_summaries collection
+POST {{localBaseUrl}}/api/search/summaries
+Content-Type: application/json
+
+{
+    "query": "зеленая энергия",
+    "limit": 2,
+    "language": 0
+}
+
+### test extract date range
+POST {{localBaseUrl}}/api/maintenance/extract-date-range
+Content-Type: application/json
+api-key: {{localApiKey}}
 
 # "Куда летал президент в феврале 2024?"
 # "Куда летал президент c 1 по 25 декабря 2024?"

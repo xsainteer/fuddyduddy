@@ -4,10 +4,10 @@
 
 ```bash
 # From the Infrastructure project directory
-dotnet ef migrations add MigrationName
+dotnet ef migrations add MigrationName -o Data/Migrations
 
 # Or from solution root
-dotnet ef migrations add MigrationName --project src/Core/FuddyDuddy.Core.Infrastructure
+dotnet ef migrations add MigrationName --project src/Core/FuddyDuddy.Core.Infrastructure -o Data/Migrations
 ```
 
 ## Applying migrations

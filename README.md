@@ -4,11 +4,12 @@ A news aggregation and summarization platform that collects news from various so
 
 ## Overview
 
-Fuddy-Duddy is a private platform that:
+Fuddy-Duddy is an open-source platform that:
 - Aggregates news from trusted sources using sitemaps
 - Processes news articles using AI for summarization
 - Generates daily digests in multiple languages
 - Provides a modern web interface for news consumption
+- Leverages vector search for finding similar articles
 
 ## Architecture
 
@@ -19,9 +20,10 @@ The platform consists of:
 - CQRS pattern for data operations
 - Async communication with RabbitMQ
 - Data storage in MySQL and Elasticsearch
+- Vector search with Qdrant
 - Object storage with MinIO
 - Caching with Redis
-- AI-powered processing pipeline
+- AI-powered processing pipeline using Ollama and Gemini API
 
 ### Frontend (React)
 - Modern React with TypeScript
@@ -33,43 +35,90 @@ The platform consists of:
 ## Infrastructure
 - Containerized with Docker
 - CI/CD through Azure Pipelines
-- Private Docker Hub repository
 - Automated deployment
 - High availability setup
 
-## Development
-
-This is a private repository. Access is restricted to authorized team members only.
+## Getting Started
 
 ### Prerequisites
 - Docker and Docker Compose
 - .NET 9 SDK
 - Node.js 20+
-- Access to private Docker Hub repository
 
 ### Local Setup
 1. Clone the repository
+   ```bash
+   git clone https://github.com/anurmatov/fuddy-duddy.git
+   cd fuddy-duddy
+   ```
+
 2. Copy `.env.example` to `.env` and configure
-3. Run `docker compose up -d`
-4. Access the web interface at `http://localhost:5173`
+   ```bash
+   cp .env.example .env
+   # Edit .env with your preferred settings
+   ```
+
+3. Start the infrastructure services
+   ```bash
+   docker compose -f docker/docker-compose.yml up -d
+   ```
+
+4. Build and run the backend
+   ```bash
+   cd src
+   dotnet build
+   dotnet run --project Application/FuddyDuddy.Api
+   ```
+
+5. Start the frontend development server
+   ```bash
+   cd src/Web
+   npm install
+   npm run dev
+   ```
+
+6. Access the web interface at `http://localhost:5173`
 
 ### Environment Variables
-- Database configuration
-- API endpoints
-- Service credentials
-- AI provider settings
+See [Environment Configuration](docs/environment-configuration.md) for details on required environment variables.
 
-## Deployment
+## Documentation
 
-Deployment is automated through Azure Pipelines:
-- Builds Docker images for API and web
-- Pushes to private Docker Hub repository
-- Deploys to production server
-- Maintains rolling updates
+Detailed documentation is available in the `/docs` directory:
 
-## Private Repository Notice
+- [Architecture Overview](docs/architecture.md)
+- [Core Components](docs/core-components.md)
+- [Development Guidelines](docs/development-guidelines.md)
+- [API Documentation](docs/api-documentation.md)
+- [Vector Search Implementation](docs/vector-search-implementation.md)
+- [Deployment Guide](docs/deployment-guide.md)
 
-This repository contains proprietary code and is not intended for public distribution. All rights reserved.
+## Contributing
+
+We welcome contributions to Fuddy-Duddy! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details on:
+
+- Code of Conduct
+- Development workflow
+- Pull request process
+- Coding standards
+- Testing requirements
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+The AGPL-3.0 license ensures that:
+- Anyone can use, modify, and distribute this software
+- Any modifications must be made available under the same license
+- If you use this software to provide a service over a network, you must make the source code (including any modifications) available to users of that service
+- All contributors retain their copyright while granting usage rights under this license
+
+This license was chosen to encourage collaboration while ensuring that improvements to the codebase remain available to the community.
+
+## Acknowledgments
+
+- This project was created as a learning platform for working with large language models and news aggregation
+- Special thanks to all contributors and the open-source community
 
 ## Design & Branding
 

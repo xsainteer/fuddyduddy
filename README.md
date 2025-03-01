@@ -2,6 +2,8 @@
 
 A news aggregation and summarization platform that collects news from various sources, processes them with AI, and generates comprehensive digests.
 
+**Website:** [https://fuddy-duddy.org](https://fuddy-duddy.org)
+
 ## Overview
 
 Fuddy-Duddy is an open-source platform that:

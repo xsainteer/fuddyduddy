@@ -1,0 +1,67 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+TestResults/
+
+# Development files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.swp
+*.*~
+
+# Dependencies
+**/node_modules/
+**/packages/
+**/bower_components/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+appsettings.*.json
+!appsettings.json
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# IDE specific files
+.idea/
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing and coverage
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Temporary files
+[Tt]emp/
+.DS_Store
+Thumbs.db
+
+# Docker specific
+.docker/
+docker-compose*.yml
+Dockerfile*
+!Dockerfile
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+LICENSE

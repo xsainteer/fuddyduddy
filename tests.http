@@ -47,7 +47,7 @@ Content-Type: text/xml
 
 
 ### remove similar reference
-POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/f255470c-1960-4592-abab-37468d0ea7be
+POST https://fuddy-duddy.org/api/maintenance/delete-similar-reference/2a5a428d-3e6c-4f5e-93ae-13f063259513
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 
@@ -78,12 +78,12 @@ Content-Type: application/json
 }
 
 ### rebuild vector index
-POST http://localhost:5102/api/maintenance/rebuild-vector-index?skipDelete=true
+POST http://localhost:5102/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
 Content-Type: application/json
 api-key: fuddy-duddy-secret
 
 ### PROD: rebuild vector index
-POST https://fuddy-duddy.org/api/maintenance/rebuild-vector-index?skipDelete=true
+POST https://fuddy-duddy.org/api/maintenance/rebuild-vector-index?skipDelete=true&indexType=Titles
 Content-Type: application/json
 api-key: 8F66EC3F-99D4-4C87-A4E6-0F8A9D7BFEC3
 

@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Fuddy-Duddy! This document provid
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our Code of Conduct:
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md):
 
 - Be respectful and inclusive
 - Provide constructive feedback

@@ -38,6 +38,38 @@ The platform consists of:
 - Automated deployment
 - High availability setup
 
+## Roadmap
+
+Here are our planned features and improvements:
+
+### Short-term (1-3 months)
+1. Implement proper versioning of builds
+   - Adjust pipeline to update build number
+   - Propagate version to artifacts
+   - Add version information in frontend
+2. Dynamic sitemap.xml generation in frontend for new digests
+3. Improve search with hybrid search in Qdrant
+4. Add more news sources and dialects
+5. Implement user authentication and personalization
+
+### Medium-term (3-6 months)
+1. Add topic clustering for better digest organization
+2. Implement real-time notifications for breaking news
+3. Create mobile applications (iOS/Android)
+4. Add support for more languages
+5. Implement advanced analytics dashboard
+
+### Long-term (6+ months)
+1. Develop a recommendation engine based on user preferences
+2. Create a plugin system for custom extensions
+3. Implement federated learning for improved AI models
+4. Add support for multimedia content (videos, podcasts)
+5. Develop an API marketplace for third-party integrations
+
+For more detailed information about our plans, including specific tasks and benefits, see our [detailed roadmap](ROADMAP.md).
+
+We welcome contributions in any of these areas! Check our [issues](https://github.com/anurmatov/fuddy-duddy/issues) for specific tasks related to these roadmap items.
+
 ## Getting Started
 
 ### Prerequisites
@@ -95,13 +127,22 @@ Detailed documentation is available in the `/docs` directory:
 
 ## Contributing
 
-We welcome contributions to Fuddy-Duddy! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details on:
+We welcome contributions to Fuddy-Duddy! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
 
 - Code of Conduct
 - Development workflow
 - Pull request process
 - Coding standards
 - Testing requirements
+
+### Community Guidelines
+
+This project adheres to the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+### Reporting Issues
+
+- For bugs and feature requests, use our [GitHub issue templates](https://github.com/anurmatov/fuddy-duddy/issues/new/choose)
+- For security vulnerabilities, please review our [Security Policy](SECURITY.md)
 
 ## License
 

@@ -14,11 +14,11 @@ RUN dotnet restore "Application/FuddyDuddy.Api/FuddyDuddy.Api.csproj"
 COPY src/. .
 
 # Build the application
-RUN dotnet build "Application/FuddyDuddy.Api/FuddyDuddy.Api.csproj" -c Release -o /app/build
+RUN dotnet build "Application/FuddyDuddy.Api/FuddyDuddy.Api.csproj" --no-restore -c Release -o /app/build
 
 # Publish the application
 FROM build AS publish
-RUN dotnet publish "Application/FuddyDuddy.Api/FuddyDuddy.Api.csproj" -c Release -o /app/publish
+RUN dotnet publish "Application/FuddyDuddy.Api/FuddyDuddy.Api.csproj" --no-restore -c Release -o /app/publish
 
 # Final stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

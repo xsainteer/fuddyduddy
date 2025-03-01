@@ -11,10 +11,62 @@ variables:
   backendDockerfile: 'src/Application/FuddyDuddy.Api/Dockerfile'
   # Frontend variables
   frontendDockerfile: 'src/Application/fuddyduddy-web-react/Dockerfile'
+  # Build configuration
+  buildConfiguration: 'Release'
 
 stages:
+- stage: Test
+  displayName: Test stage
+  jobs:
+  - job: RunTests
+    displayName: Run Tests
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+
+    # Setup .NET
+    - task: UseDotNet@2
+      displayName: 'Install .NET 9'
+      inputs:
+        version: '9.0.x'
+        includePreviewVersions: true
+
+    # Restore dependencies
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: restore
+        projects: 'FuddyDuddy.sln'
+
+    # Run Core tests
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Core Tests'
+      inputs:
+        command: test
+        projects: 'tests/FuddyDuddy.Core.Tests/FuddyDuddy.Core.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+
+    # Run API tests
+    - task: DotNetCoreCLI@2
+      displayName: 'Run API Tests'
+      inputs:
+        command: test
+        projects: 'tests/FuddyDuddy.Api.Tests/FuddyDuddy.Api.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+
+    # Publish code coverage results
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        failIfCoverageEmpty: false
+
 - stage: BuildAndPush
   displayName: Build and push stage
+  dependsOn: Test
+  condition: succeeded()
   jobs:
   - job: Build
     displayName: Build
@@ -95,6 +147,8 @@ stages:
 
 - stage: Deploy
   displayName: Deploy stage
+  dependsOn: BuildAndPush
+  condition: succeeded()
   jobs:
   - deployment: Deploy
     displayName: Deploy

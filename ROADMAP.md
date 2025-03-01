@@ -145,7 +145,7 @@ This document outlines the planned features and improvements for the Fuddy-Duddy
 
 We welcome contributions to any of these roadmap items! If you're interested in working on a specific feature:
 
-1. Check the [GitHub issues](https://github.com/anurmatov/fuddy-duddy/issues) to see if there's already a related issue
+1. Check the [GitHub issues](https://github.com/anurmatov/fuddyduddy/issues) to see if there's already a related issue
 2. If not, create a new issue describing your proposed implementation
 3. Follow the [contribution guidelines](CONTRIBUTING.md) to submit your work
 

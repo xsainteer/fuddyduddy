@@ -68,7 +68,7 @@ Here are our planned features and improvements:
 
 For more detailed information about our plans, including specific tasks and benefits, see our [detailed roadmap](ROADMAP.md).
 
-We welcome contributions in any of these areas! Check our [issues](https://github.com/anurmatov/fuddy-duddy/issues) for specific tasks related to these roadmap items.
+We welcome contributions in any of these areas! Check our [issues](https://github.com/anurmatov/fuddyduddy/issues) for specific tasks related to these roadmap items.
 
 ## Getting Started
 
@@ -80,8 +80,8 @@ We welcome contributions in any of these areas! Check our [issues](https://githu
 ### Local Setup
 1. Clone the repository
    ```bash
-   git clone https://github.com/anurmatov/fuddy-duddy.git
-   cd fuddy-duddy
+   git clone https://github.com/anurmatov/fuddyduddy.git
+   cd fuddyduddy
    ```
 
 2. Copy `.env.example` to `.env` and configure
@@ -141,7 +141,7 @@ This project adheres to the [Code of Conduct](CODE_OF_CONDUCT.md). By participat
 
 ### Reporting Issues
 
-- For bugs and feature requests, use our [GitHub issue templates](https://github.com/anurmatov/fuddy-duddy/issues/new/choose)
+- For bugs and feature requests, use our [GitHub issue templates](https://github.com/anurmatov/fuddyduddy/issues/new/choose)
 - For security vulnerabilities, please review our [Security Policy](SECURITY.md)
 
 ## License

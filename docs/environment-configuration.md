@@ -65,7 +65,7 @@ GEMINI_API_KEY=your_api_key_here
 # API
 API_PORT=5000
 ASPNETCORE_ENVIRONMENT=Development
-JWT_SECRET_KEY=your_secret_key_here
+AUTH_SECRET=your_secret_key_here
 CORS_ORIGINS=http://localhost:5173
 
 # Frontend

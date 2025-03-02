@@ -139,7 +139,7 @@ public async Task ProcessArticle_WithValidUrl_ExtractsContent()
    - Implement rate limiting
 
 2. Authentication/Authorization
-   - Use JWT tokens
+   - Use API key authentication for maintenance endpoints
    - Implement proper role-based access
    - Secure sensitive endpoints
    - Follow least privilege principle

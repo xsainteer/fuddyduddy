@@ -92,7 +92,7 @@ Fuddy-Duddy follows Clean Architecture principles to maintain a flexible, testab
 
 ## Security
 
-- JWT authentication
+- API key authentication for maintenance endpoints
 - Role-based authorization
 - API rate limiting
 - Input validation

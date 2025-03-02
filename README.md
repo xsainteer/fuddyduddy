@@ -19,9 +19,9 @@ The platform consists of:
 
 ### Backend (.NET 9)
 - Clean Architecture design
-- CQRS pattern for data operations
+- Repository pattern for data access
 - Async communication with RabbitMQ
-- Data storage in MySQL and Elasticsearch
+- Data storage in MySQL
 - Vector search with Qdrant
 - Object storage with MinIO
 - Caching with Redis

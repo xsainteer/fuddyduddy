@@ -94,6 +94,7 @@ internal class SummaryTranslationService : ISummaryTranslationService
             await _cacheService.AddSummaryAsync(translatedSummary.Id, cancellationToken);
             
             await _broker.PushAsync(QueueNameConstants.Similar, new SimilarRequest(translatedSummary.Id), cancellationToken);
+            await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(translatedSummary.Id, IndexRequestType.Add), cancellationToken);
 
             _logger.LogInformation("Created translation {TranslatedId} for summary {Id} in {Language}", 
                 translatedSummary.Id, summaryId, targetLanguage);

@@ -42,5 +42,5 @@ public interface IVectorSearchService
     /// Recreates the vector collection for all languages
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
-    Task RecreateCollectionAsync(CancellationToken cancellationToken = default);
+    Task RecreateCollectionAsync(Language language, CancellationToken cancellationToken = default);
 } 

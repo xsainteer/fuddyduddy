@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 using FuddyDuddy.Core.Application.Models;
 using FuddyDuddy.Core.Application.Models.Broker;
-using FuddyDuddy.Core.Application.Constants;
 using FuddyDuddy.Core.Application;
+using System.Text.Json.Serialization;
 
 namespace FuddyDuddy.Api.Controllers;
 
@@ -104,21 +104,21 @@ public class MaintenanceController : ControllerBase
     }
 
     [HttpPost("rebuild-cache")]
-    public async Task RebuildCache(CancellationToken cancellationToken = default)
+    public async Task RebuildCache([FromQuery] Language language, CancellationToken cancellationToken = default)
     {
         Response.ContentType = "text/event-stream";
 
         // Clear existing cache
         await _cacheService.ClearCacheAsync(cancellationToken);
 
-        await foreach (var progress in RebuildingSummariesCache(cancellationToken))
+        await foreach (var progress in RebuildingSummariesCache(language, cancellationToken))
         {
             await Response.WriteAsync($"data: {progress}\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
 
         // Add digests back to cache
-        await foreach (var progress in RebuildingDigestsCache(cancellationToken))
+        await foreach (var progress in RebuildingDigestsCache(language, cancellationToken))
         {
             await Response.WriteAsync($"data: {progress}\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
@@ -160,9 +160,9 @@ public class MaintenanceController : ControllerBase
         return Ok(new { message = $"Summary {summaryId} updated in cache." });
     }
 
-    private async IAsyncEnumerable<string> RebuildingDigestsCache([EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<string> RebuildingDigestsCache(Language language, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var digests = (await _digestRepository.GetLatestAsync(100, cancellationToken)).ToArray();
+        var digests = (await _digestRepository.GetLatestAsync(100, language, 0, cancellationToken)).ToArray();
         var k = 0;
         foreach (var digest in digests)
         {
@@ -172,9 +172,9 @@ public class MaintenanceController : ControllerBase
         yield return "DONE. 100% of digests added to cache.";
     }
 
-    private async IAsyncEnumerable<string> RebuildingSummariesCache([EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<string> RebuildingSummariesCache(Language language, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var summaries = (await _summaryRepository.GetValidatedOrDigestedAsync(2000, cancellationToken)).ToArray();
+        var summaries = (await _summaryRepository.GetValidatedOrDigestedAsync(2000, language, cancellationToken)).ToArray();
         var k = 0;
         foreach (var summary in summaries)
         {
@@ -221,15 +221,15 @@ public class MaintenanceController : ControllerBase
 
 #region Vector Index
     [HttpPost("rebuild-vector-index")]
-    public async Task<IActionResult> RebuildVectorIndex([FromQuery] bool skipDelete = false, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> RebuildVectorIndex([FromQuery] ToIndexRequest request, CancellationToken cancellationToken = default)
     {
-        if (!skipDelete)
+        if (request.Delete)
         {
-            _logger.LogInformation("Recreating vector index");
-            await _vectorSearchService.RecreateCollectionAsync(cancellationToken);
+            _logger.LogInformation("Recreating vector index for language {Language}", request.Language.GetDescription());
+            await _vectorSearchService.RecreateCollectionAsync(request.Language, cancellationToken);
         }
 
-        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(cancellationToken: cancellationToken);
+        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(language: request.Language, cancellationToken: cancellationToken);
 
         // Add summaries to vector index
         foreach (var summary in summaries)
@@ -237,7 +237,15 @@ public class MaintenanceController : ControllerBase
             await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
         }
 
-        return Ok(new { message = "Vector index rebuilt" });
+        return Ok(new { message = $"Vector index for language {request.Language.GetDescription()} rebuilt" });
+    }
+
+    public class ToIndexRequest
+    {
+        [JsonPropertyName("delete")]
+        public bool Delete { get; set; } = false;
+        [JsonPropertyName("language")]
+        public Language Language { get; set; } = Language.RU;
     }
 #endregion
 } 

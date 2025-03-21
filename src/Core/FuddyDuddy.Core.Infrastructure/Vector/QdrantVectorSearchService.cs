@@ -261,17 +261,14 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         }
     }
 
-    public async Task RecreateCollectionAsync(CancellationToken cancellationToken = default)
+    public async Task RecreateCollectionAsync(Language language, CancellationToken cancellationToken = default)
     {
         try
         {
-            foreach (var language in Enum.GetValues(typeof(Language)))
-            {
-                var collectionName = $"{_qdrantOptions.Value.CollectionName}_{((Language)language).GetDescription()}";
-                await _qdrantClient.DeleteCollectionAsync(collectionName);
-                await EnsureCollectionExists((Language)language, cancellationToken);
-                _logger.LogInformation("Recreated collection for language {Language}", ((Language)language).GetDescription());
-            }
+            var collectionName = $"{_qdrantOptions.Value.CollectionName}_{language.GetDescription()}";
+            await _qdrantClient.DeleteCollectionAsync(collectionName);
+            await EnsureCollectionExists(language, cancellationToken);
+            _logger.LogInformation("Recreated collection for language {Language}", language.GetDescription());
         }
         catch (Exception ex)
         {

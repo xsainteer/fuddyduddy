@@ -48,11 +48,12 @@ internal class NewsSummaryRepository : INewsSummaryRepository
         return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<NewsSummary>> GetValidatedOrDigestedAsync(int? first = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<NewsSummary>> GetValidatedOrDigestedAsync(int? first = null, Language? language = null, CancellationToken cancellationToken = default)
     {
         var query = _context
             .NewsSummaries
             .Where(s => s.State == NewsSummaryState.Validated || s.State == NewsSummaryState.Digested)
+            .Where(s => language == null || s.Language == language)
             .Include(s => s.Category)
             .Include(s => s.NewsArticle)
             .ThenInclude(na => na.NewsSource)

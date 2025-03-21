@@ -9,6 +9,7 @@ interface Translation {
     feed: string
     language: string
     followUs: string
+    followGithub: string
     search: string
   }
   filters: {
@@ -59,6 +60,12 @@ interface Translation {
       description: string
       email: string
     }
+    openSource: {
+      title: string
+      description: string
+      githubLink: string
+      viewOnGithub: string
+    }
   }
   common: {
     links: string
@@ -94,7 +101,6 @@ interface Translation {
         title: string
         useNaturalLanguage: string
         beSpecific: string
-        includeContext: string
         tryDifferent: string
       }
     }
@@ -145,6 +151,7 @@ const translations: Record<Language, Translation> = {
       feed: 'Feed',
       language: 'Language',
       followUs: 'Follow us on X',
+      followGithub: 'GitHub',
       search: 'Search'
     },
     filters: {
@@ -194,6 +201,12 @@ const translations: Record<Language, Translation> = {
         title: 'Contact Us',
         description: 'For all inquiries, including requests from news agencies, please contact:',
         email: 'hey@fuddy-duddy.org'
+      },
+      openSource: {
+        title: 'Open Source',
+        description: 'FuddyDuddy News is an open source project that uses modern AI technologies to process and analyze news content. We believe in transparency and community collaboration.',
+        githubLink: 'https://github.com/anurmatov/fuddyduddy',
+        viewOnGithub: 'View on GitHub'
       }
     },
     common: {
@@ -230,7 +243,6 @@ const translations: Record<Language, Translation> = {
           title: 'Tips for better results:',
           useNaturalLanguage: 'Use natural language questions',
           beSpecific: 'Be specific about what you\'re looking for',
-          includeContext: 'Include relevant context or time periods (e.g. "today", "from 1 to 28 December 2024")',
           tryDifferent: 'Try different phrasings if you don\'t get the expected results'
         }
       },
@@ -279,6 +291,7 @@ const translations: Record<Language, Translation> = {
       feed: 'Лента',
       language: 'Язык',
       followUs: 'Читайте нас в X',
+      followGithub: 'GitHub',
       search: 'Поиск'
     },
     filters: {
@@ -328,6 +341,12 @@ const translations: Record<Language, Translation> = {
         title: 'Связаться с нами',
         description: 'По всем вопросам, включая запросы от информационных агентств, пожалуйста, обращайтесь:',
         email: 'hey@fuddy-duddy.org'
+      },
+      openSource: {
+        title: 'Открытый исходный код',
+        description: 'FuddyDuddy News — это проект с открытым исходным кодом, использующий современные AI технологии для обработки и анализа новостного контента. Мы верим в прозрачность и совместное развитие сообщества.',
+        githubLink: 'https://github.com/anurmatov/fuddyduddy',
+        viewOnGithub: 'Смотреть на GitHub'
       }
     },
     common: {
@@ -364,7 +383,6 @@ const translations: Record<Language, Translation> = {
           title: 'Советы для лучших результатов:',
           useNaturalLanguage: 'Используйте вопросы на естественном языке',
           beSpecific: 'Будьте конкретны в том, что ищете',
-          includeContext: 'Включайте соответствующий контекст или временные периоды (например: "сегодня", "c 1 по 28 декабря 2024")',
           tryDifferent: 'Попробуйте разные формулировки, если не получаете ожидаемых результатов'
         }
       },

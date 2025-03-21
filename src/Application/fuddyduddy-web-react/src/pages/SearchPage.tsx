@@ -115,7 +115,6 @@ export default function SearchPage() {
           <ul className="list-disc list-inside space-y-1 text-sm">
             <li>{t.search.experimental.tips.useNaturalLanguage}</li>
             <li>{t.search.experimental.tips.beSpecific}</li>
-            <li>{t.search.experimental.tips.includeContext}</li>
             <li>{t.search.experimental.tips.tryDifferent}</li>
           </ul>
         </div>

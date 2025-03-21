@@ -221,15 +221,15 @@ public class MaintenanceController : ControllerBase
 
 #region Vector Index
     [HttpPost("rebuild-vector-index")]
-    public async Task<IActionResult> RebuildVectorIndex([FromQuery] ToIndexRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> RebuildVectorIndex([FromBody] ToIndexRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Delete)
         {
-            _logger.LogInformation("Recreating vector index for language {Language}", request.Language.GetDescription());
-            await _vectorSearchService.RecreateCollectionAsync(request.Language, cancellationToken);
+            _logger.LogInformation("Recreating vector index for language {Language}", request.LanguageEnum.GetDescription());
+            await _vectorSearchService.RecreateCollectionAsync(request.LanguageEnum, cancellationToken);
         }
 
-        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(language: request.Language, cancellationToken: cancellationToken);
+        var summaries = await _summaryRepository.GetValidatedOrDigestedAsync(language: request.LanguageEnum, cancellationToken: cancellationToken);
 
         // Add summaries to vector index
         foreach (var summary in summaries)
@@ -237,7 +237,7 @@ public class MaintenanceController : ControllerBase
             await _broker.PushAsync(QueueNameConstants.Index, new IndexRequest(summary.Id, IndexRequestType.Add), cancellationToken);
         }
 
-        return Ok(new { message = $"Vector index for language {request.Language.GetDescription()} rebuilt" });
+        return Ok(new { message = $"Vector index for language {request.LanguageEnum.GetDescription()} rebuilt" });
     }
 
     public class ToIndexRequest
@@ -245,7 +245,8 @@ public class MaintenanceController : ControllerBase
         [JsonPropertyName("delete")]
         public bool Delete { get; set; } = false;
         [JsonPropertyName("language")]
-        public Language Language { get; set; } = Language.RU;
+        public string Language { get; set; } = "RU";
+        public Language LanguageEnum => Enum.Parse<Language>(Language);
     }
 #endregion
 } 

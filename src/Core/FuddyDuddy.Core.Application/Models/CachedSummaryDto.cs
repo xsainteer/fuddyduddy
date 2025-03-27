@@ -29,6 +29,11 @@ public class CachedSummaryDto
             .Where(r => r.NewsSummaryId != Id)
             .Select(CachedSimilarReferenceBaseDto.FromSimilarReference)
             .ToArray());
+
+        Similarities = Similarities
+            .OrderByDescending(s => s.GeneratedAt)
+            .Take(3)
+            .ToList();
     }
 
     public static CachedSummaryDto FromNewsSummary(NewsSummary summary)

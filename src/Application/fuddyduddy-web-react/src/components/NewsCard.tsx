@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDateTime } from '../utils/dateFormat'
 import ShareButton from './ShareButton'
 import type { Summary } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
+import { loadAllSimilarities } from '../api/summaries'
 
 const truncateTitle = (title: string, maxLength: number = 100): string => {
   if (title.length <= maxLength) return title;
@@ -19,20 +20,45 @@ interface NewsCardProps {
 export default function NewsCard({ summary, score }: NewsCardProps) {
   const { t, language } = useLocalization()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [showAllSimilarities, setShowAllSimilarities] = useState(false)
 
   // Split article into lines and determine if it needs expansion
   const lines = summary.article.split('\n')
   const hasMoreLines = lines.length > 10
   const displayedLines = isExpanded ? lines : lines.slice(0, 10)
 
+
   // Get similarities to display
   const sortedSimilarities = summary.similarities?.sort(
     (a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
   ) || []
-  const displayedSimilarities = showAllSimilarities ? sortedSimilarities : sortedSimilarities.slice(0, 3)
-  const hasMoreSimilarities = sortedSimilarities.length > 3
+  
+  const [offset, setOffset] = useState(0);
 
+  const [displayedSimilarities, setDisplayedSimilarities] = useState(sortedSimilarities);
+  
+  const [hasMoreSimilarities, setHasMoreSimilarities] = useState(false);
+  
+  async function requestMoreSimilarities() {
+    const newSimilarities = await loadAllSimilarities(summary.id, offset.toString());
+    setDisplayedSimilarities(
+        [...displayedSimilarities,
+          ...newSimilarities]
+    )
+    
+    setOffset(prevOffset => prevOffset + 3)
+    
+    setHasMoreSimilarities(offset === 3);
+  }
+    
+  
+  useEffect(() => {
+    const fetchSimilarities = async () => {
+      requestMoreSimilarities();
+    }
+    
+    fetchSimilarities();
+  }, [summary.id]);
+  
   return (
     <article className="p-4 rounded-xl transition-all duration-300 border dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:text-gray-100">
       {/* Header */}
@@ -105,9 +131,9 @@ export default function NewsCard({ summary, score }: NewsCardProps) {
                 </div>
               </div>
             ))}
-            {hasMoreSimilarities && !showAllSimilarities && (
+            {hasMoreSimilarities  && (
               <button
-                onClick={() => setShowAllSimilarities(true)}
+                onClick={() => requestMoreSimilarities()}
                 className="text-blue-600 dark:text-blue-400 hover:underline text-xs mt-1"
               >
                 {t.common.showMore}

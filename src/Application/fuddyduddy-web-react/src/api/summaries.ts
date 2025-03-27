@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Summary } from '../types'
+import type { Summary, SimilarSummary } from '../types'
 
 export const summaryKeys = {
   all: ['summaries'] as const,
@@ -30,6 +30,16 @@ export async function fetchSummaryById(id: string): Promise<Summary> {
     return data
   } catch (error) {
     console.error('Error fetching summary:', error)
+    throw error
+  }
+}
+
+export async function loadAllSimilarities(id: string, offset: string): Promise<SimilarSummary[]> {
+  try {
+    const { data } = await axios.get<SimilarSummary[]>(`/api/${id}/allSimilarities?offset=${offset}`)
+    return data
+  } catch (error) {
+    console.error('Error fetching similarities:', error)
     throw error
   }
 } 

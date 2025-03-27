@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDateTime } from '../utils/dateFormat'
 import ShareButton from './ShareButton'
-import type { Summary } from '../types'
+import type { Summary, SimilarSummary } from '../types'
 import { useLocalization } from '../hooks/useLocalization'
-import { loadAllSimilarities } from '../api/summaries'
+import { loadSimilarities } from '../api/summaries'
 
 const truncateTitle = (title: string, maxLength: number = 100): string => {
   if (title.length <= maxLength) return title;
@@ -36,24 +36,44 @@ export default function NewsCard({ summary, score }: NewsCardProps) {
 
   const [displayedSimilarities, setDisplayedSimilarities] = useState(sortedSimilarities);
   
+  const [preloadedSimilarities, setPreloadedSimilarities] = useState<SimilarSummary[]>([]);
+  
   const [hasMoreSimilarities, setHasMoreSimilarities] = useState(false);
   
   async function requestMoreSimilarities() {
-    const newSimilarities = await loadAllSimilarities(summary.id, offset.toString());
-    setDisplayedSimilarities(
-        [...displayedSimilarities,
-          ...newSimilarities]
-    )
-    
-    setOffset(prevOffset => prevOffset + 3)
-    
-    setHasMoreSimilarities(offset === 3);
+    const newSimilarities = await loadSimilarities(summary.id, offset.toString());
+    if(newSimilarities.length > 0)
+    {
+      setPreloadedSimilarities(newSimilarities);
+      
+      setOffset(prevOffset => prevOffset + 3);
+      
+      setHasMoreSimilarities(preloadedSimilarities.length > 0);
+      
+      return true;
+    }
+    else
+    {
+      return false;
+    }
   }
     
+  async function loadMoreSimilarities() {
+    setDisplayedSimilarities([
+        ...displayedSimilarities,
+        ...preloadedSimilarities
+    ]);
+    
+    const areSummariesLeft = await requestMoreSimilarities();
+    if(!areSummariesLeft)
+    {
+      setHasMoreSimilarities(false);
+    }
+  }
   
   useEffect(() => {
     const fetchSimilarities = async () => {
-      requestMoreSimilarities();
+      await requestMoreSimilarities();
     }
     
     fetchSimilarities();
@@ -131,9 +151,9 @@ export default function NewsCard({ summary, score }: NewsCardProps) {
                 </div>
               </div>
             ))}
-            {hasMoreSimilarities  && (
+            {hasMoreSimilarities && (
               <button
-                onClick={() => requestMoreSimilarities()}
+                onClick={async () => await loadMoreSimilarities()}
                 className="text-blue-600 dark:text-blue-400 hover:underline text-xs mt-1"
               >
                 {t.common.showMore}

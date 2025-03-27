@@ -34,7 +34,7 @@ export async function fetchSummaryById(id: string): Promise<Summary> {
   }
 }
 
-export async function loadAllSimilarities(id: string, offset: string): Promise<SimilarSummary[]> {
+export async function loadSimilarities(id: string, offset: string): Promise<SimilarSummary[]> {
   try {
     const { data } = await axios.get<SimilarSummary[]>(`/api/${id}/allSimilarities?offset=${offset}`)
     return data

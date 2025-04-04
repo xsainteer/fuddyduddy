@@ -1,6 +1,7 @@
 using FuddyDuddy.Core.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using FuddyDuddy.Core.Application.Models;
 using Xunit;
 
 namespace FuddyDuddy.Core.Tests.Domain;
@@ -131,4 +132,40 @@ public class SimilarReferenceTests
         Assert.Equal(255, reference.Reason.Length);
         Assert.Equal(longReason.Substring(0, 255), reference.Reason);
     }
-} 
+}
+
+public class CacheReferenceTests
+{
+    [Fact]
+    public void AddCacheReference_ShouldKeep3References()
+    {
+        //arrange
+        
+        var title = "Similar News Group";
+        var language = Language.EN;
+        
+        var references = new List<SimilarReference>
+        {
+            new SimilarReference(Guid.NewGuid(), "First similar article"),
+            new SimilarReference(Guid.NewGuid(), "Second similar article"),
+            new SimilarReference(Guid.NewGuid(), "Third similar article"),
+            new SimilarReference(Guid.NewGuid(), "Fourth similar article"),
+            new SimilarReference(Guid.NewGuid(), "Fifth similar article"),
+            new SimilarReference(Guid.NewGuid(), "Sixth similar article")
+        };
+        
+        var similar = new Similar(title, language, references);
+
+        var cachedSummary = new CachedSummaryDto();
+        
+        //act
+        
+        cachedSummary.AddBaseSimilarities(similar);
+        
+        var similarities = cachedSummary.Similarities;
+        
+        //assert
+        
+        Assert.Equal(3, cachedSummary.Similarities.Count);
+    }
+}

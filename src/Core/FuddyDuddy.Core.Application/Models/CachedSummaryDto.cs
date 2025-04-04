@@ -41,15 +41,15 @@ public class CachedSummaryDto
         return new CachedSummaryDto
         {
             Id = summary.Id,
-            Title = summary.Title,
-            Article = summary.Article,
-            Category = summary.Category.Name,
-            CategoryLocal = summary.Category.Local,
+            Title = summary.Title ?? string.Empty,
+            Article = summary.Article ?? string.Empty,
+            Category = summary.Category?.Name ?? string.Empty,
+            CategoryLocal = summary.Category?.Local ?? string.Empty,
             GeneratedAt = summary.GeneratedAt,
-            Reason = summary.Reason,
-            NewsArticleTitle = summary.NewsArticle.Title,
-            NewsArticleUrl = summary.NewsArticle.Url,
-            Source = summary.NewsArticle.NewsSource.Name
+            Reason = summary.Reason ?? string.Empty,
+            NewsArticleTitle = summary.NewsArticle?.Title ?? string.Empty, 
+            NewsArticleUrl = summary.NewsArticle?.Url ?? string.Empty,
+            Source = summary.NewsArticle?.NewsSource?.Name ?? string.Empty 
         };
     }
 } 

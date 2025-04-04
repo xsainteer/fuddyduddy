@@ -7,11 +7,16 @@ using System.Text.Json.Serialization;
 using FuddyDuddy.Core.Application.Configuration;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using FuddyDuddy.Core.Application.Models;
+
 namespace FuddyDuddy.Core.Application.Services;
 
 public interface ISimilarityService
 {
     Task FindSimilarSummariesAsync(Guid newsSummaryId, CancellationToken cancellationToken);
+
+    Task<List<CachedSimilarReferenceBaseDto>> GetDbSimilaritiesBySummaryId(Guid summaryId, int offset, int limit,
+        CancellationToken cancellationToken);
 }
 
 public class SimilarityService : ISimilarityService
@@ -189,6 +194,26 @@ List of candidate summaries: {JsonSerializer.Serialize(summariesData, jsonOption
         {
             await _cacheService.AddSummaryAsync(reference.NewsSummaryId, cancellationToken);
         }
+    }
+
+    public async Task<List<CachedSimilarReferenceBaseDto>> GetDbSimilaritiesBySummaryId(Guid summaryId, int offset, int limit,
+        CancellationToken cancellationToken)
+    {
+        var similars = await _similarRepository.GetBySummaryIdAsync(summaryId, cancellationToken);
+        if (similars.Any())
+        {
+            var references = similars
+                .SelectMany(s => s.References)
+                //mapping it to cache DTO so web-react will accept it (they have the same structure)
+                .OrderByDescending(r => r.NewsSummary.GeneratedAt)
+                .Skip(offset)
+                .Take(limit)
+                .Select(CachedSimilarReferenceBaseDto.FromSimilarReference)
+                .ToList();
+            return references;
+        }
+
+        return [];
     }
 }
 

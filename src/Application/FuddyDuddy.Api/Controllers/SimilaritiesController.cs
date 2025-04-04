@@ -1,6 +1,7 @@
 using FuddyDuddy.Core.Application.Interfaces;
 using FuddyDuddy.Core.Application.Models;
 using FuddyDuddy.Core.Application.Repositories;
+using FuddyDuddy.Core.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FuddyDuddy.Api.Controllers;
@@ -11,13 +12,13 @@ public class SimilaritiesController : Controller
 {
     private readonly ICacheService _cacheService;
     private readonly ILogger<SimilaritiesController> _logger;
-    private readonly ISimilarRepository _similarRepository;
+    private readonly ISimilarityService _similarityService;
 
-    public SimilaritiesController(ICacheService cacheService, ILogger<SimilaritiesController> logger, ISimilarRepository similarRepository)
+    public SimilaritiesController(ICacheService cacheService, ILogger<SimilaritiesController> logger, ISimilarityService similarityService)
     {
         _cacheService = cacheService;
         _logger = logger;
-        _similarRepository = similarRepository;
+        _similarityService = similarityService;
     }
 
     [HttpGet("/{summaryId}/allSimilarities")]
@@ -27,19 +28,8 @@ public class SimilaritiesController : Controller
         {
             if (Guid.TryParse(summaryId, out Guid id))
             {
-                var similars = await _similarRepository.GetBySummaryIdAsync(id, cancellationToken);
-                if (similars.Any())
-                {
-                    var references = similars
-                        .SelectMany(s => s.References)
-                        //mapping it to cache DTO so web-react will accept it (they have the same structure)
-                        .OrderByDescending(r => r.NewsSummary.GeneratedAt)
-                        .Skip(offset)
-                        .Take(limit)
-                        .Select(CachedSimilarReferenceBaseDto.FromSimilarReference)
-                        .ToList();
-                    return Ok(references);
-                }
+                var references = await _similarityService.GetDbSimilaritiesBySummaryId(id, offset, limit, cancellationToken);
+                return Ok(references);
             }
             return NotFound(new {message = "Summary not found"});
         }

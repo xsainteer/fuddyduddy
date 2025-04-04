@@ -34,9 +34,9 @@ public class CachedSimilarReferenceBaseDto
         {
             Id = reference.Id,
             NewsSummaryId = reference.NewsSummaryId,
-            Source = reference.NewsSummary.NewsArticle.NewsSource.Name,
-            GeneratedAt = reference.NewsSummary.GeneratedAt,
-            Title = reference.NewsSummary.Title
+            Source = reference.NewsSummary?.NewsArticle?.NewsSource?.Name ?? string.Empty,
+            GeneratedAt = reference.NewsSummary?.GeneratedAt ?? default,
+            Title = reference.NewsSummary?.Title ?? string.Empty
         };
     }
 }

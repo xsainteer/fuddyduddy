@@ -206,7 +206,7 @@ List of candidate summaries: {JsonSerializer.Serialize(summariesData, jsonOption
                 .SelectMany(s => s.References)
                 //mapping it to cache DTO so web-react will accept it (they have the same structure)
                 .OrderByDescending(r => r.NewsSummary.GeneratedAt)
-                .Skip(offset)
+                .Skip(offset + 3) // already shown summaries by cache won't be shown again
                 .Take(limit)
                 .Select(CachedSimilarReferenceBaseDto.FromSimilarReference)
                 .ToList();

@@ -36,7 +36,7 @@ export async function fetchSummaryById(id: string): Promise<Summary> {
 
 export async function loadSimilarities(id: string, offset: string): Promise<SimilarSummary[]> {
   try {
-    const { data } = await axios.get<SimilarSummary[]>(`/api/${id}/allSimilarities?offset=${offset}`)
+    const { data } = await axios.get<SimilarSummary[]>(`/api/similarities/${id}/allSimilarities?offset=${offset}`)
     return data
   } catch (error) {
     console.error('Error fetching similarities:', error)

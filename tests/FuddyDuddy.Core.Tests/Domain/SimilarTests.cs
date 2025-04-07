@@ -137,7 +137,7 @@ public class SimilarReferenceTests
 public class CacheReferenceTests
 {
     [Fact]
-    public void AddCacheReference_ShouldKeep3References()
+    public void AddCacheReference_ShouldKeep3LatestReferences()
     {
         //arrange
         

@@ -40,7 +40,7 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         _qdrantClient = new QdrantClient(_qdrantOptions.Value.Host, _qdrantOptions.Value.Port, loggerFactory: loggerFactory);
     }
 
-    private async Task EnsureCollectionExists(Language language, CancellationToken cancellationToken)
+   public async Task EnsureCollectionExists(Language language, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -103,8 +103,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
 
             await CheckRateLimit(cancellationToken);
 
-            await EnsureCollectionExists(summary.Language, cancellationToken);
-
             var embedding = await _embeddingService.GenerateEmbeddingAsync(
                 $"{summary.Title}\n{summary.Article}",
                 cancellationToken);
@@ -151,8 +149,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         try
         {
             await CheckRateLimit(cancellationToken);
-
-            await EnsureCollectionExists(language, cancellationToken);
 
             var filter = new Filter();
 
@@ -267,7 +263,6 @@ internal sealed class QdrantVectorSearchService : IVectorSearchService
         {
             var collectionName = $"{_qdrantOptions.Value.CollectionName}_{language.GetDescription()}";
             await _qdrantClient.DeleteCollectionAsync(collectionName);
-            await EnsureCollectionExists(language, cancellationToken);
             _logger.LogInformation("Recreated collection for language {Language}", language.GetDescription());
         }
         catch (Exception ex)

@@ -43,4 +43,11 @@ public interface IVectorSearchService
     /// </summary>
     /// <param name="cancellationToken">Cancellation token</param>
     Task RecreateCollectionAsync(Language language, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Ensures that the vector collection exists for the specified language.
+    /// </summary>
+    /// <param name="language">language</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    Task EnsureCollectionExists(Language language, CancellationToken cancellationToken = default);
 } 

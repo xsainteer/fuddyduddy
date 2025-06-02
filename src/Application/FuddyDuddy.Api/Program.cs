@@ -4,6 +4,8 @@ using FuddyDuddy.Api.Middleware;
 using FuddyDuddy.Api.Swagger;
 using FuddyDuddy.Api.HostedServices;
 using FuddyDuddy.Api.Configuration;
+using FuddyDuddy.Core.Application.Interfaces;
+using FuddyDuddy.Core.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +41,15 @@ builder.Services.AddHostedService<IndexRequestListener>();
 builder.Services.Configure<TaskSchedulerSettings>(builder.Configuration.GetSection("TaskScheduler"));
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var vectorService = services.GetRequiredService<IVectorSearchService>();
+
+    await vectorService.EnsureCollectionExists(Language.RU);
+    await vectorService.EnsureCollectionExists(Language.EN);
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
